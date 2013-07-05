@@ -9,8 +9,16 @@ using namespace llvm;
 
 MPITypeCheckingConsumer::MPITypeCheckingConsumer(CompilerInstance *ci) {
 	this->ci=ci;
+	this->visitStart=false;
 }
 
+void MPITypeCheckingConsumer::HandleTranslationUnit(ASTContext &Ctx) {
+cout<<"all the parts have been parsed!"<<endl;
+this->visitStart=true;
+
+this->TraverseDecl(this->mainFunc);
+
+}
 
 
 bool MPITypeCheckingConsumer::HandleTopLevelDecl( clang::DeclGroupRef d)
@@ -20,30 +28,21 @@ bool MPITypeCheckingConsumer::HandleTopLevelDecl( clang::DeclGroupRef d)
 
 	
 	clang::DeclGroupRef::iterator it;
-	for( it = d.begin(); it != d.end(); it++){
-	//myDeclVisitor::VisitDecl(*it);
-	}
-
+	
 
 	for( it = d.begin(); it != d.end(); it++)
 	{
-//		this->TraverseDecl(*it);
-		
+		this->TraverseDecl(*it);
 
-		clang::FunctionDecl *fd = llvm::dyn_cast<clang::FunctionDecl>(*it);
-		if(!fd)
-		{
-			continue;
-		}
-
-		if(fd->getName().compare("main")==0){
-			cout << "Found the main!"<<endl;
-			this->TraverseDecl(fd);
-
+		if(isa<FunctionDecl>(*it)){
+		FunctionDecl *func=cast<FunctionDecl>(*it);
+			if(func->isMain()){
+				this->mainFunc=func;
+			}
 		}
 		
-
 	}
+
 	return true;
 }
 

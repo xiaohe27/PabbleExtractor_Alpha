@@ -53,7 +53,10 @@ class MPITypeCheckingConsumer:
 private:
 	CompilerInstance *ci;
 
-	typedef DeclVisitor<MPITypeCheckingConsumer> myDeclVisitor;
+	FunctionDecl *mainFunc;
+
+	//visitStart is true if we begin to visit the stmts in main function.
+	bool visitStart;
 
 
 public:
@@ -61,11 +64,15 @@ public:
 
 	virtual bool HandleTopLevelDecl( DeclGroupRef d);
 
+	void HandleTranslationUnit(ASTContext &Ctx);
+
 	bool TraverseAsmStmt(AsmStmt *S);
 
 	bool TraverseIfStmt(IfStmt *S);
 
-	bool TraverseDeclStmt(DeclStmt *S);
+	//bool TraverseDeclStmt(DeclStmt *S);
+	bool VisitDeclStmt(DeclStmt *S);
+
 
 	bool TraverseSwitchStmt(SwitchStmt *S);
 
@@ -87,7 +94,10 @@ public:
 
 	bool TraverseContinueStmt(ContinueStmt *S);
 
-	bool TraverseCallExpr(CallExpr *op);
+//	bool TraverseCallExpr(CallExpr *op);
+
+	bool VisitCallExpr(CallExpr *op);
+
 
 //	bool TraverseCompoundStmt(CompoundStmt *S);
 	bool VisitBinAndAssign(CompoundAssignOperator *OP);
@@ -95,6 +105,10 @@ public:
 	bool VisitBinComma(BinaryOperator *S);
 
 	bool VisitBinaryOperator(BinaryOperator *S);
+
+	bool VisitDecl(Decl *);
+
+	bool VisitCompoundStmt(CompoundStmt *cs);
 };
 
 

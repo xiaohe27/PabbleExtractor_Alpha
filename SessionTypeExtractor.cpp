@@ -69,8 +69,6 @@ int main()
 
 	clang::ParseAST(ci.getSema());
 
-
-
 	ci.getASTContext().Idents.PrintStats();
 
 	//checkIdTable(&ci);
