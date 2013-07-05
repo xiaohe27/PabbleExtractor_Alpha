@@ -50,6 +50,7 @@ int main()
 	MPITypeCheckingConsumer *astConsumer = new MPITypeCheckingConsumer(&ci);
 	ci.setASTConsumer(astConsumer);
 
+
 	ci.createSema(clang::TU_Complete, NULL);
 
 
@@ -63,7 +64,13 @@ int main()
 
 	const FileEntry *pFile = ci.getFileManager().getFile("test.c");
 	ci.getSourceManager().createMainFileID(pFile);
+
+	
+
 	clang::ParseAST(ci.getSema());
+
+
+
 	ci.getASTContext().Idents.PrintStats();
 
 	//checkIdTable(&ci);

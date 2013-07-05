@@ -32,8 +32,28 @@ bool MPITypeCheckingConsumer::TraverseCompoundStmt(CompoundStmt *cs){
 }
 */
 
-bool MPITypeCheckingConsumer::VisitBinaryOperator(BinaryOperator *S){
-	cout <<"Visit BinaryOperator!"<<endl;
+bool MPITypeCheckingConsumer::VisitBinaryOperator(BinaryOperator *op){
+	cout <<"Visit '"<< op->getStmtClassName()<<"':\n" ;
+	cout << stmt2str(&ci->getSourceManager(),ci->getLangOpts(),op) <<endl;
+
+	Expr *lhs=op->getLHS();
+	if (DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(lhs)) {
+		// It's a reference to a declaration...
+		if (VarDecl *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+			// It's a reference to a variable (a local, function parameter, global, or static data member).
+			std::cout << "LHS is " << VD->getQualifiedNameAsString() << std::endl;
+		}
+	}
+
+	APSInt Result;
+	Expr *rhs=op->getRHS();
+
+	cout << "RHS has textual content: \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs)<<"\n"<<endl;
+
+			
+	if (rhs->EvaluateAsInt(Result, this->ci->getASTContext())) {
+		std::cout << "RHS has value " << Result.toString(10) << std::endl;
+	}
 	return true;
 }
 
@@ -50,13 +70,13 @@ bool MPITypeCheckingConsumer::VisitBinComma(BinaryOperator *binOP){
 
 
 bool MPITypeCheckingConsumer::TraverseAsmStmt(AsmStmt *S){
-	cout <<"Call Asm stmt" <<endl;
+	cout <<"The Asm stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 
 	return true;
 }
 
 bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
-	cout <<"Call If stmt" <<endl;
+cout <<"The if stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(), ifStmt) <<endl;
 
 	VarDecl *ifCondVar=ifStmt->getConditionVariable();
 
@@ -82,7 +102,7 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 
 bool MPITypeCheckingConsumer::TraverseDeclStmt(DeclStmt *S){
-	cout <<"Call Decl stmt" <<endl;
+	cout <<"The decl stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 	return true;
 }
 
@@ -95,7 +115,7 @@ bool MPITypeCheckingConsumer::TraverseSwitchStmt(SwitchStmt *S){
 }
 
 bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
-	cout <<"Call For stmt" <<endl;
+	cout <<"The for stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 	return true;
 }
 
@@ -105,7 +125,7 @@ bool MPITypeCheckingConsumer::TraverseDoStmt(DoStmt *S){
 }
 
 bool MPITypeCheckingConsumer::TraverseWhileStmt(WhileStmt *S){
-	cout <<"Call While stmt" <<endl;
+	cout <<"The While stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 	return true;
 }
 
@@ -115,7 +135,7 @@ bool MPITypeCheckingConsumer::TraverseLabelStmt(LabelStmt *S){
 }
 
 bool MPITypeCheckingConsumer::TraverseReturnStmt(ReturnStmt *S){
-	cout <<"Call Return stmt" <<endl;
+	cout <<"The return stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 	return true;
 }
 
@@ -125,26 +145,7 @@ bool MPITypeCheckingConsumer::TraverseNullStmt(NullStmt *S){
 }
 
 
-bool MPITypeCheckingConsumer::TraverseBinaryOperator(BinaryOperator *op){
-	cout <<"Call Bin Op stmt" <<endl;
-	cout << op->getOpcodeStr().data()<<endl;
 
-	Expr *lhs=op->getLHS();
-	if (DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(lhs)) {
-		// It's a reference to a declaration...
-		if (VarDecl *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-			// It's a reference to a variable (a local, function parameter, global, or static data member).
-			std::cout << "LHS is " << VD->getQualifiedNameAsString() << std::endl;
-		}
-	}
-
-	APSInt Result;
-	Expr *rhs=op->getRHS();
-	if (rhs->EvaluateAsInt(Result, this->ci->getASTContext())) {
-		std::cout << "RHS has value " << Result.toString(10) << std::endl;
-	}
-	return true;
-}
 
 bool MPITypeCheckingConsumer::TraverseBreakStmt(BreakStmt *S){
 	cout <<"Call Break stmt" <<endl;
@@ -157,8 +158,22 @@ bool MPITypeCheckingConsumer::TraverseContinueStmt(ContinueStmt *S){
 }
 
 
-bool MPITypeCheckingConsumer::TraverseCallExpr(CallExpr *op){
-	cout <<"Call Call Expr stmt" <<endl;
+bool MPITypeCheckingConsumer::TraverseCallExpr(CallExpr *funcCall){
+	cout <<"The function being called is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),funcCall) <<endl;
+
+	Decl *decl=funcCall->getCalleeDecl();
+	cout <<"It is a "<<decl->getDeclKindName()<<endl;
+
+	this->TraverseDecl(decl);
+
+	/*
+	if(isa<FunctionDecl>(decl)){
+		FunctionDecl *fd=llvm::cast<FunctionDecl>(decl);
+		cout <<"The name of the function is "<<fd->getNameAsString()<<endl;
+		Stmt *body=fd->getBody();
+		this->VisitStmt(body);
+	}
+	*/
 
 	return true;
 }

@@ -42,14 +42,18 @@ class MPITypeCheckingConsumer;
 
 void checkIdTable(clang::CompilerInstance *ci);
 string decl2str(SourceManager *sm, LangOptions lopt,clang::Decl *d);
+string stmt2str(SourceManager *sm, LangOptions lopt,clang::Stmt *stmt);
 
 
 class MPITypeCheckingConsumer:
 	public ASTConsumer,
-	public RecursiveASTVisitor<MPITypeCheckingConsumer> 
+	public RecursiveASTVisitor<MPITypeCheckingConsumer>
+//	,public DeclVisitor<MPITypeCheckingConsumer>
 {
 private:
 	CompilerInstance *ci;
+
+	typedef DeclVisitor<MPITypeCheckingConsumer> myDeclVisitor;
 
 
 public:
@@ -77,7 +81,7 @@ public:
 
 	bool TraverseNullStmt(NullStmt *S);
 
-	bool TraverseBinaryOperator(BinaryOperator *op);
+//	bool TraverseBinaryOperator(BinaryOperator *op);
 
 	bool TraverseBreakStmt(BreakStmt *S);
 

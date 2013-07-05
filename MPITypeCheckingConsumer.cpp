@@ -18,13 +18,18 @@ bool MPITypeCheckingConsumer::HandleTopLevelDecl( clang::DeclGroupRef d)
 	using clang::Stmt;
 	using clang::CFG;
 
-	static int count = 0;
+	
 	clang::DeclGroupRef::iterator it;
+	for( it = d.begin(); it != d.end(); it++){
+	//myDeclVisitor::VisitDecl(*it);
+	}
+
+
 	for( it = d.begin(); it != d.end(); it++)
 	{
-		this->TraverseDecl(*it);
-		/*
-		count++;
+//		this->TraverseDecl(*it);
+		
+
 		clang::FunctionDecl *fd = llvm::dyn_cast<clang::FunctionDecl>(*it);
 		if(!fd)
 		{
@@ -36,7 +41,7 @@ bool MPITypeCheckingConsumer::HandleTopLevelDecl( clang::DeclGroupRef d)
 			this->TraverseDecl(fd);
 
 		}
-		*/
+		
 
 	}
 	return true;
@@ -83,6 +88,14 @@ bool MPITypeCheckingConsumer::TraverseFunctionDecl(FunctionDecl *fd){
 
 string decl2str(SourceManager *sm, LangOptions lopt,clang::Decl *d) {
 	clang::SourceLocation b(d->getLocStart()), _e(d->getLocEnd());
+	clang::SourceLocation e(clang::Lexer::getLocForEndOfToken(_e, 0, *sm, lopt));
+	return std::string(sm->getCharacterData(b),
+		sm->getCharacterData(e)-sm->getCharacterData(b));
+
+}
+
+string stmt2str(SourceManager *sm, LangOptions lopt,clang::Stmt *stmt) {
+	clang::SourceLocation b(stmt->getLocStart()), _e(stmt->getLocEnd());
 	clang::SourceLocation e(clang::Lexer::getLocForEndOfToken(_e, 0, *sm, lopt));
 	return std::string(sm->getCharacterData(b),
 		sm->getCharacterData(e)-sm->getCharacterData(b));
