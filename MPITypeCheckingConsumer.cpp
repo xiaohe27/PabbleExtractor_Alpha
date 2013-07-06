@@ -75,10 +75,12 @@ if (this->checkWhetherTheDeclHasBeenVisitedBefore(funcDecl))
 	}
 
 	else{
-
+	
+	if(funcDecl->hasBody()){
 	this->funcsList.push_back(funcDecl->getQualifiedNameAsString());
 
 	cout<<"add "<<funcDecl->getQualifiedNameAsString()<<" to list "<<endl;
+	}
 
 	this->VisitFunctionDecl(funcDecl);
 	}

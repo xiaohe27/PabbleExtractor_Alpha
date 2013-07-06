@@ -183,10 +183,10 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *op){
 	if(!this->visitStart)
 		return true;
 
-	cout <<"The function going to be called is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),op) <<endl;
+//	cout <<"The function going to be called is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),op) <<endl;
 
 	Decl *decl=op->getCalleeDecl();
-	cout <<"It is a "<<decl->getDeclKindName()<<endl;
+//	cout <<"It is a "<<decl->getDeclKindName()<<endl;
 
 	FunctionDecl *funcCall=op->getDirectCallee();
 	//perform a check. If the decl has been visited before, then throw err info
@@ -224,7 +224,7 @@ bool MPITypeCheckingConsumer::VisitFunctionDecl(FunctionDecl *funcDecl){
 
 		if(funcDecl->hasBody()){
 		
-			cout<<funcDecl->getNameAsString()<<" has a body!"<<endl;
+	//		cout<<funcDecl->getNameAsString()<<" has a body!"<<endl;
 			this->TraverseStmt(funcDecl->getBody());
 
 		}
