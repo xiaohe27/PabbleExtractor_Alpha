@@ -12,6 +12,9 @@
 #include "MPITypeCheckingConsumer.h"
 using namespace std;
 
+
+
+
 int main()
 {
 	using clang::CompilerInstance;
@@ -66,10 +69,22 @@ int main()
 	ci.getSourceManager().createMainFileID(pFile);
 
 	
-
+	try{
 	clang::ParseAST(ci.getSema());
 
+
 	ci.getASTContext().Idents.PrintStats();
+
+
+	}
+
+
+	catch(FunctionRecursionError* funcErr){
+		funcErr->printErrInfo();
+	}
+
+	catch(...){cout<<"default error occurs";}
+
 
 	//checkIdTable(&ci);
 

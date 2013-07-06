@@ -4,60 +4,7 @@ using namespace clang;
 using namespace llvm;
 using namespace std;
 
-/*
-bool MPITypeCheckingConsumer::TraverseCompoundStmt(CompoundStmt *cs){
-	cout <<"Call Compound stmt" <<endl;
-	Stmt **stmtIt;
 
-	int count=0;
-	for(stmtIt=cs->body_begin(); stmtIt!=cs->body_end();stmtIt++){
-
-		Stmt *curS= *stmtIt;
-
-		cout << "stmt " << (++count) <<" : " <<curS->getStmtClassName()<< endl;
-
-
-		if(isa<BinaryOperator>(curS)){
-			BinaryOperator *binop = llvm::cast<clang::BinaryOperator>(curS);
-			this->TraverseBinaryOperator(binop);
-		}
-
-		else
-			this->TraverseStmt(curS);
-
-	}
-
-
-	return true;
-}
-*/
-
-
-bool MPITypeCheckingConsumer::VisitCompoundStmt(CompoundStmt *cs){
-	cout <<"Visit Compound stmt" <<endl;
-	Stmt **stmtIt;
-
-	int count=0;
-	for(stmtIt=cs->body_begin(); stmtIt!=cs->body_end();stmtIt++){
-
-		Stmt *curS= *stmtIt;
-
-		cout << "stmt " << (++count) <<" : " <<curS->getStmtClassName()<< endl;
-
-
-		if(isa<BinaryOperator>(curS)){
-			BinaryOperator *binop = llvm::cast<clang::BinaryOperator>(curS);
-			this->VisitBinaryOperator(binop);
-		}
-
-		else
-			this->VisitStmt(curS);
-
-	}
-
-
-	return true;
-}
 
 
 
@@ -97,20 +44,18 @@ bool MPITypeCheckingConsumer::VisitBinAndAssign(CompoundAssignOperator *op){
 	return true;
 }
 
-bool MPITypeCheckingConsumer::VisitBinComma(BinaryOperator *binOP){
-	cout <<"Call Compound Ass Op" <<endl;
-	return true;
-}
 
 
+bool MPITypeCheckingConsumer::VisitAsmStmt(AsmStmt *S){
+	if(!this->visitStart)
+		return true;
 
-bool MPITypeCheckingConsumer::TraverseAsmStmt(AsmStmt *S){
 	cout <<"The Asm stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 
 	return true;
 }
 
-bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
+bool MPITypeCheckingConsumer::VisitIfStmt(IfStmt *ifStmt){
 	if(!this->visitStart)
 		return true;
 
@@ -129,65 +74,86 @@ cout <<"The if stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(), 
 
 
 	//visit then part
-	this->TraverseStmt(ifStmt->getThen());
+	this->VisitStmt(ifStmt->getThen());
 	
 
 	//visit else part
-	this->TraverseStmt(ifStmt->getElse());
+	this->VisitStmt(ifStmt->getElse());
 	
 	return true;
 }
 
 
 
-/*
-bool MPITypeCheckingConsumer::TraverseDeclStmt(DeclStmt *S){
-	cout <<"The decl stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
-	return true;
-}
-
-*/
 
 bool MPITypeCheckingConsumer::VisitDeclStmt(DeclStmt *S){
 	if(!this->visitStart)
 		return true;
 
-	cout <<"The decl stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
+	cout <<"The decl stmt is: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 	return true;
 }
 
 
-bool MPITypeCheckingConsumer::TraverseSwitchStmt(SwitchStmt *S){
+bool MPITypeCheckingConsumer::VisitSwitchStmt(SwitchStmt *S){
+	if(!this->visitStart)
+		return true;
+
 	cout <<"Call Switch stmt" <<endl;
 	return true;
 }
 
-bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
+bool MPITypeCheckingConsumer::VisitForStmt(ForStmt *S){
+	if(!this->visitStart)
+		return true;
+
 	cout <<"The for stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 	return true;
 }
 
-bool MPITypeCheckingConsumer::TraverseDoStmt(DoStmt *S){
+bool MPITypeCheckingConsumer::VisitDoStmt(DoStmt *S){
+	if(!this->visitStart)
+		return true;
+
 	cout <<"Call Do stmt" <<endl;
 	return true;
 }
 
-bool MPITypeCheckingConsumer::TraverseWhileStmt(WhileStmt *S){
+bool MPITypeCheckingConsumer::VisitWhileStmt(WhileStmt *S){
+	if(!this->visitStart)
+		return true;
+
 	cout <<"The While stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 	return true;
 }
 
-bool MPITypeCheckingConsumer::TraverseLabelStmt(LabelStmt *S){
+bool MPITypeCheckingConsumer::VisitLabelStmt(LabelStmt *S){
+	if(!this->visitStart)
+		return true;
+
 	cout <<"Call Label stmt" <<endl;
 	return true;
 }
 
-bool MPITypeCheckingConsumer::TraverseReturnStmt(ReturnStmt *S){
+bool MPITypeCheckingConsumer::VisitReturnStmt(ReturnStmt *S){
+	if(!this->visitStart)
+		return true;
+
 	cout <<"The return stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
+
+	if(!this->funcsList.empty()){
+	string popped=this->funcsList.back();
+	cout<<"The decl with name "<<popped<<" is going to be removed.";
+	this->funcsList.pop_back();
+	}
+
 	return true;
 }
 
-bool MPITypeCheckingConsumer::TraverseNullStmt(NullStmt *S){
+bool MPITypeCheckingConsumer::VisitNullStmt(NullStmt *S){
+	if(!this->visitStart)
+		return true;
+
 	cout <<"Call Null stmt" <<endl;
 	return true;
 }
@@ -195,12 +161,18 @@ bool MPITypeCheckingConsumer::TraverseNullStmt(NullStmt *S){
 
 
 
-bool MPITypeCheckingConsumer::TraverseBreakStmt(BreakStmt *S){
+bool MPITypeCheckingConsumer::VisitBreakStmt(BreakStmt *S){
+	if(!this->visitStart)
+		return true;
+
 	cout <<"Call Break stmt" <<endl;
 	return true;
 }
 
-bool MPITypeCheckingConsumer::TraverseContinueStmt(ContinueStmt *S){
+bool MPITypeCheckingConsumer::VisitContinueStmt(ContinueStmt *S){
+	if(!this->visitStart)
+		return true;
+
 	cout <<"Call Continue stmt" <<endl;
 	return true;
 }
@@ -211,13 +183,23 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *op){
 	if(!this->visitStart)
 		return true;
 
-	cout <<"The function being visited is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),op) <<endl;
+	cout <<"The function going to be called is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),op) <<endl;
 
 	Decl *decl=op->getCalleeDecl();
 	cout <<"It is a "<<decl->getDeclKindName()<<endl;
 
-	this->VisitStmt(decl->getBody());
+	FunctionDecl *funcCall=op->getDirectCallee();
+	//perform a check. If the decl has been visited before, then throw err info
+	//else traverse the decl.
+	if (funcCall)
+	{
+		this->analyzeDecl(funcCall);
+	}
 	
+	else{
+		this->TraverseDecl(decl);
+	}
+
 	return true;
 }
 
@@ -228,30 +210,31 @@ bool MPITypeCheckingConsumer::VisitDecl(Decl *decl){
 
 	if(isa<FunctionDecl>(decl)){
 		FunctionDecl *func=cast<FunctionDecl>(decl);
-		this->VisitStmt(func->getBody());
+		this->VisitFunctionDecl(func);
 	}
+
 	return true;
 }
 
+bool MPITypeCheckingConsumer::VisitFunctionDecl(FunctionDecl *funcDecl){
+		if(!this->visitStart)
+		return true;	
 
-/*
-bool MPITypeCheckingConsumer::TraverseCallExpr(CallExpr *funcCall){
-	cout <<"The function being called is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),funcCall) <<endl;
+		cout<<funcDecl->getNameAsString()<<" is a function decl!"<<endl;
 
-	Decl *decl=funcCall->getCalleeDecl();
-	cout <<"It is a "<<decl->getDeclKindName()<<endl;
+		if(funcDecl->hasBody()){
+		
+			cout<<funcDecl->getNameAsString()<<" has a body!"<<endl;
+			this->TraverseStmt(funcDecl->getBody());
 
-	this->TraverseDecl(decl);
+		}
 
-	/*
-	if(isa<FunctionDecl>(decl)){
-		FunctionDecl *fd=llvm::cast<FunctionDecl>(decl);
-		cout <<"The name of the function is "<<fd->getNameAsString()<<endl;
-		Stmt *body=fd->getBody();
-		this->VisitStmt(body);
-	}
-	
-
-	return true;
+		else
+		{
+			cout<<"The function "<<funcDecl->getNameAsString()<<" do not have a body here!"<<endl;
+		}
 }
-*/
+
+
+
+

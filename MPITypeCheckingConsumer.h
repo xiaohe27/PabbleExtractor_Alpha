@@ -3,6 +3,9 @@
 
 #include <iostream>
 #include <unordered_map>
+#include <algorithm>
+
+
 #include "llvm/Support/Host.h"
 #include "llvm/ADT/IntrusiveRefCntPtr.h"
 
@@ -36,6 +39,19 @@ using namespace llvm;
 
 class MPITypeCheckingConsumer;
 
+class FunctionRecursionError{
+private: string errInfo;
+
+public:
+		 FunctionRecursionError::FunctionRecursionError(string err){
+			this->errInfo=err;
+		 }
+
+		 void printErrInfo(){
+			cout<<errInfo<<endl;
+		 }
+};
+
 
 
 
@@ -58,6 +74,9 @@ private:
 	//visitStart is true if we begin to visit the stmts in main function.
 	bool visitStart;
 
+	//the list holds all the functions which have not finished execution
+	list<string> funcsList;
+
 
 public:
 	MPITypeCheckingConsumer(CompilerInstance *ci);
@@ -66,49 +85,46 @@ public:
 
 	void HandleTranslationUnit(ASTContext &Ctx);
 
-	bool TraverseAsmStmt(AsmStmt *S);
+	bool checkWhetherTheDeclHasBeenVisitedBefore(FunctionDecl *decl);
 
-	bool TraverseIfStmt(IfStmt *S);
+	void analyzeDecl(FunctionDecl *decl);
 
-	//bool TraverseDeclStmt(DeclStmt *S);
+
+
+
+	bool VisitAsmStmt(AsmStmt *S);
+
+	bool VisitIfStmt(IfStmt *S);
+
 	bool VisitDeclStmt(DeclStmt *S);
 
+	bool VisitSwitchStmt(SwitchStmt *S);
 
-	bool TraverseSwitchStmt(SwitchStmt *S);
+	bool VisitForStmt(ForStmt *S);
 
-	bool TraverseForStmt(ForStmt *S);
+	bool VisitDoStmt(DoStmt *S);
 
-	bool TraverseDoStmt(DoStmt *S);
+	bool VisitWhileStmt(WhileStmt *S);
 
-	bool TraverseWhileStmt(WhileStmt *S);
+	bool VisitLabelStmt(LabelStmt *S);
 
-	bool TraverseLabelStmt(LabelStmt *S);
+	bool VisitReturnStmt(ReturnStmt *S);
 
-	bool TraverseReturnStmt(ReturnStmt *S);
+	bool VisitNullStmt(NullStmt *S);
 
-	bool TraverseNullStmt(NullStmt *S);
+	bool VisitBreakStmt(BreakStmt *S);
 
-//	bool TraverseBinaryOperator(BinaryOperator *op);
-
-	bool TraverseBreakStmt(BreakStmt *S);
-
-	bool TraverseContinueStmt(ContinueStmt *S);
-
-//	bool TraverseCallExpr(CallExpr *op);
+	bool VisitContinueStmt(ContinueStmt *S);
 
 	bool VisitCallExpr(CallExpr *op);
 
-
-//	bool TraverseCompoundStmt(CompoundStmt *S);
 	bool VisitBinAndAssign(CompoundAssignOperator *OP);
-
-	bool VisitBinComma(BinaryOperator *S);
 
 	bool VisitBinaryOperator(BinaryOperator *S);
 
-	bool VisitDecl(Decl *);
+	bool VisitDecl(Decl *decl);
 
-	bool VisitCompoundStmt(CompoundStmt *cs);
+	bool VisitFunctionDecl(FunctionDecl *funcDecl);
 };
 
 

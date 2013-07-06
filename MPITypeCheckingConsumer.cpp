@@ -16,7 +16,7 @@ void MPITypeCheckingConsumer::HandleTranslationUnit(ASTContext &Ctx) {
 cout<<"all the parts have been parsed!"<<endl;
 this->visitStart=true;
 
-this->TraverseDecl(this->mainFunc);
+this->VisitDecl(this->mainFunc);
 
 }
 
@@ -47,38 +47,44 @@ bool MPITypeCheckingConsumer::HandleTopLevelDecl( clang::DeclGroupRef d)
 }
 
 
-/*
-bool MPITypeCheckingConsumer::TraverseFunctionDecl(FunctionDecl *fd){
-	//		const string stat=fd->hasBody()?" has ":"has NO ";
-	//	cout <<"function " << fd->getName().data() << stat<< "function body" <<endl;
-
-	cout << "Find function "<<fd->getName().data()<<endl;
-
-	if(fd->hasBody())
-		cout << "The body of the function "<<fd->getName().data()<<" is \n" <<
-		decl2str(&ci->getSourceManager(),ci->getLangOpts(),fd) <<endl;
 
 
 
-	Stmt *s0=fd->getBody();
-	//cout << "The statement is " << s0->getStmtClassName() << endl;
 
-	this->TraverseStmt(s0);
+bool MPITypeCheckingConsumer::checkWhetherTheDeclHasBeenVisitedBefore(FunctionDecl *decl){
+	list<string>::iterator findIt=find(funcsList.begin(),funcsList.end(),decl->getQualifiedNameAsString());
+	
+	if(findIt!=funcsList.end())
+		return true;
 
-
-	return true;
+	else
+	return false;
 }
 
-*/
 
 
+void MPITypeCheckingConsumer::analyzeDecl(FunctionDecl *funcDecl){
+
+if (this->checkWhetherTheDeclHasBeenVisitedBefore(funcDecl))
+	{
+		string errInfo=	"The decl "+decl2str(&ci->getSourceManager(),ci->getLangOpts(),funcDecl)
+			+ " has already started in the past and has NOT finished yet! A possible deadlock is detected. Program analysis stops here.";
+		
+		throw new FunctionRecursionError(errInfo);
+		
+	}
+
+	else{
+
+	this->funcsList.push_back(funcDecl->getQualifiedNameAsString());
+
+	cout<<"add "<<funcDecl->getQualifiedNameAsString()<<" to list "<<endl;
+
+	this->VisitFunctionDecl(funcDecl);
+	}
 
 
-
-
-
-
-
+}
 
 
 
@@ -100,6 +106,8 @@ string stmt2str(SourceManager *sm, LangOptions lopt,clang::Stmt *stmt) {
 		sm->getCharacterData(e)-sm->getCharacterData(b));
 
 }
+
+
 
 
 
