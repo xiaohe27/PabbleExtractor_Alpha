@@ -220,7 +220,7 @@ bool MPITypeCheckingConsumer::VisitFunctionDecl(FunctionDecl *funcDecl){
 		if(!this->visitStart)
 		return true;	
 
-		cout<<funcDecl->getNameAsString()<<" is a function decl!"<<endl;
+//		cout<<funcDecl->getNameAsString()<<" is a function decl!"<<endl;
 
 		if(funcDecl->hasBody()){
 		

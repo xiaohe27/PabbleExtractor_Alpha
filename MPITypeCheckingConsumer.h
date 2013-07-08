@@ -6,9 +6,9 @@
 #include <algorithm>
 
 
+
 #include "llvm/Support/Host.h"
 #include "llvm/ADT/IntrusiveRefCntPtr.h"
-
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
 #include "clang/Frontend/CompilerInstance.h"
@@ -25,6 +25,7 @@
 #include "clang/Parse/ParseAST.h"
 #include "clang/Analysis/CFG.h"
 #include "clang/AST/Stmt.h"
+#include "clang/Lex/HeaderSearch.h"
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Frontend/FrontendAction.h"
 #include "clang/Tooling/Tooling.h"
@@ -32,6 +33,8 @@
 #include "clang/Analysis/AnalysisContext.h"
 #include "clang/AST/DeclVisitor.h"
 #include "clang/AST/StmtVisitor.h"
+#include "clang/Frontend/Utils.h"
+
 
 using namespace clang;
 using namespace std;

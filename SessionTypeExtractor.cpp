@@ -14,7 +14,6 @@ using namespace std;
 
 
 
-
 int main()
 {
 	using clang::CompilerInstance;
@@ -37,7 +36,7 @@ int main()
 		&diagnosticOptions,
 		true);
 
-	ci.createDiagnostics(0,true);
+	ci.createDiagnostics(pTextDiagnosticPrinter,false);
 
 	llvm::IntrusiveRefCntPtr<TargetOptions> pto( new TargetOptions());
 	pto->Triple = llvm::sys::getDefaultTargetTriple();
@@ -47,11 +46,62 @@ int main()
 	ci.createFileManager();
 	ci.createSourceManager(ci.getFileManager());
 	ci.createPreprocessor();
+
 	ci.getPreprocessorOpts().UsePredefines = false;
-	ci.createASTContext();
+
+
+
+	//ci.getPreprocessorOpts().UsePredefines = true;
+
+	llvm::IntrusiveRefCntPtr<clang::HeaderSearchOptions> hso( new clang::HeaderSearchOptions());
+	HeaderSearch headerSearch(	hso, 
+		ci.getFileManager(),
+		ci.getDiagnostics(),
+		ci.getLangOpts(),
+		pti);
+
+
+
+	/**
+	Platform specific code start
+	**/
+	hso->AddPath(StringRef("A:/MPI_SessionType_Extractor/SessionTypeExtractor4MPI/MPI/mpich2"),
+		clang::frontend::Quoted,
+		false,
+		false);
+
+
+	hso->AddPath(StringRef("C:/Program Files (x86)/Microsoft Visual Studio 11.0/VC/include"),
+		clang::frontend::Angled,
+		false,
+		false);
+
+	
+
+
+
+	hso->AddPath(StringRef("C:/Program Files (x86)/Microsoft Visual Studio 11.0/VC/atlmfc/include"),
+		clang::frontend::Angled,
+		false,
+		false);
+	/**
+	Platform specific code end
+	**/
+
+	InitializePreprocessor(ci.getPreprocessor(), 
+		ci.getPreprocessorOpts(),
+		*hso,
+		ci.getFrontendOpts());
+
+
+
 
 	MPITypeCheckingConsumer *astConsumer = new MPITypeCheckingConsumer(&ci);
 	ci.setASTConsumer(astConsumer);
+
+
+	ci.createASTContext();
+
 
 
 	ci.createSema(clang::TU_Complete, NULL);
@@ -60,7 +110,7 @@ int main()
 
 	//read from the mpi src file
 
-//	onst FileEntry *fileIn = fileMgr.getFile(argv[1]);
+	//	onst FileEntry *fileIn = fileMgr.getFile(argv[1]);
 
 	/////////////////////////////////////////
 
@@ -68,12 +118,22 @@ int main()
 	const FileEntry *pFile = ci.getFileManager().getFile("test.c");
 	ci.getSourceManager().createMainFileID(pFile);
 
-	
+
+
+
+
+
 	try{
-	clang::ParseAST(ci.getSema());
+
+		ci.getDiagnosticClient().BeginSourceFile(ci.getLangOpts(),
+			&ci.getPreprocessor());
 
 
-	ci.getASTContext().Idents.PrintStats();
+		clang::ParseAST(ci.getSema());
+
+		ci.getDiagnosticClient().EndSourceFile();
+
+		ci.getASTContext().Idents.PrintStats();
 
 
 	}
@@ -87,6 +147,10 @@ int main()
 
 
 	//checkIdTable(&ci);
+
+	/*Delete the unused resources: start.
+	***********************************************************************************/
+
 
 	return 0;
 }
