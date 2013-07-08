@@ -63,7 +63,7 @@ bool MPITypeCheckingConsumer::checkWhetherTheDeclHasBeenVisitedBefore(FunctionDe
 
 
 
-void MPITypeCheckingConsumer::analyzeDecl(FunctionDecl *funcDecl){
+void MPITypeCheckingConsumer::analyzeDecl(FunctionDecl *funcDecl, CallExpr *op){
 
 if (this->checkWhetherTheDeclHasBeenVisitedBefore(funcDecl))
 	{
@@ -75,12 +75,48 @@ if (this->checkWhetherTheDeclHasBeenVisitedBefore(funcDecl))
 	}
 
 	else{
+		int count=0;
+		for (CallExpr::arg_iterator it=op->arg_begin(); it!=op->arg_end(); ++it)
+		{
+			Expr *expr=*it;
+			if(expr==NULL)
+				continue;
+
+
+			if(expr->isRValue()){
+					APSInt result;
+					Expr::EvalResult rValue;
+					if(expr->EvaluateAsInt(result,ci->getASTContext())){
+						//print the number in radix 10
+						cout<<"The parameter in the No."<<(count++)<<" position has value "<<result.toString(10)<<endl;						
+					}
+
+					
+					else if(expr->EvaluateAsRValue(rValue,ci->getASTContext())){
+						cout<<"The parameter in the No."<<(count++)<<" position has value "<<rValue.Val.getAsString(ci->getASTContext(),
+							expr->getType())<<endl;		
+					}
+					
+
+					else{}
+			}
+
+			else if(expr->isLValue())
+			{
+				
+			}
+
+			else{}
+		}
+
+
 	
 	if(funcDecl->hasBody()){
 	this->funcsList.push_back(funcDecl->getQualifiedNameAsString());
 
 	cout<<"add "<<funcDecl->getQualifiedNameAsString()<<" to list "<<endl;
 	}
+
 
 	this->VisitFunctionDecl(funcDecl);
 	}

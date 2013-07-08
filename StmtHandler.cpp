@@ -143,7 +143,7 @@ bool MPITypeCheckingConsumer::VisitReturnStmt(ReturnStmt *S){
 
 	if(!this->funcsList.empty()){
 	string popped=this->funcsList.back();
-	cout<<"The decl with name "<<popped<<" is going to be removed.";
+	cout<<"The decl with name "<<popped<<" is going to be removed."<<endl;
 	this->funcsList.pop_back();
 	}
 
@@ -193,7 +193,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *op){
 	//else traverse the decl.
 	if (funcCall)
 	{
-		this->analyzeDecl(funcCall);
+		this->analyzeDecl(funcCall,op);
 	}
 	
 	else{
@@ -219,10 +219,30 @@ bool MPITypeCheckingConsumer::VisitDecl(Decl *decl){
 bool MPITypeCheckingConsumer::VisitFunctionDecl(FunctionDecl *funcDecl){
 		if(!this->visitStart)
 		return true;	
+	
+		/***************************************************************
+		*The parameter list of the function call.
+		*****************************************************************/
+			for (FunctionDecl::param_iterator it = funcDecl->param_begin(); it !=funcDecl->param_end(); it++)
+			{
+				unsigned int index=(*it)->getFunctionScopeIndex();
+				unsigned int depth=(*it)->getFunctionScopeDepth();
 
-//		cout<<funcDecl->getNameAsString()<<" is a function decl!"<<endl;
+				cout << "The index and depth of the parameter "<<decl2str(&ci->getSourceManager(),ci->getLangOpts(),*it);
+				cout <<" is " << index << " and " << depth << endl;
 
-		if(funcDecl->hasBody()){
+				Expr *argVal=(*it)->getDefaultArg();
+				if(argVal && argVal->isRValue()){
+					APSInt result;
+					if(argVal->EvaluateAsInt(result,ci->getASTContext())){
+						cout<<"The parameter in the "<<index<<" position has default value "<<result.toString(10)<<endl;						
+					}
+				
+				}
+			}
+			
+
+			if(funcDecl->hasBody()){
 		
 	//		cout<<funcDecl->getNameAsString()<<" has a body!"<<endl;
 			this->TraverseStmt(funcDecl->getBody());
@@ -232,7 +252,8 @@ bool MPITypeCheckingConsumer::VisitFunctionDecl(FunctionDecl *funcDecl){
 		else
 		{
 			cout<<"The function "<<funcDecl->getNameAsString()<<" do not have a body here!"<<endl;
-		}
+		}	
+		
 }
 
 

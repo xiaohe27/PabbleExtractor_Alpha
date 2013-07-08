@@ -48,16 +48,6 @@ int main()
 	ci.createPreprocessor();
 
 
-	/*********************************************************************
-	vector<string> inclPair=ci.getPreprocessorOpts().Includes;
-	cout<<"the default includes are : "<<endl;
-	for (vector<string>::iterator it = inclPair.begin(); it !=inclPair.end() ; it++)
-	{
-		cout << *it << endl;
-	}
-	/**********************************************************************/
-
-
 
 	ci.getPreprocessorOpts().UsePredefines = true;
 
@@ -71,9 +61,9 @@ int main()
 
 
 
-	/**
+	/******************************************************************************************
 	Platform specific code start
-	**/
+	****************************************************************************************/
 	hso->AddPath(StringRef("A:/MPI_SessionType_Extractor/SessionTypeExtractor4MPI/MPI/mpich2"),
 		clang::frontend::Quoted,
 		false,
@@ -94,9 +84,9 @@ int main()
 
 	
 	
-	/**
+	/******************************************************************************************
 	Platform specific code end
-	**/
+	****************************************************************************************/
 
 	InitializePreprocessor(ci.getPreprocessor(), 
 		ci.getPreprocessorOpts(),
@@ -104,8 +94,6 @@ int main()
 		ci.getFrontendOpts());
 
 
-//	Builtin::Context builtInContext;
-//	builtInContext.InitializeBuiltins(ci.getPreprocessor().getIdentifierTable(),ci.getLangOpts()) ;
 
 	/**********************************************************************
 	inclPair=ci.getPreprocessorOpts().Includes;
@@ -171,7 +159,8 @@ int main()
 
 	//checkIdTable(&ci);
 
-	/*Delete the unused resources: start.
+	/**********************************************************************************
+	*Delete the unused resources: start.
 	***********************************************************************************/
 
 

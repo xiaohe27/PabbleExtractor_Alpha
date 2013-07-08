@@ -1,8 +1,8 @@
-﻿Build started 08/07/2013 14:41:11.
+﻿Build started 08/07/2013 17:03:58.
      1>Project "A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt SessionTypeExtractor.cpp
-         SessionTypeExtractor.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt MPITypeCheckingConsumer.cpp
+         MPITypeCheckingConsumer.cpp
      1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(61): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
      1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(64): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
      1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(67): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
@@ -311,4 +311,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:14.39
+Time Elapsed 00:00:14.73
