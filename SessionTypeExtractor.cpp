@@ -47,11 +47,20 @@ int main()
 	ci.createSourceManager(ci.getFileManager());
 	ci.createPreprocessor();
 
-	ci.getPreprocessorOpts().UsePredefines = false;
+
+	/*********************************************************************
+	vector<string> inclPair=ci.getPreprocessorOpts().Includes;
+	cout<<"the default includes are : "<<endl;
+	for (vector<string>::iterator it = inclPair.begin(); it !=inclPair.end() ; it++)
+	{
+		cout << *it << endl;
+	}
+	/**********************************************************************/
 
 
 
-	//ci.getPreprocessorOpts().UsePredefines = true;
+	ci.getPreprocessorOpts().UsePredefines = true;
+
 
 	llvm::IntrusiveRefCntPtr<clang::HeaderSearchOptions> hso( new clang::HeaderSearchOptions());
 	HeaderSearch headerSearch(	hso, 
@@ -71,19 +80,20 @@ int main()
 		false);
 
 
-	hso->AddPath(StringRef("C:/Program Files (x86)/Microsoft Visual Studio 11.0/VC/include"),
+
+	hso->AddPath(StringRef("S:/MinGW/include"),
+		clang::frontend::Angled,
+		false,
+		false);
+
+
+	hso->AddPath(StringRef("S:/CLANG/SW/build4VS11/lib/clang/3.4/include/"),
 		clang::frontend::Angled,
 		false,
 		false);
 
 	
-
-
-
-	hso->AddPath(StringRef("C:/Program Files (x86)/Microsoft Visual Studio 11.0/VC/atlmfc/include"),
-		clang::frontend::Angled,
-		false,
-		false);
+	
 	/**
 	Platform specific code end
 	**/
@@ -92,6 +102,19 @@ int main()
 		ci.getPreprocessorOpts(),
 		*hso,
 		ci.getFrontendOpts());
+
+
+//	Builtin::Context builtInContext;
+//	builtInContext.InitializeBuiltins(ci.getPreprocessor().getIdentifierTable(),ci.getLangOpts()) ;
+
+	/**********************************************************************
+	inclPair=ci.getPreprocessorOpts().Includes;
+	cout<<"the default includes are : "<<endl;
+	for (vector<string>::iterator it = inclPair.begin(); it !=inclPair.end() ; it++)
+	{
+		cout << *it << endl;
+	}
+	/**********************************************************************/
 
 
 

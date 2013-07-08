@@ -4,10 +4,11 @@
 #include <iostream>
 #include <unordered_map>
 #include <algorithm>
-
+#include <vector>
 
 
 #include "llvm/Support/Host.h"
+#include "clang/Basic/Builtins.h"
 #include "llvm/ADT/IntrusiveRefCntPtr.h"
 #include "clang/Basic/DiagnosticOptions.h"
 #include "clang/Frontend/TextDiagnosticPrinter.h"
