@@ -178,22 +178,34 @@ bool MPITypeCheckingConsumer::VisitContinueStmt(ContinueStmt *S){
 }
 
 
-bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *op){
+bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 	//if we haven't started to visit the main function, then do nothing.
 	if(!this->visitStart)
 		return true;
 
 //	cout <<"The function going to be called is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),op) <<endl;
+	
+    PrintingPolicy Policy(ci->getLangOpts());
 
-	Decl *decl=op->getCalleeDecl();
+    for(int i=0, j=E->getNumArgs(); i<j; i++)
+    {
+        string TypeS;
+        raw_string_ostream s(TypeS);
+        E->getArg(i)->printPretty(s, 0, Policy);
+        errs() << "arg: " << s.str() << "\n";
+    }
+
+
+
+	Decl *decl=E->getCalleeDecl();
 //	cout <<"It is a "<<decl->getDeclKindName()<<endl;
 
-	FunctionDecl *funcCall=op->getDirectCallee();
+	FunctionDecl *funcCall=E->getDirectCallee();
 	//perform a check. If the decl has been visited before, then throw err info
 	//else traverse the decl.
 	if (funcCall)
 	{
-		this->analyzeDecl(funcCall,op);
+		this->analyzeDecl(funcCall,E);
 	}
 	
 	else{

@@ -126,7 +126,7 @@ int main()
 	/////////////////////////////////////////
 
 
-	const FileEntry *pFile = ci.getFileManager().getFile("test.c");
+	const FileEntry *pFile = ci.getFileManager().getFile("A:/MPI_SessionType_Extractor/SessionTypeExtractor4MPI/Debug/test.c");
 	ci.getSourceManager().createMainFileID(pFile);
 
 
