@@ -11,22 +11,37 @@
 *****************************************************************************/
 #include "MPITypeCheckingConsumer.h"
 using namespace std;
+using namespace clang;
+using namespace llvm;
+
+int numOfProcesses=-1;
+string filePath;
 
 
-
-int main()
+int main(int argc, char *argv[])
 {
-	using clang::CompilerInstance;
-	using clang::TargetOptions;
-	using clang::TargetInfo;
-	using clang::FileEntry;
-	using clang::Token;
-	using clang::ASTContext;
-	using clang::ASTConsumer;
-	using clang::Parser;
-	using clang::DiagnosticOptions;
-	using clang::TextDiagnosticPrinter;
-	using clang::IdentifierTable;
+	if(argc==2){
+		filePath=argv[1];
+
+		cout<<"The path of src file is "<<argv[1]<<endl;
+	}
+	else if(argc==3){	
+		cout<<"There are two args"<<endl;
+
+		filePath=argv[1];
+		cout<<"The path of src file is "<<argv[1]<<endl;
+
+		numOfProcesses=atoi(argv[2]);
+
+		cout<<"There are "<<numOfProcesses<<" processes!"<<endl;
+	}
+
+	else{
+		cerr <<"The argument number should be one (only the mpi src code is provided)";
+		cerr <<"\tor two (if both the mpi src code and number of processes are provided.)"<<endl;
+		throw exception();
+	}
+
 
 	CompilerInstance ci;
 	DiagnosticOptions diagnosticOptions;
@@ -52,7 +67,7 @@ int main()
 	ci.getPreprocessorOpts().UsePredefines = true;
 
 
-	llvm::IntrusiveRefCntPtr<clang::HeaderSearchOptions> hso( new clang::HeaderSearchOptions());
+	IntrusiveRefCntPtr<clang::HeaderSearchOptions> hso( new clang::HeaderSearchOptions());
 	HeaderSearch headerSearch(	hso, 
 		ci.getFileManager(),
 		ci.getDiagnostics(),
@@ -82,8 +97,8 @@ int main()
 		false,
 		false);
 
-	
-	
+
+
 	/******************************************************************************************
 	Platform specific code end
 	****************************************************************************************/
@@ -92,18 +107,6 @@ int main()
 		ci.getPreprocessorOpts(),
 		*hso,
 		ci.getFrontendOpts());
-
-
-
-	/**********************************************************************
-	inclPair=ci.getPreprocessorOpts().Includes;
-	cout<<"the default includes are : "<<endl;
-	for (vector<string>::iterator it = inclPair.begin(); it !=inclPair.end() ; it++)
-	{
-		cout << *it << endl;
-	}
-	/**********************************************************************/
-
 
 
 
@@ -118,19 +121,31 @@ int main()
 	ci.createSema(clang::TU_Complete, NULL);
 
 
+	/**********************************************************************/
+	/*Compile the mpi file programmatically*/
+
+	int i;
+	printf ("Checking if processor is available...");
+	if (system(NULL)) 
+	{
+	puts ("Ok");
+	
+	printf ("Compile the MPI file %s\n",argv[1]);
+
+	string s="mpicc \"";
+	s.append(argv[1]);
+	s.append("\" -o result.o");
+
+
+	i=system(s.c_str());
+	printf ("The value returned was: %d.\n",i);
+	}
+	/**********************************************************************/
 
 	//read from the mpi src file
-
-	//	onst FileEntry *fileIn = fileMgr.getFile(argv[1]);
-
-	/////////////////////////////////////////
-
-
-	const FileEntry *pFile = ci.getFileManager().getFile("A:/MPI_SessionType_Extractor/SessionTypeExtractor4MPI/Debug/test.c");
+	const FileEntry *pFile = ci.getFileManager().getFile(argv[1]);
 	ci.getSourceManager().createMainFileID(pFile);
-
-
-
+	/////////////////////////////////////////
 
 
 

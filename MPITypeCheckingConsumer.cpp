@@ -74,63 +74,6 @@ void MPITypeCheckingConsumer::analyzeDecl(FunctionDecl *funcDecl, CallExpr *op){
 
 	}
 
-	
-	/*
-	else{
-		int count=0;
-		for (CallExpr::arg_iterator it=op->arg_begin(); it!=op->arg_end(); ++it, count++)
-		{
-			Expr *expr=*it;
-			if(expr==NULL){
-				continue;
-			}
-
-			ExprValueKind vk=expr->getValueKind();
-
-			cout<<"The param No."<<count<<" is : "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),expr)<<endl;
-
-			if(vk==ExprValueKind::VK_LValue)
-			{
-				cout<<"The param No."<<count<<" is : "<<expr->getStmtClassName()<<endl;
-				Expr::EvalResult lValue;
-				expr->EvaluateAsLValue(lValue,ci->getASTContext());
-
-				cout<<"The lVal is "<<lValue.Val.getAsString(ci->getASTContext(),expr->getType())<<endl;
-				
-				if (DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(expr)) {
-					// It's a reference to a declaration...
-					if (VarDecl *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-						// It's a reference to a variable (a local, function parameter, global, or static data member).
-						std::cout << "The No."<<count<<" arg is " << VD->getQualifiedNameAsString() << std::endl;
-					}
-				}
-			}
-
-			else if(vk==ExprValueKind::VK_RValue){
-				APSInt result;
-				Expr::EvalResult rValue;
-				if(expr->EvaluateAsInt(result,ci->getASTContext())){
-					//print the number in radix 10
-					cout<<"The parameter in the No."<<(count)<<" position has value "<<result.toString(10)<<endl;						
-				}
-
-
-				else if(expr->EvaluateAsRValue(rValue,ci->getASTContext())){
-					cout<<"The parameter in the No."<<(count)<<" position has value "<<rValue.Val.getAsString(ci->getASTContext(),
-						expr->getType())<<endl;		
-				}
-
-
-				else if (DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(expr)){
-					cout<<"The parameter in the No."<<(count)<<" pos is a decl ref expr"<<endl;
-				}
-			}
-
-			
-
-			if(!expr->isLValue()&&!expr->isRValue()){cout<<"The expr is neither LVAL or RVAL!"<<endl;}
-		}
-
 
 		//analyze the body of the function
 		/***********************************************************************/
@@ -143,8 +86,6 @@ void MPITypeCheckingConsumer::analyzeDecl(FunctionDecl *funcDecl, CallExpr *op){
 
 
 		this->VisitFunctionDecl(funcDecl);
-	
-
 
 }
 
