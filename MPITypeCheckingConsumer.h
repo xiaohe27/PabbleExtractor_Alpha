@@ -80,6 +80,10 @@ private:
 	//the list holds all the functions which have not finished execution
 	list<string> funcsList;
 
+	string rankVar;
+
+	string numOfProcessesVar;
+
 
 public:
 	MPITypeCheckingConsumer(CompilerInstance *ci);
@@ -90,7 +94,9 @@ public:
 
 	bool checkWhetherTheDeclHasBeenVisitedBefore(FunctionDecl *decl);
 
-	void analyzeDecl(FunctionDecl *decl, CallExpr *op);
+	void analyzeDecl(FunctionDecl *decl);
+
+	void removeFuncFromList();
 
 
 

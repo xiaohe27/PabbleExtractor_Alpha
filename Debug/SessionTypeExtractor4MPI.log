@@ -1,8 +1,8 @@
-﻿Build started 09/07/2013 23:41:03.
+﻿Build started 10/07/2013 16:34:28.
      1>Project "A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt SessionTypeExtractor.cpp
-         SessionTypeExtractor.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt StmtHandler.cpp
+         StmtHandler.cpp
      1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(61): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
      1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(64): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
      1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(67): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
@@ -302,6 +302,7 @@
                  c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
                  c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
                  c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\stmthandler.cpp(297): warning C4715: 'MPITypeCheckingConsumer::VisitFunctionDecl' : not all control paths return a value
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\Debug\SessionTypeExtractor4MPI.exe" /INCREMENTAL /NOLOGO "S:\CLANG\SW\build4VS11\lib\Debug\*.lib" "S:\CLANG\SW\build4VS11\lib\Debug\*.lib" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\Debug\SessionTypeExtractor4MPI.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\Debug\SessionTypeExtractor4MPI.lib" /MACHINE:X86 Debug\MPITypeCheckingConsumer.obj
          Debug\SessionTypeExtractor.obj
@@ -311,4 +312,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:54.23
+Time Elapsed 00:00:10.63

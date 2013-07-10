@@ -29,7 +29,7 @@ bool MPITypeCheckingConsumer::VisitBinaryOperator(BinaryOperator *op){
 
 	cout << "RHS has textual content: \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs)<<"\n"<<endl;
 
-			
+
 	if (rhs->EvaluateAsInt(Result, this->ci->getASTContext())) {
 		std::cout << "RHS has value " << Result.toString(10) << std::endl;
 	}
@@ -59,7 +59,7 @@ bool MPITypeCheckingConsumer::VisitIfStmt(IfStmt *ifStmt){
 	if(!this->visitStart)
 		return true;
 
-cout <<"The if stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(), ifStmt) <<endl;
+	cout <<"The if stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(), ifStmt) <<endl;
 
 	VarDecl *ifCondVar=ifStmt->getConditionVariable();
 
@@ -68,18 +68,18 @@ cout <<"The if stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(), 
 	{
 		cout <<"The var in if part is " << ifCondVar->getIdentifier()->getName().data() <<endl;
 	}
-	
+
 	//cout << "The body of the var decl "<<ifCondVar->getName().data()<<" is \n" <<
 	//	decl2str(&ci->getSourceManager(),ci->getLangOpts(),ifCondVar) <<endl;
 
 
 	//visit then part
 	this->VisitStmt(ifStmt->getThen());
-	
+
 
 	//visit else part
 	this->VisitStmt(ifStmt->getElse());
-	
+
 	return true;
 }
 
@@ -139,13 +139,9 @@ bool MPITypeCheckingConsumer::VisitReturnStmt(ReturnStmt *S){
 	if(!this->visitStart)
 		return true;
 
-	cout <<"The return stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
+	cout <<"The return stmt is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 
-	if(!this->funcsList.empty()){
-	string popped=this->funcsList.back();
-	cout<<"The decl with name "<<popped<<" is going to be removed."<<endl;
-	this->funcsList.pop_back();
-	}
+	removeFuncFromList();
 
 	return true;
 }
@@ -183,35 +179,53 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 	if(!this->visitStart)
 		return true;
 
-//	cout <<"The function going to be called is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),op) <<endl;
-	
-    PrintingPolicy Policy(ci->getLangOpts());
+	//	cout <<"The function going to be called is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),op) <<endl;
 
-    for(int i=0, j=E->getNumArgs(); i<j; i++)
-    {
-        string TypeS;
-        raw_string_ostream s(TypeS);
-        E->getArg(i)->printPretty(s, 0, Policy);
-        errs() << "arg: " << s.str() << "\n";
-    }
+	PrintingPolicy Policy(ci->getLangOpts());
+	int numOfArgs=E->getNumArgs();
 
+	vector<string> args(numOfArgs);
 
+	for(int i=0, j=numOfArgs; i<j; i++)
+	{
+		string TypeS;
+		raw_string_ostream s(TypeS);
+		E->getArg(i)->printPretty(s, 0, Policy);
+//		errs() << "arg: " << s.str() << "\n";
+
+		args[i]=s.str();
+	}
 
 	Decl *decl=E->getCalleeDecl();
-//	cout <<"It is a "<<decl->getDeclKindName()<<endl;
 
 	FunctionDecl *funcCall=E->getDirectCallee();
 	//perform a check. If the decl has been visited before, then throw err info
 	//else traverse the decl.
 	if (funcCall)
 	{
-		this->analyzeDecl(funcCall,E);
+		string funcName=funcCall->getQualifiedNameAsString();
+		//get the var storing number of processes
+		if(funcName=="MPI_Comm_size"){
+			this->numOfProcessesVar=args[1].substr(1,args[1].length()-1);
+
+			cout<<"Var storing num of Processes is "<<this->numOfProcessesVar<<endl;
+		}
+
+		if(funcName=="MPI_Comm_rank"){
+			
+			this->rankVar=args[1].substr(1,args[1].length()-1);
+		
+			cout<<"Rank var is "<<this->rankVar<<endl;
+		}
+
+		this->analyzeDecl(funcCall);
 	}
-	
+
 	else{
 		this->TraverseDecl(decl);
 	}
 
+	
 	return true;
 }
 
@@ -229,43 +243,57 @@ bool MPITypeCheckingConsumer::VisitDecl(Decl *decl){
 }
 
 bool MPITypeCheckingConsumer::VisitFunctionDecl(FunctionDecl *funcDecl){
-		if(!this->visitStart)
+	if(!this->visitStart)
 		return true;	
-	
-		/***************************************************************
-		*The parameter list of the function call.
-		*****************************************************************/
-			for (FunctionDecl::param_iterator it = funcDecl->param_begin(); it !=funcDecl->param_end(); it++)
-			{
-				unsigned int index=(*it)->getFunctionScopeIndex();
-				unsigned int depth=(*it)->getFunctionScopeDepth();
 
-				cout << "The index and depth of the parameter "<<decl2str(&ci->getSourceManager(),ci->getLangOpts(),*it);
-				cout <<" is " << index << " and " << depth << endl;
+	/***************************************************************
+	*The parameter list of the function call.
+	*****************************************************************/
+	for (FunctionDecl::param_iterator it = funcDecl->param_begin(); it !=funcDecl->param_end(); it++)
+	{
+		unsigned int index=(*it)->getFunctionScopeIndex();
+		unsigned int depth=(*it)->getFunctionScopeDepth();
 
-				Expr *argVal=(*it)->getDefaultArg();
-				if(argVal && argVal->isRValue()){
-					APSInt result;
-					if(argVal->EvaluateAsInt(result,ci->getASTContext())){
-						cout<<"The parameter in the "<<index<<" position has default value "<<result.toString(10)<<endl;						
-					}
-				
-				}
+//		cout << "The index and depth of the parameter "<<decl2str(&ci->getSourceManager(),ci->getLangOpts(),*it);
+//		cout <<" is " << index << " and " << depth << endl;
+
+		Expr *argVal=(*it)->getDefaultArg();
+		if(argVal && argVal->isRValue()){
+			APSInt result;
+			if(argVal->EvaluateAsInt(result,ci->getASTContext())){
+				cout<<"The parameter in the "<<index<<" position has default value "<<result.toString(10)<<endl;						
 			}
-			
-
-			if(funcDecl->hasBody()){
-		
-	//		cout<<funcDecl->getNameAsString()<<" has a body!"<<endl;
-			this->TraverseStmt(funcDecl->getBody());
 
 		}
+	}
 
-		else
-		{
-			cout<<"The function "<<funcDecl->getNameAsString()<<" do not have a body here!"<<endl;
-		}	
+	string funcName=funcDecl->getQualifiedNameAsString();
+
+	if(funcDecl->hasBody()){
+
+		//		cout<<funcDecl->getNameAsString()<<" has a body!"<<endl;
+		this->TraverseStmt(funcDecl->getBody());
+
+		string retType=funcDecl->getResultType().getAsString();
 		
+		if(retType.compare("void")==0){
+			if( !this->funcsList.empty() && this->funcsList.back().compare(funcName)==0){
+				//if the void function does not have a return stmt, then remove the function name from the list here.
+				this->removeFuncFromList();				
+			}
+
+			else{}
+		}
+
+	}
+
+	else
+	{
+//		cout<<"The function "<<funcName<<" do not have a body here!"<<endl;
+
+
+	}	
+
 }
 
 

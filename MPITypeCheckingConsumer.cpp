@@ -14,6 +14,13 @@ MPITypeCheckingConsumer::MPITypeCheckingConsumer(CompilerInstance *ci) {
 
 void MPITypeCheckingConsumer::HandleTranslationUnit(ASTContext &Ctx) {
 	cout<<"all the parts have been parsed!"<<endl;
+	
+	int numOfErrs=ci->getDiagnosticClient().getNumErrors();
+
+	if(numOfErrs>0){
+		throw exception();
+	}
+
 	this->visitStart=true;
 
 	this->VisitDecl(this->mainFunc);
@@ -63,7 +70,7 @@ bool MPITypeCheckingConsumer::checkWhetherTheDeclHasBeenVisitedBefore(FunctionDe
 
 
 
-void MPITypeCheckingConsumer::analyzeDecl(FunctionDecl *funcDecl, CallExpr *op){
+void MPITypeCheckingConsumer::analyzeDecl(FunctionDecl *funcDecl){
 
 	if (this->checkWhetherTheDeclHasBeenVisitedBefore(funcDecl))
 	{
@@ -89,7 +96,13 @@ void MPITypeCheckingConsumer::analyzeDecl(FunctionDecl *funcDecl, CallExpr *op){
 
 }
 
-
+void MPITypeCheckingConsumer::removeFuncFromList(){
+	if(!this->funcsList.empty()){
+	string popped=this->funcsList.back();
+	cout<<"The decl with name "<<popped<<" is going to be removed."<<endl;
+	this->funcsList.pop_back();
+	}
+}
 
 
 
@@ -130,7 +143,6 @@ void checkIdTable(clang::CompilerInstance *ci){
 
 	}
 }
-
 
 
 

@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 	/******************************************************************************************
 	Platform specific code start
 	****************************************************************************************/
-	hso->AddPath(StringRef("A:/MPI_SessionType_Extractor/SessionTypeExtractor4MPI/MPI/mpich2"),
+	hso->AddPath(StringRef("S:/MinGW/MPI/include"),
 		clang::frontend::Quoted,
 		false,
 		false);
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 		false);
 
 
-	hso->AddPath(StringRef("S:/CLANG/SW/build4VS11/lib/clang/3.4/include/"),
+	hso->AddPath(StringRef("S:/CLANG/SW/build4VS11/lib/clang/3.4/include"),
 		clang::frontend::Angled,
 		false,
 		false);
@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 		funcErr->printErrInfo();
 	}
 
-	catch(...){cout<<"default error occurs";}
+	catch(...){cout<<"There exists compile time error, please fix the error(s) first.";}
 
 
 	//checkIdTable(&ci);
