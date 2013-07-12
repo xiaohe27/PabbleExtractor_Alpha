@@ -2,7 +2,7 @@
 #define MPITypeCheckingConsumer_H
 
 #include <iostream>
-#include <unordered_map>
+#include <map>
 #include <algorithm>
 #include <vector>
 
@@ -46,7 +46,7 @@ class FunctionRecursionError{
 private: string errInfo;
 
 public:
-		 FunctionRecursionError::FunctionRecursionError(string err){
+		 FunctionRecursionError(string err){
 			this->errInfo=err;
 		 }
 
@@ -83,6 +83,8 @@ private:
 	string rankVar;
 
 	string numOfProcessesVar;
+
+	stack<bool> stackOfConditions;
 
 
 public:

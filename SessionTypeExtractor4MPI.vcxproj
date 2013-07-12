@@ -43,7 +43,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>S:\CLANG\SW\llvm\tools\clang\lib\Frontend;S:\CLANG\SW\llvm\include;S:\CLANG\SW\llvm\tools\clang\include;S:\CLANG\SW\build4VS11\include;S:\CLANG\SW\build4VS11\tools\clang\include;$(IncludePath)</IncludePath>
+    <IncludePath>A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI\include;S:\CLANG\SW\llvm\tools\clang\lib\Frontend;S:\CLANG\SW\llvm\include;S:\CLANG\SW\llvm\tools\clang\include;S:\CLANG\SW\build4VS11\include;S:\CLANG\SW\build4VS11\tools\clang\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -84,11 +84,13 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Comm.cpp" />
     <ClCompile Include="MPITypeCheckingConsumer.cpp" />
     <ClCompile Include="SessionTypeExtractor.cpp" />
     <ClCompile Include="StmtHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Comm.h" />
     <ClInclude Include="MPITypeCheckingConsumer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
