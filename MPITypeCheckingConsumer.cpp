@@ -54,8 +54,13 @@ bool MPITypeCheckingConsumer::HandleTopLevelDecl( clang::DeclGroupRef d)
 }
 
 
+//need to be implemented.
+bool MPITypeCheckingConsumer::isRelatedToRank(Expr* expr){
+	//check whether the var in the expr is related to rank var
 
 
+	return false;
+}
 
 
 bool MPITypeCheckingConsumer::checkWhetherTheDeclHasBeenVisitedBefore(FunctionDecl *decl){

@@ -6,6 +6,7 @@
 #include <vector>
 #include <stack>
 #include <map>
+#include <string>
 
 using namespace std;
 
@@ -14,23 +15,25 @@ class CommNode;
 
 class Property{
 private:
-	string conditionStr;
-	int startIndex;
-	int endIndex;
+	vector<string> conditionStack;
+	int startingIndex;
+	int endingIndex;
 
-	void analyze();
+	//
+	void analyze(){}
 
 public:
 
-	Property(string condStr){this->conditionStr=condStr; analyze();}
+	Property(vector<string> condStack){this->conditionStack=condStack; analyze();}
 
-	int startIndex(){return this->startIndex;}
+	int startIndex(){return this->startingIndex;}
 
-	int endIndex(){return this->endIndex;}
+	int endIndex(){return this->endingIndex;}
 
-	string getCondStr(){return this->conditionStr;}
+	//use a loop to concatenate all the conditions in the stack
+	string getCondStr(){return "";}
 
-	string getRoleName();
+	string getRoleName(){return "roleName";}
 
 	//the param role name is in the between of beginning and the first underscore.
 	string getParamRoleName(){
@@ -38,6 +41,7 @@ public:
 		return roleName.substr(0,roleName.find_first_of('_'));
 	}
 };
+
 
 class Role{
 private:
@@ -53,7 +57,7 @@ private:
 public:
 	Role(Property *p){prop=p; this->roleName=prop->getRoleName();}
 
-	Role(string condStr){prop= new Property(condStr); this->roleName=prop->getRoleName();}
+	Role(vector<string> condStack){prop= new Property(condStack); this->roleName=prop->getRoleName();}
 
 	Property* getProp(){return this->prop;}
 
@@ -72,15 +76,18 @@ private:
 	vector<Role*> actualRoles;
 
 public:
+	ParamRole(){}
 	ParamRole(string name){ParamRole(name,"world");}
 	ParamRole(string name, string groupName){this->paramRoleName=name; this->commGroup=groupName;}
 
-	Role* getActualRoleWhichSatisfies(Property p);
+	//needs to be implemented.
+	Role* getActualRoleWhichSatisfies(Property p){return nullptr;}
 	void insertActualRole(Role *r){actualRoles.push_back(r);}
 };
 
 
-
+//above ok
+////////////////////////////////////////////////////////////////////////////
 class MPIOperation{
 private:
 	string opType;
@@ -144,21 +151,22 @@ public:
 
 };
 
+
 class RoleManager{
 private:
 	//assume all the communications happen in the default WORLD communicator group.
 	map<string,ParamRole> paramRoleNameMap;
 
 public:
-	void addRole(string cond){
+	void addRole(vector<string> condStack){
 
-		if(isThereAnyRoleSatisfies(cond)){
-			cout<<"There already exists a role for the condition " << &cond<<endl;
+		if(isThereAnyRoleSatisfies(condStack)){
+			cout<<"There already exists a role for the condition " <<endl;
 			return;
 		}
 
 		else{
-		Property *p=new Property(cond);
+		Property *p=new Property(condStack);
 		Role role=Role(p);
 		string paramRoleName=p->getParamRoleName();
 		
@@ -176,12 +184,12 @@ public:
 	}
 
 
-	Role* getRole(string condition){
-		if(!isThereAnyRoleSatisfies(condition)){
+	Role* getRole(vector<string> conditionStack){
+		if(!isThereAnyRoleSatisfies(conditionStack)){
 			return nullptr;
 		}
 
-		Property p=Property(condition);
+		Property p=Property(conditionStack);
 		string paramRoleName=p.getParamRoleName();
 		
 
@@ -196,8 +204,8 @@ public:
 	}
 	
 //	Role* getRole(string condition, string commGroup);
-	bool isThereAnyRoleSatisfies(string condition){
-		Property p=Property(condition);
+	bool isThereAnyRoleSatisfies(vector<string> conditionStack){
+		Property p=Property(conditionStack);
 		string paramRoleName=p.getParamRoleName();
 		
 
@@ -227,15 +235,31 @@ public:
 class CommManager{
 
 private:
-	stack<string> stackOfConditions;
+	vector<string> stackOfConditions;
+	vector<string> stackOfRankConditions;
 	RoleManager roleManager;
+	CommNode root;
+
 
 public:
-	
-	void insertCondition(string cond){
-		stackOfConditions.push(cond);
-		this->roleManager.addRole(cond);
+	CommManager():root(ST_NODE_ROOT){
+		
 	}
+
+	void insertCondition(string cond, bool isRelatedToRank){
+		stackOfConditions.push_back(cond);
+
+
+		if(isRelatedToRank){
+			stackOfRankConditions.push_back(cond);
+		this->roleManager.addRole(stackOfRankConditions);
+
+		}
+	}
+
+	string retrieveTopCondition(){return stackOfConditions.back();}
+	string retrieveTopRankCondition(){return stackOfRankConditions.back();}
+
 	
 	void addCommActions(MPIOperation op);
 

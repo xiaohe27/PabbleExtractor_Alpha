@@ -5,6 +5,7 @@
 #include <map>
 #include <algorithm>
 #include <vector>
+#include "Comm.h"
 
 
 #include "llvm/Support/Host.h"
@@ -84,7 +85,9 @@ private:
 
 	string numOfProcessesVar;
 
-	stack<bool> stackOfConditions;
+	CommManager commManager;
+
+
 
 
 public:
@@ -100,8 +103,10 @@ public:
 
 	void removeFuncFromList();
 
+	bool isRelatedToRank(Expr* expr);
 
-
+	//translate to a special format so that the class Property can understand the string.
+	string extractConditionStrFromExpr(Expr* expr){return nullptr;}
 
 	bool VisitAsmStmt(AsmStmt *S);
 
