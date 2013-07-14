@@ -8,33 +8,6 @@
 #include "Comm.h"
 
 
-#include "llvm/Support/Host.h"
-#include "llvm/ADT/IntrusiveRefCntPtr.h"
-#include "clang/Basic/DiagnosticOptions.h"
-#include "clang/Frontend/TextDiagnosticPrinter.h"
-#include "clang/Frontend/CompilerInstance.h"
-#include "clang/Basic/TargetOptions.h"
-#include "clang/Basic/TargetInfo.h"
-#include "clang/Basic/FileManager.h"
-#include "clang/Basic/SourceManager.h"
-#include "clang/Lex/Preprocessor.h"
-#include "clang/Basic/Diagnostic.h"
-#include "clang/AST/ASTContext.h"
-#include "clang/AST/ASTConsumer.h"
-#include "clang/Basic/LangOptions.h"
-#include "clang/Parse/Parser.h"
-#include "clang/Parse/ParseAST.h"
-#include "clang/Analysis/CFG.h"
-#include "clang/AST/Stmt.h"
-#include "clang/Lex/HeaderSearch.h"
-#include "clang/AST/RecursiveASTVisitor.h"
-#include "clang/Frontend/FrontendAction.h"
-#include "clang/Tooling/Tooling.h"
-#include "clang/Analysis/CallGraph.h"
-#include "clang/Analysis/AnalysisContext.h"
-#include "clang/AST/DeclVisitor.h"
-#include "clang/AST/StmtVisitor.h"
-#include "clang/Frontend/Utils.h"
 
 
 using namespace clang;
@@ -85,7 +58,7 @@ private:
 
 	string numOfProcessesVar;
 
-	CommManager commManager;
+	CommManager *commManager;
 
 
 

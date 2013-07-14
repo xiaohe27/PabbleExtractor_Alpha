@@ -10,6 +10,7 @@ using namespace llvm;
 MPITypeCheckingConsumer::MPITypeCheckingConsumer(CompilerInstance *ci) {
 	this->ci=ci;
 	this->visitStart=false;
+	this->commManager=new CommManager(ci);
 }
 
 void MPITypeCheckingConsumer::HandleTranslationUnit(ASTContext &Ctx) {
@@ -120,13 +121,7 @@ string decl2str(SourceManager *sm, LangOptions lopt,clang::Decl *d) {
 
 }
 
-string stmt2str(SourceManager *sm, LangOptions lopt,clang::Stmt *stmt) {
-	clang::SourceLocation b(stmt->getLocStart()), _e(stmt->getLocEnd());
-	clang::SourceLocation e(clang::Lexer::getLocForEndOfToken(_e, 0, *sm, lopt));
-	return std::string(sm->getCharacterData(b),
-		sm->getCharacterData(e)-sm->getCharacterData(b));
 
-}
 
 
 

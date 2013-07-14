@@ -64,19 +64,16 @@ bool MPITypeCheckingConsumer::VisitIfStmt(IfStmt *ifStmt){
 
 	Expr *condExpr=ifStmt->getCond();
 	string typeOfCond=condExpr->getType().getAsString();
-	string rawStr4Cond=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr);
 
-	cout<<"Type of condition is "<<typeOfCond<<"\nCond Expr is: "<<rawStr4Cond<<endl;
+	cout<<"Type of condition is "<<typeOfCond<<"\nCond Expr is: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
 
 	if(this->isRelatedToRank(condExpr)){
-		//the condStr has a special format so that the class Property can understand it.
-		string condStr=this->extractConditionStrFromExpr(condExpr);
 
-		this->commManager.insertCondition(condStr,true);
+		this->commManager->insertCondition(condExpr,true);
 	}
 
 	else{
-		this->commManager.insertCondition(rawStr4Cond,false);
+		this->commManager->insertCondition(condExpr,false);
 	}
 	
 
