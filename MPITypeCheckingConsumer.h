@@ -58,6 +58,8 @@ private:
 
 	string numOfProcessesVar;
 
+	int numOfProcs;
+
 	CommManager *commManager;
 
 
@@ -65,6 +67,8 @@ private:
 
 public:
 	MPITypeCheckingConsumer(CompilerInstance *ci);
+
+	MPITypeCheckingConsumer(CompilerInstance *ci, int numOfProc);
 
 	virtual bool HandleTopLevelDecl( DeclGroupRef d);
 

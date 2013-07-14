@@ -27,7 +27,7 @@ bool MPITypeCheckingConsumer::VisitBinaryOperator(BinaryOperator *op){
 	APSInt Result;
 	Expr *rhs=op->getRHS();
 
-	cout << "RHS has textual content: \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs)<<"\n"<<endl;
+//	cout << "RHS has textual content: \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs)<<"\n"<<endl;
 
 
 	if (rhs->EvaluateAsInt(Result, this->ci->getASTContext())) {

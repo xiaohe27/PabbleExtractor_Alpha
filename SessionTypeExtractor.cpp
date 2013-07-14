@@ -14,7 +14,7 @@ using namespace std;
 using namespace clang;
 using namespace llvm;
 
-int numOfProcesses=-1;
+int numOfProcesses;
 string filePath;
 
 
@@ -110,7 +110,16 @@ int main(int argc, char *argv[])
 
 
 
-	MPITypeCheckingConsumer *astConsumer = new MPITypeCheckingConsumer(&ci);
+	MPITypeCheckingConsumer *astConsumer;
+
+	if(numOfProcesses!=0){
+	astConsumer= new MPITypeCheckingConsumer(&ci,numOfProcesses);
+	}
+	
+	else{
+	astConsumer= new MPITypeCheckingConsumer(&ci);
+	}
+
 	ci.setASTConsumer(astConsumer);
 
 

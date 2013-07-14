@@ -74,10 +74,14 @@ public:
 	int getStart(){return startPos;}
 	int getEnd(){return endPos;}
 
+	void setEndPos(int endP){this->endPos=endP;}
+
 	Range(){shouldBeIgnored=true;}
 	Range(int s,int e);
-	Range createByStartIndex(int start);
-	Range createByEndIndex(int end);
+	
+	static Range createByOp(string op, int num);
+	static Range createByStartIndex(int start);
+	static Range createByEndIndex(int end);
 	Range AND(Range other);
 	bool hasIntersectionWith(Range other);
 	
@@ -114,6 +118,8 @@ public:
 	Condition(Range ran1, Range ran2){
 	rangeList.clear(); rangeList.push_back(ran1);rangeList.push_back(ran2);
 	}
+
+	static Condition createCondByOp(string op, int num);
 
 	void normalize();
 
@@ -290,15 +296,19 @@ private:
 
 	CompilerInstance *ci;
 
+	int numOfProc;
+
 	map<string,int> rankVarOffsetMapping;
 
 	Condition extractCondFromExpr(Expr *expr);
 
 
 public:
-	CommManager(CompilerInstance *ci0):root(ST_NODE_ROOT),curNode(ST_NODE_ROOT){
+	
+	CommManager(CompilerInstance *ci0, int numOfProc0):root(ST_NODE_ROOT),curNode(ST_NODE_ROOT){
 		curNode=&root;
 		this->ci=ci0;
+		this->numOfProc=numOfProc0;
 	}
 
 	void insertCondition(Expr *expr);
@@ -313,6 +323,7 @@ public:
 	bool isVarRelatedToRank(string varName);
 
 	void cancelRelation(string varName);
+
 
 };
 

@@ -68,16 +68,48 @@ Range::Range(int s,int e){
 
 }
 
-Range Range::createByStartIndex(int start){
+
+ Range Range::createByStartIndex(int start){
 	Range tmp= Range(start,0);
-	tmp.endPos=InitEndIndex;
+	tmp.setEndPos(InitEndIndex);
 
 	return tmp;
 }
 
-Range Range::createByEndIndex(int end){
+ Range Range::createByEndIndex(int end){
 
 	return Range(0,end);
+}
+
+
+ Range Range::createByOp(string op, int num){
+	if(op=="==")
+		return Range(num,num);
+
+	if(op=="<"){
+		if(num<=0)
+			return Range();
+
+		return Range(0,num-1);
+	}
+
+	if(op=="<="){
+		if(num<0)
+			return Range();
+
+		return Range(0,num);
+	}
+
+	if(op==">"){	
+		return createByStartIndex(num+1);
+	}
+
+	if(op==">="){	
+		return createByStartIndex(num);
+	}
+
+	return Range();
+
 }
 
 Range Range::AND(Range other){
@@ -136,6 +168,30 @@ bool Range::isEqualTo(Range ran){
 /********************************************************************/
 //Class Condition impl start									****
 /********************************************************************/
+
+ Condition Condition::createCondByOp(string op, int num){
+	if(op!="!="){
+		Range ran=Range::createByOp(op,num);
+		return Condition(ran);
+	}
+
+	else{
+		if(num<0)
+			return Condition(true);
+
+		if(num==0)
+		{
+			return Condition(Range::createByStartIndex(1));
+		}
+
+		Range ran1=Range(0,num-1);
+		Range ran2=Range::createByStartIndex(num+1);
+
+		return Condition(ran1,ran2);
+	}
+
+}
+
 
 void Condition::normalize(){
 
@@ -225,6 +281,9 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 	else{cout <<"The expr can NOT be evaluated!"<<endl;}
 
 
+	/////////////////////////////////////////////////////////////
+	//the expr is a bin op.
+	////////////////////////////////////////////////////////////
 	if(isa<BinaryOperator>(expr)){
 		BinaryOperator *binOP=cast<BinaryOperator>(expr);
 
@@ -247,7 +306,70 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 		else if(op=="||")
 			return extractCondFromExpr(lhs).OR(extractCondFromExpr(rhs));
 
-		else if(op=="=="){
+		////it is a basic op
+		else {
+			
+			bool leftIsVar;
+			bool rightIsVar;
+			string lVarName;
+			string rVarName;
+
+			if (DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(lhs)) {
+				// It's a reference to a declaration...
+				if (VarDecl *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+				// It's a reference to a variable (a local, function parameter, global, or static data member).
+
+				lVarName=VD->getQualifiedNameAsString();
+				std::cout << "LHS is var: " << lVarName << std::endl;
+				leftIsVar=true;
+				}
+			}
+
+			if (DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(rhs)) {
+				// It's a reference to a declaration...
+				if (VarDecl *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
+				// It's a reference to a variable (a local, function parameter, global, or static data member).
+				
+				rVarName=VD->getQualifiedNameAsString();
+				std::cout << "RHS is var: " << rVarName << std::endl;
+				rightIsVar=true;
+				}
+			}
+
+			if(leftIsVar && rightIsVar){
+				return Condition(true);
+			}
+
+			else if(!this->isVarRelatedToRank(lVarName)
+				&&  !this->isVarRelatedToRank(rVarName)){
+				//if one of the vars is non-rank var, then it might be true
+				//so return the "all" range.
+				return Condition(true);
+			}
+
+			else{
+				APSInt Result;
+
+				if(leftIsVar){
+					if (rhs->EvaluateAsInt(Result, this->ci->getASTContext())) {
+						int num=atoi(Result.toString(10).c_str());
+						std::cout << "The cond is created by (" <<op<<","<< num <<")"<< std::endl;
+
+						return Condition::createCondByOp(op,num);
+					}
+				}
+
+				if(rightIsVar){
+					if (lhs->EvaluateAsInt(Result, this->ci->getASTContext())) {
+						int num=atoi(Result.toString(10).c_str());
+						std::cout << "The cond is created by (" <<op<<","<< num <<")"<< std::endl;
+
+						return Condition::createCondByOp(op,num);
+					}
+				}
+			}
+
+			
 			
 		}
 	}
