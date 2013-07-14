@@ -53,6 +53,10 @@ string convertIntToStr(int number);
 
 string stmt2str(SourceManager *sm, LangOptions lopt,clang::Stmt *stmt);
 
+bool evalIntCmpTruth(int arg1, int arg2, string op);
+
+
+
 
 class CommNode;
 class Condition;
@@ -87,10 +91,24 @@ public:
 class Condition{
 private:
 	vector<Range> rangeList;
-
+	bool shouldBeIgnored;
+	bool complete;
 
 public:
-	Condition(){}
+	Condition(){this->shouldBeIgnored=true;}
+	Condition(bool val){
+		rangeList.clear();
+
+		if(val){
+			
+			this->complete=true;
+		}
+
+		else{
+			this->shouldBeIgnored=true;
+		}
+	}
+
 	Condition(Range ran){rangeList.clear(); rangeList.push_back(ran);}
 
 	Condition(Range ran1, Range ran2){
@@ -265,13 +283,14 @@ public:
 class CommManager{
 
 private:
-	vector<string> stackOfNormalConditions;
 	vector<Condition> stackOfRankConditions;
 //	RoleManager roleManager;
 	CommNode root;
 	CommNode *curNode;
 
 	CompilerInstance *ci;
+
+	map<string,int> rankVarOffsetMapping;
 
 	Condition extractCondFromExpr(Expr *expr);
 
@@ -282,38 +301,18 @@ public:
 		this->ci=ci0;
 	}
 
-	void insertCondition(Expr *expr, bool isRelatedToRank){
+	void insertCondition(Expr *expr);
 
-		if(!isRelatedToRank){
-			string normCond=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),expr);
-			stackOfNormalConditions.push_back(normCond);
-
-			CommNode *node=new CommNode(ST_NODE_ROOT);
-			node->setInfo(normCond);
-			curNode->insert(node);
-		}
-
-		/////////////////////////////////////////////////////////////////
-		else{
-		
-			Condition cond=this->extractCondFromExpr(expr);
-
-			if(!stackOfRankConditions.empty()){
-				Condition top=stackOfRankConditions.back();
-				cond=top.AND(cond);
-			}
-			stackOfRankConditions.push_back(cond);
-
-			CommNode *node=new CommNode(cond);
-			curNode->insert(node);
-		}
-	}
-
-	string retrieveTopNormalCondition(){return stackOfNormalConditions.back();}
 	Condition retrieveTopRankCondition(){return stackOfRankConditions.back();}
 
 	
 	void addCommActions(MPIOperation op);
+
+	void insertRankVarAndOffset(string varName, int offset);
+
+	bool isVarRelatedToRank(string varName);
+
+	void cancelRelation(string varName);
 
 };
 

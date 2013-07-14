@@ -1,8 +1,8 @@
-﻿Build started 14/07/2013 14:39:07.
-     1>Project "A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI.vcxproj" on node 2 (Build target(s)).
+﻿Build started 14/07/2013 18:49:33.
+     1>Project "A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI.vcxproj" on node 2 (Rebuild target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt Comm.cpp
-         Comm.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt Comm.cpp MPITypeCheckingConsumer.cpp SessionTypeExtractor.cpp StmtHandler.cpp
+         StmtHandler.cpp
      1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(61): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
      1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(64): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
      1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(67): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
@@ -95,11 +95,8 @@
      1>s:\clang\sw\llvm\tools\clang\include\clang\analysis\cfg.h(261): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
      1>s:\clang\sw\llvm\tools\clang\include\clang\analysis\cfg.h(272): warning C4800: 'const clang::Stmt *' : forcing value to bool 'true' or 'false' (performance warning)
      1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decltemplate.h(1568): warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\comm.h(164): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\comm.h(176): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\comm.cpp(137): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\comm.cpp(142): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\comm.cpp(163): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\comm.h(182): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\comm.h(194): warning C4018: '<' : signed/unsigned mismatch
      1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(366): warning C4244: '=' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
                  s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(363) : while compiling class template member function 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getExtraLocalData(void) const'
                  with
@@ -307,14 +304,924 @@
                  c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
                  c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
                  c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+         SessionTypeExtractor.cpp
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(61): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(64): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(67): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(70): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(73): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(76): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(79): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(82): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(85): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(88): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\basic\targetinfo.h(345): warning C4244: 'return' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
+     1>s:\clang\sw\llvm\tools\clang\include\clang\basic\targetinfo.h(416): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\lex\preprocessor.h(391): warning C4624: 'clang::Preprocessor::MacroInfoChain' : destructor could not be generated because a base class destructor is inaccessible
+     1>s:\clang\sw\llvm\tools\clang\include\clang\lex\preprocessor.h(406): warning C4624: 'clang::Preprocessor::DeserializedMacroInfoChain' : destructor could not be generated because a base class destructor is inaccessible
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\apvalue.h(446): warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declbase.h(234): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declbase.h(235): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declbase.h(350): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declbase.h(528): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declbase.h(632): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\nestednamespecifier.h(234): warning C4800: 'clang::NestedNameSpecifier *const ' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\nestednamespecifier.h(238): warning C4800: 'clang::NestedNameSpecifier *const ' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\templatename.h(410): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(233): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(240): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(247): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(265): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(286): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(312): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(327): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(347): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(355): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(618): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(628): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(648): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(1523): warning C4800: 'const clang::FunctionNoProtoType *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(1524): warning C4800: 'const clang::FunctionProtoType *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(2683): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(2684): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(2760): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(2761): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(527): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(1298): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(1302): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(2320): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(2462): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(3093): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(93): warning C4800: 'const void *const ' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(239): warning C4244: '=' : conversion from 'uint64_t' to 'uintptr_t', possible loss of data
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(287): warning C4800: 'clang::IdentifierInfo *const ' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(554): warning C4291: 'void *operator new(size_t,void *) throw()' : no matching operator delete found; memory will not be freed if initialization throws an exception
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\new(58) : see declaration of 'operator new'
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(571): warning C4291: 'void *operator new(size_t,void *) throw()' : no matching operator delete found; memory will not be freed if initialization throws an exception
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\new(58) : see declaration of 'operator new'
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(589): warning C4291: 'void *operator new(size_t,void *) throw()' : no matching operator delete found; memory will not be freed if initialization throws an exception
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\new(58) : see declaration of 'operator new'
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(601): warning C4291: 'void *operator new(size_t,void *) throw()' : no matching operator delete found; memory will not be freed if initialization throws an exception
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\new(58) : see declaration of 'operator new'
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(615): warning C4291: 'void *operator new(size_t,void *) throw()' : no matching operator delete found; memory will not be freed if initialization throws an exception
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\new(58) : see declaration of 'operator new'
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\declspec.h(2071): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\expr.h(3456): warning C4244: 'return' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\expr.h(3741): warning C4800: 'const clang::Expr *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\expr.h(4305): warning C4146: unary minus operator applied to unsigned type, result still unsigned
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declobjc.h(890): warning C4800: 'clang::ObjCInterfaceDecl::DefinitionData *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declobjc.h(1474): warning C4800: 'clang::ObjCProtocolDecl::DefinitionData *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declobjc.h(2069): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declobjc.h(2090): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declobjc.h(2096): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprobjc.h(656): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprobjc.h(717): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprobjc.h(718): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprobjc.h(719): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\scopeinfo.h(403): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprcxx.h(559): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprcxx.h(693): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprcxx.h(1379): warning C4800: 'clang::VarDecl *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprcxx.h(1464): warning C4244: 'initializing' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(808): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(842): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(848): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(891): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(924): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(968): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(1124): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(1152): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(1180): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(1833): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(1840): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\analysis\cfg.h(261): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\analysis\cfg.h(272): warning C4800: 'const clang::Stmt *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decltemplate.h(1568): warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\comm.h(182): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\comm.h(194): warning C4018: '<' : signed/unsigned mismatch
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(366): warning C4244: '=' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(363) : while compiling class template member function 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getExtraLocalData(void) const'
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::BuiltinTypeLoc,
+                     TypeClass=clang::BuiltinType,
+                     LocalData=clang::BuiltinLocInfo
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(496) : see reference to function template instantiation 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getExtraLocalData(void) const' being compiled
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::BuiltinTypeLoc,
+                     TypeClass=clang::BuiltinType,
+                     LocalData=clang::BuiltinLocInfo
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(484) : see reference to class template instantiation 'clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>' being compiled
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::BuiltinTypeLoc,
+                     TypeClass=clang::BuiltinType,
+                     LocalData=clang::BuiltinLocInfo
+                 ]
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\externalastsource.h(351): warning C4244: 'argument' : conversion from 'uint64_t' to 'uint32_t', possible loss of data
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\externalastsource.h(347) : while compiling class template member function 'clang::Decl *clang::LazyOffsetPtr<T,OffsT,Get>::get(clang::ExternalASTSource *) const'
+                 with
+                 [
+                     T=clang::Decl,
+                     OffsT=uint32_t,
+                     Get=clang::ExternalASTSource::GetExternalDecl
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\declfriend.h(94) : see reference to function template instantiation 'clang::Decl *clang::LazyOffsetPtr<T,OffsT,Get>::get(clang::ExternalASTSource *) const' being compiled
+                 with
+                 [
+                     T=clang::Decl,
+                     OffsT=uint32_t,
+                     Get=clang::ExternalASTSource::GetExternalDecl
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(485) : see reference to class template instantiation 'clang::LazyOffsetPtr<T,OffsT,Get>' being compiled
+                 with
+                 [
+                     T=clang::Decl,
+                     OffsT=uint32_t,
+                     Get=clang::ExternalASTSource::GetExternalDecl
+                 ]
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(373): warning C4244: '=' : conversion from 'uint64_t' to 'uintptr_t', possible loss of data
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(370) : while compiling class template member function 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getNonLocalData(void) const'
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::AttributedTypeLoc,
+                     TypeClass=clang::AttributedType,
+                     LocalData=clang::AttributedLocInfo
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(381) : see reference to function template instantiation 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getNonLocalData(void) const' being compiled
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::AttributedTypeLoc,
+                     TypeClass=clang::AttributedType,
+                     LocalData=clang::AttributedLocInfo
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(691) : see reference to class template instantiation 'clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>' being compiled
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::AttributedTypeLoc,
+                     TypeClass=clang::AttributedType,
+                     LocalData=clang::AttributedLocInfo
+                 ]
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(334): warning C4244: '=' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(331) : while compiling class template member function 'unsigned int clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getLocalDataSize(void) const'
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::AttributedTypeLoc,
+                     TypeClass=clang::AttributedType,
+                     LocalData=clang::AttributedLocInfo
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(372) : see reference to function template instantiation 'unsigned int clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getLocalDataSize(void) const' being compiled
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::AttributedTypeLoc,
+                     TypeClass=clang::AttributedType,
+                     LocalData=clang::AttributedLocInfo
+                 ]
+     1>s:\clang\sw\llvm\include\llvm\adt\stringref.h(347): warning C4244: '=' : conversion from 'unsigned __int64' to 'unsigned int', possible loss of data
+                 s:\clang\sw\llvm\tools\clang\include\clang\frontend\commandlinesourceloc.h(40) : see reference to function template instantiation 'bool llvm::StringRef::getAsInteger<unsigned int>(unsigned int,T &) const' being compiled
+                 with
+                 [
+                     T=unsigned int
+                 ]
+     1>c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(348): warning C4996: 'std::_Uninitialized_copy0': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(454) : see reference to function template instantiation '_FwdIt std::uninitialized_copy<in_iter,std::pair<_Ty1,_Ty2>*>(_InIt,_InIt,_FwdIt)' being compiled
+                 with
+                 [
+                     _FwdIt=std::pair<std::string,clang::FullSourceLoc> *,
+                     in_iter=const std::pair<std::string,clang::FullSourceLoc> *,
+                     _Ty1=std::string,
+                     _Ty2=clang::FullSourceLoc,
+                     _InIt=const std::pair<std::string,clang::FullSourceLoc> *
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\basic\sourcemanager.h(724) : see reference to function template instantiation 'void llvm::SmallVectorImpl<T>::append<const std::pair<_Ty1,_Ty2>*>(in_iter,in_iter)' being compiled
+                 with
+                 [
+                     T=std::pair<std::string,clang::FullSourceLoc>,
+                     _Ty1=std::string,
+                     _Ty2=clang::FullSourceLoc,
+                     in_iter=const std::pair<std::string,clang::FullSourceLoc> *
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\basic\sourcemanager.h(724) : see reference to function template instantiation 'void llvm::SmallVectorImpl<T>::append<const std::pair<_Ty1,_Ty2>*>(in_iter,in_iter)' being compiled
+                 with
+                 [
+                     T=std::pair<std::string,clang::FullSourceLoc>,
+                     _Ty1=std::string,
+                     _Ty2=clang::FullSourceLoc,
+                     in_iter=const std::pair<std::string,clang::FullSourceLoc> *
+                 ]
+     1>c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2176): warning C4996: 'std::_Copy_impl': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2157) : see declaration of 'std::_Copy_impl'
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(761) : see reference to function template instantiation '_OutIt std::copy<const clang::FixItHint*,clang::FixItHint*>(_InIt,_InIt,_OutIt)' being compiled
+                 with
+                 [
+                     _OutIt=clang::FixItHint *,
+                     _InIt=const clang::FixItHint *
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(749) : while compiling class template member function 'llvm::SmallVectorImpl<T> &llvm::SmallVectorImpl<T>::operator =(const llvm::SmallVectorImpl<T> &)'
+                 with
+                 [
+                     T=clang::FixItHint
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(903) : see reference to function template instantiation 'llvm::SmallVectorImpl<T> &llvm::SmallVectorImpl<T>::operator =(const llvm::SmallVectorImpl<T> &)' being compiled
+                 with
+                 [
+                     T=clang::FixItHint
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(880) : see reference to class template instantiation 'llvm::SmallVectorImpl<T>' being compiled
+                 with
+                 [
+                     T=clang::FixItHint
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\basic\partialdiagnostic.h(78) : see reference to class template instantiation 'llvm::SmallVector<T,N>' being compiled
+                 with
+                 [
+                     T=clang::FixItHint,
+                     N=6
+                 ]
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2157) : see declaration of 'std::_Copy_impl'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2157) : see declaration of 'std::_Copy_impl'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+     1>c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2455): warning C4996: 'std::_Copy_backward': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2440) : see declaration of 'std::_Copy_backward'
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(315) : see reference to function template instantiation '_BidIt2 std::copy_backward<It1,It2>(_BidIt1,_BidIt1,_BidIt2)' being compiled
+                 with
+                 [
+                     _BidIt2=clang::Token *,
+                     It1=clang::Token *,
+                     It2=clang::Token *,
+                     _BidIt1=clang::Token *
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(551) : see reference to function template instantiation 'It2 llvm::SmallVectorTemplateBase<T,isPodLike>::move_backward<clang::Token*,clang::Token*>(It1,It1,It2)' being compiled
+                 with
+                 [
+                     It2=clang::Token *,
+                     T=clang::Token,
+                     isPodLike=true,
+                     It1=clang::Token *
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(551) : see reference to function template instantiation 'It2 llvm::SmallVectorTemplateBase<T,isPodLike>::move_backward<clang::Token*,clang::Token*>(It1,It1,It2)' being compiled
+                 with
+                 [
+                     It2=clang::Token *,
+                     T=clang::Token,
+                     isPodLike=true,
+                     It1=clang::Token *
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(537) : while compiling class template member function 'clang::Token *llvm::SmallVectorImpl<T>::insert(clang::Token *,const T &)'
+                 with
+                 [
+                     T=clang::Token
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\lex\preprocessor.h(819) : see reference to function template instantiation 'clang::Token *llvm::SmallVectorImpl<T>::insert(clang::Token *,const T &)' being compiled
+                 with
+                 [
+                     T=clang::Token
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(880) : see reference to class template instantiation 'llvm::SmallVectorImpl<T>' being compiled
+                 with
+                 [
+                     T=clang::Token
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\lex\macroinfo.h(50) : see reference to class template instantiation 'llvm::SmallVector<T,N>' being compiled
+                 with
+                 [
+                     T=clang::Token,
+                     N=8
+                 ]
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2440) : see declaration of 'std::_Copy_backward'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+         MPITypeCheckingConsumer.cpp
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(61): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(64): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(67): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(70): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(73): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(76): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(79): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(82): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(85): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(88): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\basic\targetinfo.h(345): warning C4244: 'return' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
+     1>s:\clang\sw\llvm\tools\clang\include\clang\basic\targetinfo.h(416): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\lex\preprocessor.h(391): warning C4624: 'clang::Preprocessor::MacroInfoChain' : destructor could not be generated because a base class destructor is inaccessible
+     1>s:\clang\sw\llvm\tools\clang\include\clang\lex\preprocessor.h(406): warning C4624: 'clang::Preprocessor::DeserializedMacroInfoChain' : destructor could not be generated because a base class destructor is inaccessible
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\apvalue.h(446): warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declbase.h(234): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declbase.h(235): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declbase.h(350): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declbase.h(528): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declbase.h(632): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\nestednamespecifier.h(234): warning C4800: 'clang::NestedNameSpecifier *const ' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\nestednamespecifier.h(238): warning C4800: 'clang::NestedNameSpecifier *const ' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\templatename.h(410): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(233): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(240): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(247): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(265): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(286): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(312): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(327): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(347): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(355): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(618): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(628): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(648): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(1523): warning C4800: 'const clang::FunctionNoProtoType *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(1524): warning C4800: 'const clang::FunctionProtoType *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(2683): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(2684): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(2760): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(2761): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(527): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(1298): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(1302): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(2320): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(2462): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(3093): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(93): warning C4800: 'const void *const ' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(239): warning C4244: '=' : conversion from 'uint64_t' to 'uintptr_t', possible loss of data
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(287): warning C4800: 'clang::IdentifierInfo *const ' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(554): warning C4291: 'void *operator new(size_t,void *) throw()' : no matching operator delete found; memory will not be freed if initialization throws an exception
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\new(58) : see declaration of 'operator new'
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(571): warning C4291: 'void *operator new(size_t,void *) throw()' : no matching operator delete found; memory will not be freed if initialization throws an exception
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\new(58) : see declaration of 'operator new'
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(589): warning C4291: 'void *operator new(size_t,void *) throw()' : no matching operator delete found; memory will not be freed if initialization throws an exception
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\new(58) : see declaration of 'operator new'
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(601): warning C4291: 'void *operator new(size_t,void *) throw()' : no matching operator delete found; memory will not be freed if initialization throws an exception
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\new(58) : see declaration of 'operator new'
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(615): warning C4291: 'void *operator new(size_t,void *) throw()' : no matching operator delete found; memory will not be freed if initialization throws an exception
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\new(58) : see declaration of 'operator new'
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\declspec.h(2071): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\expr.h(3456): warning C4244: 'return' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\expr.h(3741): warning C4800: 'const clang::Expr *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\expr.h(4305): warning C4146: unary minus operator applied to unsigned type, result still unsigned
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declobjc.h(890): warning C4800: 'clang::ObjCInterfaceDecl::DefinitionData *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declobjc.h(1474): warning C4800: 'clang::ObjCProtocolDecl::DefinitionData *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declobjc.h(2069): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declobjc.h(2090): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declobjc.h(2096): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprobjc.h(656): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprobjc.h(717): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprobjc.h(718): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprobjc.h(719): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\scopeinfo.h(403): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprcxx.h(559): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprcxx.h(693): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprcxx.h(1379): warning C4800: 'clang::VarDecl *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprcxx.h(1464): warning C4244: 'initializing' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(808): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(842): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(848): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(891): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(924): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(968): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(1124): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(1152): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(1180): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(1833): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(1840): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\analysis\cfg.h(261): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\analysis\cfg.h(272): warning C4800: 'const clang::Stmt *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decltemplate.h(1568): warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\comm.h(182): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\comm.h(194): warning C4018: '<' : signed/unsigned mismatch
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(366): warning C4244: '=' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(363) : while compiling class template member function 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getExtraLocalData(void) const'
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::BuiltinTypeLoc,
+                     TypeClass=clang::BuiltinType,
+                     LocalData=clang::BuiltinLocInfo
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(496) : see reference to function template instantiation 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getExtraLocalData(void) const' being compiled
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::BuiltinTypeLoc,
+                     TypeClass=clang::BuiltinType,
+                     LocalData=clang::BuiltinLocInfo
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(484) : see reference to class template instantiation 'clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>' being compiled
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::BuiltinTypeLoc,
+                     TypeClass=clang::BuiltinType,
+                     LocalData=clang::BuiltinLocInfo
+                 ]
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\externalastsource.h(351): warning C4244: 'argument' : conversion from 'uint64_t' to 'uint32_t', possible loss of data
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\externalastsource.h(347) : while compiling class template member function 'clang::Decl *clang::LazyOffsetPtr<T,OffsT,Get>::get(clang::ExternalASTSource *) const'
+                 with
+                 [
+                     T=clang::Decl,
+                     OffsT=uint32_t,
+                     Get=clang::ExternalASTSource::GetExternalDecl
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\declfriend.h(94) : see reference to function template instantiation 'clang::Decl *clang::LazyOffsetPtr<T,OffsT,Get>::get(clang::ExternalASTSource *) const' being compiled
+                 with
+                 [
+                     T=clang::Decl,
+                     OffsT=uint32_t,
+                     Get=clang::ExternalASTSource::GetExternalDecl
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(485) : see reference to class template instantiation 'clang::LazyOffsetPtr<T,OffsT,Get>' being compiled
+                 with
+                 [
+                     T=clang::Decl,
+                     OffsT=uint32_t,
+                     Get=clang::ExternalASTSource::GetExternalDecl
+                 ]
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(373): warning C4244: '=' : conversion from 'uint64_t' to 'uintptr_t', possible loss of data
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(370) : while compiling class template member function 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getNonLocalData(void) const'
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::AttributedTypeLoc,
+                     TypeClass=clang::AttributedType,
+                     LocalData=clang::AttributedLocInfo
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(381) : see reference to function template instantiation 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getNonLocalData(void) const' being compiled
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::AttributedTypeLoc,
+                     TypeClass=clang::AttributedType,
+                     LocalData=clang::AttributedLocInfo
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(691) : see reference to class template instantiation 'clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>' being compiled
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::AttributedTypeLoc,
+                     TypeClass=clang::AttributedType,
+                     LocalData=clang::AttributedLocInfo
+                 ]
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(334): warning C4244: '=' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(331) : while compiling class template member function 'unsigned int clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getLocalDataSize(void) const'
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::AttributedTypeLoc,
+                     TypeClass=clang::AttributedType,
+                     LocalData=clang::AttributedLocInfo
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(372) : see reference to function template instantiation 'unsigned int clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getLocalDataSize(void) const' being compiled
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::AttributedTypeLoc,
+                     TypeClass=clang::AttributedType,
+                     LocalData=clang::AttributedLocInfo
+                 ]
+     1>s:\clang\sw\llvm\include\llvm\adt\stringref.h(347): warning C4244: '=' : conversion from 'unsigned __int64' to 'unsigned int', possible loss of data
+                 s:\clang\sw\llvm\tools\clang\include\clang\frontend\commandlinesourceloc.h(40) : see reference to function template instantiation 'bool llvm::StringRef::getAsInteger<unsigned int>(unsigned int,T &) const' being compiled
+                 with
+                 [
+                     T=unsigned int
+                 ]
+     1>c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(348): warning C4996: 'std::_Uninitialized_copy0': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(454) : see reference to function template instantiation '_FwdIt std::uninitialized_copy<in_iter,std::pair<_Ty1,_Ty2>*>(_InIt,_InIt,_FwdIt)' being compiled
+                 with
+                 [
+                     _FwdIt=std::pair<std::string,clang::FullSourceLoc> *,
+                     in_iter=const std::pair<std::string,clang::FullSourceLoc> *,
+                     _Ty1=std::string,
+                     _Ty2=clang::FullSourceLoc,
+                     _InIt=const std::pair<std::string,clang::FullSourceLoc> *
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\basic\sourcemanager.h(724) : see reference to function template instantiation 'void llvm::SmallVectorImpl<T>::append<const std::pair<_Ty1,_Ty2>*>(in_iter,in_iter)' being compiled
+                 with
+                 [
+                     T=std::pair<std::string,clang::FullSourceLoc>,
+                     _Ty1=std::string,
+                     _Ty2=clang::FullSourceLoc,
+                     in_iter=const std::pair<std::string,clang::FullSourceLoc> *
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\basic\sourcemanager.h(724) : see reference to function template instantiation 'void llvm::SmallVectorImpl<T>::append<const std::pair<_Ty1,_Ty2>*>(in_iter,in_iter)' being compiled
+                 with
+                 [
+                     T=std::pair<std::string,clang::FullSourceLoc>,
+                     _Ty1=std::string,
+                     _Ty2=clang::FullSourceLoc,
+                     in_iter=const std::pair<std::string,clang::FullSourceLoc> *
+                 ]
+     1>c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2176): warning C4996: 'std::_Copy_impl': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2157) : see declaration of 'std::_Copy_impl'
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(761) : see reference to function template instantiation '_OutIt std::copy<const clang::FixItHint*,clang::FixItHint*>(_InIt,_InIt,_OutIt)' being compiled
+                 with
+                 [
+                     _OutIt=clang::FixItHint *,
+                     _InIt=const clang::FixItHint *
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(749) : while compiling class template member function 'llvm::SmallVectorImpl<T> &llvm::SmallVectorImpl<T>::operator =(const llvm::SmallVectorImpl<T> &)'
+                 with
+                 [
+                     T=clang::FixItHint
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(903) : see reference to function template instantiation 'llvm::SmallVectorImpl<T> &llvm::SmallVectorImpl<T>::operator =(const llvm::SmallVectorImpl<T> &)' being compiled
+                 with
+                 [
+                     T=clang::FixItHint
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(880) : see reference to class template instantiation 'llvm::SmallVectorImpl<T>' being compiled
+                 with
+                 [
+                     T=clang::FixItHint
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\basic\partialdiagnostic.h(78) : see reference to class template instantiation 'llvm::SmallVector<T,N>' being compiled
+                 with
+                 [
+                     T=clang::FixItHint,
+                     N=6
+                 ]
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2157) : see declaration of 'std::_Copy_impl'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2157) : see declaration of 'std::_Copy_impl'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+     1>c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2455): warning C4996: 'std::_Copy_backward': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2440) : see declaration of 'std::_Copy_backward'
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(315) : see reference to function template instantiation '_BidIt2 std::copy_backward<It1,It2>(_BidIt1,_BidIt1,_BidIt2)' being compiled
+                 with
+                 [
+                     _BidIt2=clang::Token *,
+                     It1=clang::Token *,
+                     It2=clang::Token *,
+                     _BidIt1=clang::Token *
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(551) : see reference to function template instantiation 'It2 llvm::SmallVectorTemplateBase<T,isPodLike>::move_backward<clang::Token*,clang::Token*>(It1,It1,It2)' being compiled
+                 with
+                 [
+                     It2=clang::Token *,
+                     T=clang::Token,
+                     isPodLike=true,
+                     It1=clang::Token *
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(551) : see reference to function template instantiation 'It2 llvm::SmallVectorTemplateBase<T,isPodLike>::move_backward<clang::Token*,clang::Token*>(It1,It1,It2)' being compiled
+                 with
+                 [
+                     It2=clang::Token *,
+                     T=clang::Token,
+                     isPodLike=true,
+                     It1=clang::Token *
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(537) : while compiling class template member function 'clang::Token *llvm::SmallVectorImpl<T>::insert(clang::Token *,const T &)'
+                 with
+                 [
+                     T=clang::Token
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\lex\preprocessor.h(819) : see reference to function template instantiation 'clang::Token *llvm::SmallVectorImpl<T>::insert(clang::Token *,const T &)' being compiled
+                 with
+                 [
+                     T=clang::Token
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(880) : see reference to class template instantiation 'llvm::SmallVectorImpl<T>' being compiled
+                 with
+                 [
+                     T=clang::Token
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\lex\macroinfo.h(50) : see reference to class template instantiation 'llvm::SmallVector<T,N>' being compiled
+                 with
+                 [
+                     T=clang::Token,
+                     N=8
+                 ]
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2440) : see declaration of 'std::_Copy_backward'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+         Comm.cpp
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(61): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(64): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(67): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(70): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(73): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(76): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(79): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(82): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(85): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\frontend\langstandard.h(88): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\basic\targetinfo.h(345): warning C4244: 'return' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
+     1>s:\clang\sw\llvm\tools\clang\include\clang\basic\targetinfo.h(416): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\lex\preprocessor.h(391): warning C4624: 'clang::Preprocessor::MacroInfoChain' : destructor could not be generated because a base class destructor is inaccessible
+     1>s:\clang\sw\llvm\tools\clang\include\clang\lex\preprocessor.h(406): warning C4624: 'clang::Preprocessor::DeserializedMacroInfoChain' : destructor could not be generated because a base class destructor is inaccessible
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\apvalue.h(446): warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declbase.h(234): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declbase.h(235): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declbase.h(350): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declbase.h(528): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declbase.h(632): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\nestednamespecifier.h(234): warning C4800: 'clang::NestedNameSpecifier *const ' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\nestednamespecifier.h(238): warning C4800: 'clang::NestedNameSpecifier *const ' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\templatename.h(410): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(233): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(240): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(247): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(265): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(286): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(312): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(327): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(347): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(355): warning C4800: 'const uint32_t' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(618): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(628): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(648): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(1523): warning C4800: 'const clang::FunctionNoProtoType *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(1524): warning C4800: 'const clang::FunctionProtoType *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(2683): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(2684): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(2760): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\type.h(2761): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(527): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(1298): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(1302): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(2320): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(2462): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decl.h(3093): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(93): warning C4800: 'const void *const ' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(239): warning C4244: '=' : conversion from 'uint64_t' to 'uintptr_t', possible loss of data
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(287): warning C4800: 'clang::IdentifierInfo *const ' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(554): warning C4291: 'void *operator new(size_t,void *) throw()' : no matching operator delete found; memory will not be freed if initialization throws an exception
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\new(58) : see declaration of 'operator new'
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(571): warning C4291: 'void *operator new(size_t,void *) throw()' : no matching operator delete found; memory will not be freed if initialization throws an exception
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\new(58) : see declaration of 'operator new'
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(589): warning C4291: 'void *operator new(size_t,void *) throw()' : no matching operator delete found; memory will not be freed if initialization throws an exception
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\new(58) : see declaration of 'operator new'
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(601): warning C4291: 'void *operator new(size_t,void *) throw()' : no matching operator delete found; memory will not be freed if initialization throws an exception
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\new(58) : see declaration of 'operator new'
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\attributelist.h(615): warning C4291: 'void *operator new(size_t,void *) throw()' : no matching operator delete found; memory will not be freed if initialization throws an exception
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\new(58) : see declaration of 'operator new'
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\declspec.h(2071): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\expr.h(3456): warning C4244: 'return' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\expr.h(3741): warning C4800: 'const clang::Expr *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\expr.h(4305): warning C4146: unary minus operator applied to unsigned type, result still unsigned
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declobjc.h(890): warning C4800: 'clang::ObjCInterfaceDecl::DefinitionData *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declobjc.h(1474): warning C4800: 'clang::ObjCProtocolDecl::DefinitionData *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declobjc.h(2069): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declobjc.h(2090): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declobjc.h(2096): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprobjc.h(656): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprobjc.h(717): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprobjc.h(718): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprobjc.h(719): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\sema\scopeinfo.h(403): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprcxx.h(559): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprcxx.h(693): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprcxx.h(1379): warning C4800: 'clang::VarDecl *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\exprcxx.h(1464): warning C4244: 'initializing' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(808): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(842): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(848): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(891): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(924): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(968): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(1124): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(1152): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(1180): warning C4800: 'const unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(1833): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(1840): warning C4800: 'int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\analysis\cfg.h(261): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\analysis\cfg.h(272): warning C4800: 'const clang::Stmt *' : forcing value to bool 'true' or 'false' (performance warning)
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decltemplate.h(1568): warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\comm.h(182): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\comm.h(194): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\comm.cpp(142): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\comm.cpp(147): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\comm.cpp(168): warning C4018: '<' : signed/unsigned mismatch
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(366): warning C4244: '=' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(363) : while compiling class template member function 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getExtraLocalData(void) const'
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::BuiltinTypeLoc,
+                     TypeClass=clang::BuiltinType,
+                     LocalData=clang::BuiltinLocInfo
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(496) : see reference to function template instantiation 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getExtraLocalData(void) const' being compiled
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::BuiltinTypeLoc,
+                     TypeClass=clang::BuiltinType,
+                     LocalData=clang::BuiltinLocInfo
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(484) : see reference to class template instantiation 'clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>' being compiled
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::BuiltinTypeLoc,
+                     TypeClass=clang::BuiltinType,
+                     LocalData=clang::BuiltinLocInfo
+                 ]
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\externalastsource.h(351): warning C4244: 'argument' : conversion from 'uint64_t' to 'uint32_t', possible loss of data
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\externalastsource.h(347) : while compiling class template member function 'clang::Decl *clang::LazyOffsetPtr<T,OffsT,Get>::get(clang::ExternalASTSource *) const'
+                 with
+                 [
+                     T=clang::Decl,
+                     OffsT=uint32_t,
+                     Get=clang::ExternalASTSource::GetExternalDecl
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\declfriend.h(94) : see reference to function template instantiation 'clang::Decl *clang::LazyOffsetPtr<T,OffsT,Get>::get(clang::ExternalASTSource *) const' being compiled
+                 with
+                 [
+                     T=clang::Decl,
+                     OffsT=uint32_t,
+                     Get=clang::ExternalASTSource::GetExternalDecl
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\declcxx.h(485) : see reference to class template instantiation 'clang::LazyOffsetPtr<T,OffsT,Get>' being compiled
+                 with
+                 [
+                     T=clang::Decl,
+                     OffsT=uint32_t,
+                     Get=clang::ExternalASTSource::GetExternalDecl
+                 ]
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(373): warning C4244: '=' : conversion from 'uint64_t' to 'uintptr_t', possible loss of data
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(370) : while compiling class template member function 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getNonLocalData(void) const'
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::AttributedTypeLoc,
+                     TypeClass=clang::AttributedType,
+                     LocalData=clang::AttributedLocInfo
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(381) : see reference to function template instantiation 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getNonLocalData(void) const' being compiled
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::AttributedTypeLoc,
+                     TypeClass=clang::AttributedType,
+                     LocalData=clang::AttributedLocInfo
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(691) : see reference to class template instantiation 'clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>' being compiled
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::AttributedTypeLoc,
+                     TypeClass=clang::AttributedType,
+                     LocalData=clang::AttributedLocInfo
+                 ]
+     1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(334): warning C4244: '=' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(331) : while compiling class template member function 'unsigned int clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getLocalDataSize(void) const'
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::AttributedTypeLoc,
+                     TypeClass=clang::AttributedType,
+                     LocalData=clang::AttributedLocInfo
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(372) : see reference to function template instantiation 'unsigned int clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getLocalDataSize(void) const' being compiled
+                 with
+                 [
+                     Base=clang::UnqualTypeLoc,
+                     Derived=clang::AttributedTypeLoc,
+                     TypeClass=clang::AttributedType,
+                     LocalData=clang::AttributedLocInfo
+                 ]
+     1>s:\clang\sw\llvm\include\llvm\adt\stringref.h(347): warning C4244: '=' : conversion from 'unsigned __int64' to 'unsigned int', possible loss of data
+                 s:\clang\sw\llvm\tools\clang\include\clang\frontend\commandlinesourceloc.h(40) : see reference to function template instantiation 'bool llvm::StringRef::getAsInteger<unsigned int>(unsigned int,T &) const' being compiled
+                 with
+                 [
+                     T=unsigned int
+                 ]
+     1>c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(348): warning C4996: 'std::_Uninitialized_copy0': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(454) : see reference to function template instantiation '_FwdIt std::uninitialized_copy<in_iter,std::pair<_Ty1,_Ty2>*>(_InIt,_InIt,_FwdIt)' being compiled
+                 with
+                 [
+                     _FwdIt=std::pair<std::string,clang::FullSourceLoc> *,
+                     in_iter=const std::pair<std::string,clang::FullSourceLoc> *,
+                     _Ty1=std::string,
+                     _Ty2=clang::FullSourceLoc,
+                     _InIt=const std::pair<std::string,clang::FullSourceLoc> *
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\basic\sourcemanager.h(724) : see reference to function template instantiation 'void llvm::SmallVectorImpl<T>::append<const std::pair<_Ty1,_Ty2>*>(in_iter,in_iter)' being compiled
+                 with
+                 [
+                     T=std::pair<std::string,clang::FullSourceLoc>,
+                     _Ty1=std::string,
+                     _Ty2=clang::FullSourceLoc,
+                     in_iter=const std::pair<std::string,clang::FullSourceLoc> *
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\basic\sourcemanager.h(724) : see reference to function template instantiation 'void llvm::SmallVectorImpl<T>::append<const std::pair<_Ty1,_Ty2>*>(in_iter,in_iter)' being compiled
+                 with
+                 [
+                     T=std::pair<std::string,clang::FullSourceLoc>,
+                     _Ty1=std::string,
+                     _Ty2=clang::FullSourceLoc,
+                     in_iter=const std::pair<std::string,clang::FullSourceLoc> *
+                 ]
+     1>c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2176): warning C4996: 'std::_Copy_impl': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2157) : see declaration of 'std::_Copy_impl'
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(761) : see reference to function template instantiation '_OutIt std::copy<const clang::FixItHint*,clang::FixItHint*>(_InIt,_InIt,_OutIt)' being compiled
+                 with
+                 [
+                     _OutIt=clang::FixItHint *,
+                     _InIt=const clang::FixItHint *
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(749) : while compiling class template member function 'llvm::SmallVectorImpl<T> &llvm::SmallVectorImpl<T>::operator =(const llvm::SmallVectorImpl<T> &)'
+                 with
+                 [
+                     T=clang::FixItHint
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(903) : see reference to function template instantiation 'llvm::SmallVectorImpl<T> &llvm::SmallVectorImpl<T>::operator =(const llvm::SmallVectorImpl<T> &)' being compiled
+                 with
+                 [
+                     T=clang::FixItHint
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(880) : see reference to class template instantiation 'llvm::SmallVectorImpl<T>' being compiled
+                 with
+                 [
+                     T=clang::FixItHint
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\basic\partialdiagnostic.h(78) : see reference to class template instantiation 'llvm::SmallVector<T,N>' being compiled
+                 with
+                 [
+                     T=clang::FixItHint,
+                     N=6
+                 ]
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2157) : see declaration of 'std::_Copy_impl'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2157) : see declaration of 'std::_Copy_impl'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+     1>c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2455): warning C4996: 'std::_Copy_backward': Function call with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2440) : see declaration of 'std::_Copy_backward'
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(315) : see reference to function template instantiation '_BidIt2 std::copy_backward<It1,It2>(_BidIt1,_BidIt1,_BidIt2)' being compiled
+                 with
+                 [
+                     _BidIt2=clang::Token *,
+                     It1=clang::Token *,
+                     It2=clang::Token *,
+                     _BidIt1=clang::Token *
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(551) : see reference to function template instantiation 'It2 llvm::SmallVectorTemplateBase<T,isPodLike>::move_backward<clang::Token*,clang::Token*>(It1,It1,It2)' being compiled
+                 with
+                 [
+                     It2=clang::Token *,
+                     T=clang::Token,
+                     isPodLike=true,
+                     It1=clang::Token *
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(551) : see reference to function template instantiation 'It2 llvm::SmallVectorTemplateBase<T,isPodLike>::move_backward<clang::Token*,clang::Token*>(It1,It1,It2)' being compiled
+                 with
+                 [
+                     It2=clang::Token *,
+                     T=clang::Token,
+                     isPodLike=true,
+                     It1=clang::Token *
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(537) : while compiling class template member function 'clang::Token *llvm::SmallVectorImpl<T>::insert(clang::Token *,const T &)'
+                 with
+                 [
+                     T=clang::Token
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\lex\preprocessor.h(819) : see reference to function template instantiation 'clang::Token *llvm::SmallVectorImpl<T>::insert(clang::Token *,const T &)' being compiled
+                 with
+                 [
+                     T=clang::Token
+                 ]
+                 s:\clang\sw\llvm\include\llvm\adt\smallvector.h(880) : see reference to class template instantiation 'llvm::SmallVectorImpl<T>' being compiled
+                 with
+                 [
+                     T=clang::Token
+                 ]
+                 s:\clang\sw\llvm\tools\clang\include\clang\lex\macroinfo.h(50) : see reference to class template instantiation 'llvm::SmallVector<T,N>' being compiled
+                 with
+                 [
+                     T=clang::Token,
+                     N=8
+                 ]
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xutility(2440) : see declaration of 'std::_Copy_backward'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\xmemory(333) : see declaration of 'std::_Uninitialized_copy0'
+         Generating Code...
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\Debug\SessionTypeExtractor4MPI.exe" /INCREMENTAL /NOLOGO "S:\CLANG\SW\build4VS11\lib\Debug\*.lib" "S:\CLANG\SW\build4VS11\lib\Debug\*.lib" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\Debug\SessionTypeExtractor4MPI.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\Debug\SessionTypeExtractor4MPI.lib" /MACHINE:X86 Debug\Comm.obj
          Debug\MPITypeCheckingConsumer.obj
          Debug\SessionTypeExtractor.obj
          Debug\StmtHandler.obj
          SessionTypeExtractor4MPI.vcxproj -> A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\Debug\SessionTypeExtractor4MPI.exe
-     1>Done Building Project "A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI.vcxproj" (Build target(s)).
+     1>Done Building Project "A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI.vcxproj" (Rebuild target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:23.91
+Time Elapsed 00:00:32.85

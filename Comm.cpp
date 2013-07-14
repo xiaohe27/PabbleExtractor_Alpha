@@ -1,5 +1,7 @@
 #include "Comm.h"
 
+using namespace llvm;
+using namespace clang;
 //some functions
 int min(int a, int b){if(a<b) return a; else return b;}
 int max(int a, int b){if(a<b) return b; else return a;}
@@ -40,6 +42,9 @@ string stmt2str(SourceManager *sm, LangOptions lopt,clang::Stmt *stmt) {
 		sm->getCharacterData(e)-sm->getCharacterData(b));
 
 }
+
+
+
 
 /********************************************************************/
 //Class Range impl start										****
@@ -178,11 +183,121 @@ Condition Condition::AND(Condition other){
 
 }
 
+Condition Condition::OR(Condition other){
+	//TO DO
+	return Condition();
+
+}
+
 /********************************************************************/
 //Class Condition impl end											****
 /********************************************************************/
 
 
+/********************************************************************/
+//Class CommManager impl start										****
+/********************************************************************/
+
+Condition CommManager::extractCondFromExpr(Expr *expr){
+	cout<<"The expr "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),expr)<<" is obtained by Comm.cpp"<<endl;
+	
+	cout<<"The stmt class type is "<<expr->getStmtClassName()<<endl;
 
 
-Condition CommManager::extractCondFromExpr(Expr *expr){return Condition();}
+	bool boolResult;
+	bool canBeEval=expr->EvaluateAsBooleanCondition(boolResult,this->ci->getASTContext());
+	
+	if(canBeEval){
+		cout <<"The expr can be evaluated!"<<endl;
+
+		cout<<"The boolResult is "<<boolResult<<endl;
+
+			if(boolResult){
+				
+				return Condition(true);
+
+			}
+			
+			else{return Condition(false);}			
+		
+	}
+
+	else{cout <<"The expr can NOT be evaluated!"<<endl;}
+
+
+	if(isa<BinaryOperator>(expr)){
+		BinaryOperator *binOP=cast<BinaryOperator>(expr);
+
+		Expr *lhs=binOP->getLHS();
+		Expr *rhs=binOP->getRHS();
+
+		string op=binOP->getOpcodeStr();
+
+		cout<<"The bin op is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),binOP)<<"\n";
+		cout<<"The lhs is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),lhs)<<"\n";
+		cout<<"The rhs is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs)<<"\n";
+		cout<<"The operator is : "<<op<<endl;
+
+		
+
+
+		if(op=="&&")
+			return extractCondFromExpr(lhs).AND(extractCondFromExpr(rhs));
+
+		else if(op=="||")
+			return extractCondFromExpr(lhs).OR(extractCondFromExpr(rhs));
+
+		else if(op=="=="){
+			
+		}
+	}
+
+	return Condition();
+}
+
+
+
+void CommManager::insertCondition(Expr *expr){
+		
+			Condition cond=this->extractCondFromExpr(expr);
+
+			if(!stackOfRankConditions.empty()){
+				Condition top=stackOfRankConditions.back();
+				cond=top.AND(cond);
+			}
+			stackOfRankConditions.push_back(cond);
+
+			CommNode *node=new CommNode(cond);
+			curNode->insert(node);
+		}
+	
+
+
+
+void CommManager::insertRankVarAndOffset(string varName, int offset){
+	if(this->isVarRelatedToRank(varName)){
+		this->rankVarOffsetMapping.find(varName)->second=offset;
+	}
+
+	else{
+		this->rankVarOffsetMapping[varName]=offset;
+	}
+	
+}
+
+void CommManager::cancelRelation(string varName){
+	this->rankVarOffsetMapping.erase(this->rankVarOffsetMapping.find(varName));
+}
+
+
+bool CommManager::isVarRelatedToRank(string varName){
+	if(this->rankVarOffsetMapping.count(varName)>0)
+		return true;
+
+	else
+		return false;
+
+}
+/********************************************************************/
+//Class CommManager impl end										****
+/********************************************************************/

@@ -76,8 +76,6 @@ public:
 
 	void removeFuncFromList();
 
-	bool isRelatedToRank(Expr* expr);
-
 	//translate to a special format so that the class Property can understand the string.
 	string extractConditionStrFromExpr(Expr* expr){return nullptr;}
 

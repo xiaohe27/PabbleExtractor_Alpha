@@ -67,14 +67,9 @@ bool MPITypeCheckingConsumer::VisitIfStmt(IfStmt *ifStmt){
 
 	cout<<"Type of condition is "<<typeOfCond<<"\nCond Expr is: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
 
-	if(this->isRelatedToRank(condExpr)){
-
-		this->commManager->insertCondition(condExpr,true);
-	}
-
-	else{
-		this->commManager->insertCondition(condExpr,false);
-	}
+	
+	this->commManager->insertCondition(condExpr);
+	
 	
 
 	//visit then part
@@ -220,6 +215,8 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 		if(funcName=="MPI_Comm_rank"){
 			
 			this->rankVar=args[1].substr(1,args[1].length()-1);
+
+			this->commManager->insertRankVarAndOffset(rankVar,0);
 		
 			cout<<"Rank var is "<<this->rankVar<<endl;
 		}
@@ -295,7 +292,7 @@ bool MPITypeCheckingConsumer::VisitFunctionDecl(FunctionDecl *funcDecl){
 
 	else
 	{
-//		cout<<"The function "<<funcName<<" do not have a body here!"<<endl;
+		cout<<"The function "<<funcName<<" do not have a body here!"<<endl;
 
 
 	}	
