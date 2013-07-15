@@ -71,7 +71,6 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	this->commManager->insertCondition(condExpr);
 	
 	
-
 	//visit then part
 	cout<<"Going to visit then part of condition: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
 
@@ -79,14 +78,22 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 	//should remove the condition for the then part now.
 	cout<<"//should remove the condition for the then part now."<<endl;
-	this->commManager->popCondition();
+	Condition condInIfPart=this->commManager->popCondition();
 
+	Condition curCond=Condition::negateCondition(condInIfPart);
+	Condition topCond=this->commManager->getTopCondition();
+	Condition condInElsePart=curCond.AND(topCond);
+	this->commManager->insertExistingCondition(condInElsePart);
+
+	cout << "\n\n\n\n\nThe condition in else part is \n"<<condInElsePart.printConditionInfo()
+		<<"\n\n\n\n\n"<<endl;
 
 	//visit else part
 	cout<<"Going to visit else part of condition: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
 	this->TraverseStmt(ifStmt->getElse());
 
-
+	cout<<"//should remove the condition for the else part now."<<endl;
+	this->commManager->popCondition();
 
 	return true;
 }

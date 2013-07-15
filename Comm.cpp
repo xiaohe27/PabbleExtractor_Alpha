@@ -116,7 +116,7 @@ Range::Range(int s,int e){
 }
 
 Range Range::AND(Range other){
-	if(this->shouldBeIgnored || other.shouldBeIgnored){
+	if(this->isIgnored() || other.isIgnored()){
 		return Range();
 	}
 
@@ -135,19 +135,19 @@ Range Range::AND(Range other){
 
 bool Range::hasIntersectionWith(Range other){
 
-	return !this->AND(other).shouldBeIgnored;
+	return !this->AND(other).isIgnored();
 }
 
 Condition Range::OR(Range other){
-	if(this->shouldBeIgnored && other.shouldBeIgnored){
+	if(this->isIgnored() && other.isIgnored()){
 		return Condition(false);
 	}
 
-	if(this->shouldBeIgnored){
+	if(this->isIgnored()){
 		return Condition(other);
 	}
 
-	if(other.shouldBeIgnored){
+	if(other.isIgnored()){
 		return Condition(*this);
 	}
 
@@ -165,7 +165,7 @@ Condition Range::OR(Range other){
 }
 
 bool Range::isEqualTo(Range ran){
-	if(this->shouldBeIgnored && ran.shouldBeIgnored)
+	if(this->isIgnored() && ran.isIgnored())
 		return true;
 
 	if(this->startPos == ran.startPos && 
@@ -175,8 +175,27 @@ bool Range::isEqualTo(Range ran){
 	return false;
 }
 
+Condition Range::negateOfRange(Range ran){
+	if(ran.isIgnored()){
+		Range allRange=Range(0,InitEndIndex);
+		return Condition(allRange);
+	}
+
+	if(ran.isAllRange()){
+		return Condition(false);
+	}
+
+	if(ran.startPos<=0){
+		return Condition(Range::createByStartIndex(ran.endPos+1));
+	}
+
+	else{
+		return Condition(Range(0,ran.startPos-1),Range::createByStartIndex(ran.endPos+1));
+	}
+}
+
 string Range::printRangeInfo(){
-	if(this->shouldBeIgnored){
+	if(this->isIgnored()){
 		return "[EMPTY]";
 	}
 
@@ -259,7 +278,7 @@ void Condition::normalize(){
 
 
 Condition Condition::AND(Condition other){
-	if(this->shouldBeIgnored || other.shouldBeIgnored)
+	if(this->isIgnored() || other.isIgnored())
 		return Condition(false);
 
 	if(this->isComplete()){return other;}
@@ -285,13 +304,13 @@ Condition Condition::AND(Condition other){
 }
 
 Condition Condition::OR(Condition other){
-	if(this->shouldBeIgnored && other.shouldBeIgnored)
+	if(this->isIgnored() && other.isIgnored())
 	return other;
 
-	if(this->shouldBeIgnored)
+	if(this->isIgnored())
 		return other;
 
-	if(other.shouldBeIgnored)
+	if(other.isIgnored())
 		return *this;
 
 	/////////////////////////////////////
@@ -312,8 +331,31 @@ Condition Condition::OR(Condition other){
 }
 
 
+Condition Condition::negateCondition(Condition cond){
+	if(cond.isIgnored()){
+		//negate of nothing becomes a complete condition
+		return Condition(true);
+	}
+
+	if(cond.isComplete()){
+		return Condition(false);	
+	}
+
+	//base case: only one range
+	if(cond.rangeList.size()==1){
+		Range ran=cond.rangeList.back();
+		return Range::negateOfRange(ran);
+	}
+
+	else{
+		Range curRan=cond.rangeList.back();
+		cond.rangeList.pop_back();
+		return Range::negateOfRange(curRan).AND(Condition::negateCondition(cond));
+	}
+}
+
 string Condition::printConditionInfo(){
-	if(this->shouldBeIgnored)
+	if(this->isIgnored())
 		return "{Empty Condition}";
 
 	if(this->isComplete())

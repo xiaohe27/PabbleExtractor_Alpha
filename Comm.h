@@ -74,8 +74,6 @@ public:
 	int getStart(){return startPos;}
 	int getEnd(){return endPos;}
 
-	void setEndPos(int endP){this->endPos=endP;}
-
 	Range(){shouldBeIgnored=true;
 			marked=false;
 			startPos=InitStartIndex;
@@ -85,6 +83,8 @@ public:
 	Range(int s,int e);
 
 	bool isIgnored(){return shouldBeIgnored;}
+
+	bool isAllRange(){return (startPos==0 && endPos==InitEndIndex);}
 	
 	static Range createByOp(string op, int num);
 	static Range createByStartIndex(int start);
@@ -95,6 +95,8 @@ public:
 	Condition OR(Range other);
 
 	bool isEqualTo(Range ran);
+
+	static Condition negateOfRange(Range ran);
 
 	string printRangeInfo();
 };
@@ -115,13 +117,20 @@ public:
 			
 			this->complete=true;
 			this->shouldBeIgnored=false;
-
+			this->getRangeList().push_back(Range(0,InitEndIndex));
 		}
 
 		else{
 			this->shouldBeIgnored=true;
 			this->complete=false;
 		}
+	}
+
+	bool isIgnored(){
+		if(this->isComplete())
+			return false;
+
+		return shouldBeIgnored || this->rangeList.size()==0;
 	}
 
 	bool isComplete(){return this->complete;}
@@ -135,6 +144,8 @@ public:
 	this->shouldBeIgnored=false; this->complete=false;
 	rangeList.clear(); rangeList.push_back(ran1);rangeList.push_back(ran2);
 	}
+
+	static Condition negateCondition(Condition cond);
 
 	static Condition createCondByOp(string op, int num);
 
@@ -334,7 +345,15 @@ public:
 
 	void insertCondition(Expr *expr);
 
-	void popCondition(){this->stackOfRankConditions.pop_back();};
+	Condition popCondition(){
+		Condition tmp=stackOfRankConditions.back();	
+		this->stackOfRankConditions.pop_back();
+		return tmp;
+	}
+
+	void insertExistingCondition(Condition cond){
+		this->stackOfRankConditions.push_back(cond);
+	}
 
 	Condition retrieveTopRankCondition(){return stackOfRankConditions.back();}
 
@@ -350,6 +369,18 @@ public:
 	void insertVarName(string varName);
 
 	bool isAVar(string str);
+
+	Condition getTopCondition(){
+		if(this->stackOfRankConditions.size()==0){
+			return Condition(true);
+		}
+
+		else{
+			return this->stackOfRankConditions.back();
+		}
+	}
+
+
 };
 
 
