@@ -55,26 +55,42 @@ bool MPITypeCheckingConsumer::VisitAsmStmt(AsmStmt *S){
 	return true;
 }
 
+//almost finished
 bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	if(!this->visitStart)
 		return true;
 
 	//cout <<"The if stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(), ifStmt) <<endl;
+	CommNode *choiceNode=new CommNode(ST_NODE_CHOICE);
+	
+	//The choice node is an intermediate node, so we need to reset the cur node in CommManager
+	this->commManager->curNode->insert(choiceNode);
 
+	this->commManager->curNode=choiceNode;
 
 	Expr *condExpr=ifStmt->getCond();
 	string typeOfCond=condExpr->getType().getAsString();
 
 	cout<<"Type of condition is "<<typeOfCond<<"\nCond Expr is: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
 
-	
+	//after exec this stmt, the condition for the then part will be put on the top of the stack
 	this->commManager->insertCondition(condExpr);
 	
 	
 	//visit then part
 	cout<<"Going to visit then part of condition: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
 
+
+	//before traverse the then part, create a root node for it and change the cur node ref
+	//only the processes that satisfy the then part conditon can enter the block!
+	CommNode *thenNode=new CommNode(this->commManager->getTopCondition());
+	this->commManager->curNode->insert(thenNode);
+	this->commManager->curNode= thenNode;
+
 	this->TraverseStmt(ifStmt->getThen());
+
+	//after the stmt in the then block have been traversed, return the control to the choice node
+	this->commManager->gotoParent();
 
 	//should remove the condition for the then part now.
 	cout<<"//should remove the condition for the then part now."<<endl;
@@ -88,13 +104,22 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	cout << "\n\n\n\n\nThe condition in else part is \n"<<condInElsePart.printConditionInfo()
 		<<"\n\n\n\n\n"<<endl;
 
+	//before visit else part, create a node for it
+	CommNode *elseNode=new CommNode(this->commManager->getTopCondition());
+	this->commManager->curNode->insert(elseNode);
+	this->commManager->curNode= elseNode;
+
 	//visit else part
 	cout<<"Going to visit else part of condition: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
 	this->TraverseStmt(ifStmt->getElse());
 
+	this->commManager->gotoParent();
+
 	cout<<"//should remove the condition for the else part now."<<endl;
 	this->commManager->popCondition();
 
+
+	this->commManager->gotoParent();
 	return true;
 }
 

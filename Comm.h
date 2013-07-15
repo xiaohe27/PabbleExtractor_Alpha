@@ -278,13 +278,22 @@ private:
 
 	MPIOperation *op;
 
+	//the role visitor will check whether it can 
+	//satisfy the condition in the node.
+	//if the condition is satisfied, then it will goto visit the 
+	//first child of the cur node.
+	//else it will skip to the next sibling.
+	//If the condition in the src code does not contain a rank related var,
+	//then the condition here will be a condition whose "complete" field is true
 	Condition condition;
+
+	CommNode *sibling;
 
 	string info;
 
 public:
 	//construct an intermediate node
-	CommNode(int type){this->nodeType=type;}
+	CommNode(int type);
 
 	CommNode(Condition cond){this->nodeType=ST_NODE_ROOT; this->condition=cond;}
 
@@ -294,22 +303,25 @@ public:
 	~CommNode(){
 	delete parent;
 	delete op;
+	delete sibling;
 	}
 
-	bool isLeaf(){
-		if (children.size()==0)
-		{
-			return true;
-		}
 
-		return false;
-	}
+	bool isLeaf();
 
 	void setInfo(string info0){this->info=info0;}
 
-	void insert(CommNode *child){child->parent=this; this->children.push_back(child);}
+	CommNode* getParent(){return this->parent;}
+
+	void setNodeType(int nodeType);
+
+	void insert(CommNode *child);
 
 	string getCommInfoAsString();
+
+	CommNode* goDeeper();
+
+	CommNode* getSibling();
 
 };
 
@@ -322,7 +334,7 @@ private:
 	vector<Condition> stackOfRankConditions;
 //	RoleManager roleManager;
 	CommNode root;
-	CommNode *curNode;
+	
 
 	CompilerInstance *ci;
 
@@ -336,24 +348,18 @@ private:
 
 
 public:
+	CommNode *curNode;
 	
-	CommManager(CompilerInstance *ci0, int numOfProc0):root(ST_NODE_ROOT),curNode(ST_NODE_ROOT){
-		curNode=&root;
-		this->ci=ci0;
-		this->numOfProc=numOfProc0;
-	}
+	CommManager(CompilerInstance *ci0, int numOfProc0);
 
 	void insertCondition(Expr *expr);
 
-	Condition popCondition(){
-		Condition tmp=stackOfRankConditions.back();	
-		this->stackOfRankConditions.pop_back();
-		return tmp;
-	}
+	Condition popCondition();
 
-	void insertExistingCondition(Condition cond){
-		this->stackOfRankConditions.push_back(cond);
-	}
+	void gotoParent();
+
+	void insertExistingCondition(Condition cond);
+	
 
 	Condition retrieveTopRankCondition(){return stackOfRankConditions.back();}
 
@@ -370,15 +376,7 @@ public:
 
 	bool isAVar(string str);
 
-	Condition getTopCondition(){
-		if(this->stackOfRankConditions.size()==0){
-			return Condition(true);
-		}
-
-		else{
-			return this->stackOfRankConditions.back();
-		}
-	}
+	Condition getTopCondition();
 
 
 };

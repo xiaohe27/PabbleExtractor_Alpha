@@ -394,6 +394,12 @@ string Condition::printConditionInfo(){
 //Class CommManager impl start										****
 /********************************************************************/
 
+CommManager::CommManager(CompilerInstance *ci0, int numOfProc0):root(ST_NODE_ROOT),curNode(ST_NODE_ROOT){
+		curNode=&root;
+		this->ci=ci0;
+		this->numOfProc=numOfProc0;
+}
+
 void CommManager::insertVarName(string name){
 	this->varNames.push_back(name);
 }
@@ -619,6 +625,89 @@ bool CommManager::isVarRelatedToRank(string varName){
 		return false;
 
 }
+
+Condition CommManager::getTopCondition(){
+		if(this->stackOfRankConditions.size()==0){
+			return Condition(true);
+		}
+
+		else{
+			return this->stackOfRankConditions.back();
+		}
+}
+
+void CommManager::insertExistingCondition(Condition cond){
+		this->stackOfRankConditions.push_back(cond);
+}
+
+Condition CommManager::popCondition(){
+		Condition tmp=stackOfRankConditions.back();	
+		this->stackOfRankConditions.pop_back();
+		return tmp;
+}
+
+void CommManager::gotoParent(){
+this->curNode= this->curNode->getParent();
+}
+
 /********************************************************************/
 //Class CommManager impl end										****
+/********************************************************************/
+
+
+/********************************************************************/
+//Class CommNode impl start										****
+/********************************************************************/
+
+CommNode::CommNode(int type){
+	
+	this->nodeType=type;
+
+	if(type==ST_NODE_CHOICE){
+		//everybody has a chance to see the options
+		this->condition=Condition(true);
+	}
+
+}
+
+void CommNode::setNodeType(int type){
+	this->nodeType=type;
+}
+
+bool CommNode::isLeaf(){
+		if (children.size()==0)
+		{
+			return true;
+		}
+
+		return false;
+}
+
+void CommNode::insert(CommNode *child){
+		child->parent=this; 
+		
+		if(this->children.size()!=0){
+			this->children.back()->sibling=child;
+		}
+
+		this->children.push_back(child);
+	
+	}
+
+CommNode* CommNode::goDeeper(){
+		if(this->children.size()==0)
+		{return getSibling();}
+
+		else{
+			return children[0];
+		}
+	}
+
+	CommNode* CommNode::getSibling(){
+		return this->sibling;
+	}
+
+
+/********************************************************************/
+//Class CommNode impl end										****
 /********************************************************************/
