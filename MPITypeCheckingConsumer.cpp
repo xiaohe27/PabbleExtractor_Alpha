@@ -36,18 +36,23 @@ void MPITypeCheckingConsumer::HandleTranslationUnit(ASTContext &Ctx) {
 }
 
 
-bool MPITypeCheckingConsumer::HandleTopLevelDecl( clang::DeclGroupRef d)
+bool MPITypeCheckingConsumer::HandleTopLevelDecl(DeclGroupRef d)
 {
-	using clang::Stmt;
-	using clang::CFG;
 
-
-	clang::DeclGroupRef::iterator it;
+	DeclGroupRef::iterator it;
 
 
 	for( it = d.begin(); it != d.end(); it++)
 	{
 		this->TraverseDecl(*it);
+
+		if(isa<VarDecl>(*it)){
+			VarDecl *var=cast<VarDecl>(*it);
+			string varName=var->getDeclName().getAsString();
+			cout<<"Find the var "<<varName<<endl;
+
+			this->commManager->insertVarName(varName);
+		}
 
 		if(isa<FunctionDecl>(*it)){
 			FunctionDecl *func=cast<FunctionDecl>(*it);

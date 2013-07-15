@@ -85,7 +85,7 @@ public:
 
 	bool VisitAsmStmt(AsmStmt *S);
 
-	bool VisitIfStmt(IfStmt *S);
+	bool TraverseIfStmt(IfStmt *S);
 
 	bool VisitDeclStmt(DeclStmt *S);
 

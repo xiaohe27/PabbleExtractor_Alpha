@@ -20,7 +20,7 @@ bool MPITypeCheckingConsumer::VisitBinaryOperator(BinaryOperator *op){
 		// It's a reference to a declaration...
 		if (VarDecl *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
 			// It's a reference to a variable (a local, function parameter, global, or static data member).
-			std::cout << "LHS is " << VD->getQualifiedNameAsString() << std::endl;
+			std::cout << "Look! LHS is the var:" << VD->getQualifiedNameAsString() <<"!!!"<< std::endl;
 		}
 	}
 
@@ -55,7 +55,7 @@ bool MPITypeCheckingConsumer::VisitAsmStmt(AsmStmt *S){
 	return true;
 }
 
-bool MPITypeCheckingConsumer::VisitIfStmt(IfStmt *ifStmt){
+bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	if(!this->visitStart)
 		return true;
 
@@ -73,13 +73,20 @@ bool MPITypeCheckingConsumer::VisitIfStmt(IfStmt *ifStmt){
 	
 
 	//visit then part
-	this->VisitStmt(ifStmt->getThen());
+	cout<<"Going to visit then part of condition: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
 
+	this->TraverseStmt(ifStmt->getThen());
 
+	//should remove the condition for the then part now.
+	cout<<"//should remove the condition for the then part now."<<endl;
+	this->commManager->popCondition();
 
 
 	//visit else part
-	this->VisitStmt(ifStmt->getElse());
+	cout<<"Going to visit else part of condition: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
+	this->TraverseStmt(ifStmt->getElse());
+
+
 
 	return true;
 }
@@ -88,8 +95,25 @@ bool MPITypeCheckingConsumer::VisitIfStmt(IfStmt *ifStmt){
 
 
 bool MPITypeCheckingConsumer::VisitDeclStmt(DeclStmt *S){
-	if(!this->visitStart)
+
+	if(!this->visitStart){
+		DeclGroupRef d=S->getDeclGroup();
+		
+		DeclGroupRef::iterator it;
+
+	for( it = d.begin(); it != d.end(); it++)
+	{
+
+		if(isa<VarDecl>(*it)){
+			VarDecl *var=cast<VarDecl>(*it);
+			string varName=var->getDeclName().getAsString();
+			cout<<"Find the var "<<varName<<endl;
+
+			this->commManager->insertVarName(varName);
+		}
+	}
 		return true;
+	}
 
 	cout <<"The decl stmt is: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 	return true;

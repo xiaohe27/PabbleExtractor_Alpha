@@ -66,18 +66,25 @@ private:
 	int startPos;
 	int endPos;
 	bool marked;
-
+	bool shouldBeIgnored;
 
 public:
-	bool shouldBeIgnored;
+	
 
 	int getStart(){return startPos;}
 	int getEnd(){return endPos;}
 
 	void setEndPos(int endP){this->endPos=endP;}
 
-	Range(){shouldBeIgnored=true;}
+	Range(){shouldBeIgnored=true;
+			marked=false;
+			startPos=InitStartIndex;
+			endPos=InitEndIndex;
+	}
+	
 	Range(int s,int e);
+
+	bool isIgnored(){return shouldBeIgnored;}
 	
 	static Range createByOp(string op, int num);
 	static Range createByStartIndex(int start);
@@ -89,7 +96,7 @@ public:
 
 	bool isEqualTo(Range ran);
 
-	
+	string printRangeInfo();
 };
 
 class Condition{
@@ -99,23 +106,33 @@ private:
 	bool complete;
 
 public:
-	Condition(){this->shouldBeIgnored=true;}
+	Condition(){this->shouldBeIgnored=false; this->complete=false;}
+
 	Condition(bool val){
 		rangeList.clear();
 
 		if(val){
 			
 			this->complete=true;
+			this->shouldBeIgnored=false;
+
 		}
 
 		else{
 			this->shouldBeIgnored=true;
+			this->complete=false;
 		}
 	}
 
-	Condition(Range ran){rangeList.clear(); rangeList.push_back(ran);}
+	bool isComplete(){return this->complete;}
+
+	Condition(Range ran){
+		this->shouldBeIgnored=false; this->complete=false;
+		this->rangeList.clear(); this->rangeList.push_back(ran);
+	}
 
 	Condition(Range ran1, Range ran2){
+	this->shouldBeIgnored=false; this->complete=false;
 	rangeList.clear(); rangeList.push_back(ran1);rangeList.push_back(ran2);
 	}
 
@@ -130,6 +147,8 @@ public:
 	Condition AND(Condition other);
 	
 	Condition OR(Condition other);
+
+	string printConditionInfo();
 };
 
 
@@ -300,6 +319,8 @@ private:
 
 	map<string,int> rankVarOffsetMapping;
 
+	vector<string> varNames;
+
 	Condition extractCondFromExpr(Expr *expr);
 
 
@@ -313,6 +334,8 @@ public:
 
 	void insertCondition(Expr *expr);
 
+	void popCondition(){this->stackOfRankConditions.pop_back();};
+
 	Condition retrieveTopRankCondition(){return stackOfRankConditions.back();}
 
 	
@@ -324,7 +347,9 @@ public:
 
 	void cancelRelation(string varName);
 
+	void insertVarName(string varName);
 
+	bool isAVar(string str);
 };
 
 

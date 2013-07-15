@@ -51,6 +51,7 @@ string stmt2str(SourceManager *sm, LangOptions lopt,clang::Stmt *stmt) {
 /********************************************************************/
 
 Range::Range(int s,int e){
+	/*
 	if(e<0)	{ //the end index should not be less than 0
 		this->shouldBeIgnored=true;
 		startPos=InvalidIndex;
@@ -58,6 +59,10 @@ Range::Range(int s,int e){
 
 		return;
 	}
+	*/
+
+	this->shouldBeIgnored=false;
+	this->marked=false;
 
 	if(s<0)
 	{
@@ -70,10 +75,8 @@ Range::Range(int s,int e){
 
 
  Range Range::createByStartIndex(int start){
-	Range tmp= Range(start,0);
-	tmp.setEndPos(InitEndIndex);
 
-	return tmp;
+	return Range(start,InitEndIndex);
 }
 
  Range Range::createByEndIndex(int end){
@@ -136,6 +139,19 @@ bool Range::hasIntersectionWith(Range other){
 }
 
 Condition Range::OR(Range other){
+	if(this->shouldBeIgnored && other.shouldBeIgnored){
+		return Condition(false);
+	}
+
+	if(this->shouldBeIgnored){
+		return Condition(other);
+	}
+
+	if(other.shouldBeIgnored){
+		return Condition(*this);
+	}
+
+	//the two ranges have no intersection
 	if(!this->hasIntersectionWith(other)){
 		return Condition(*this,other);
 	}
@@ -157,6 +173,15 @@ bool Range::isEqualTo(Range ran){
 		return true;
 
 	return false;
+}
+
+string Range::printRangeInfo(){
+	if(this->shouldBeIgnored){
+		return "[EMPTY]";
+	}
+
+	return "["+convertIntToStr(this->startPos)+".."+((this->endPos==InitEndIndex)?"N-1":convertIntToStr(this->endPos))+"]";
+
 }
 
 /********************************************************************/
@@ -197,17 +222,17 @@ void Condition::normalize(){
 
 	for (int i = 0; i < rangeList.size(); i++)
 	{
-		if(rangeList[i].shouldBeIgnored)
+		if(rangeList[i].isIgnored())
 			continue;
 
 		for (int j = i+1; j < rangeList.size(); j++)
 		{
-			if (rangeList[j].shouldBeIgnored)
+			if (rangeList[j].isIgnored())
 				continue;
 			
 			if(rangeList[i].hasIntersectionWith(rangeList[j])){
 				Condition cond=rangeList[i].OR(rangeList[j]);
-				Range combinedRange=*cond.rangeList.begin();
+				Range combinedRange=cond.rangeList.back();
 				rangeList[i]=combinedRange;
 				//insert a dummy node to the pos of the deleted node.
 				rangeList[j]=Range();
@@ -223,7 +248,7 @@ void Condition::normalize(){
 	vector<Range> newRangeList;
 	for (int i = 0; i < this->rangeList.size(); i++)
 	{
-		if(!rangeList[i].shouldBeIgnored)
+		if(!rangeList[i].isIgnored())
 			newRangeList.push_back(rangeList[i]);
 	}
 
@@ -234,15 +259,88 @@ void Condition::normalize(){
 
 
 Condition Condition::AND(Condition other){
-	//TO DO
-	return Condition();
+	if(this->shouldBeIgnored || other.shouldBeIgnored)
+		return Condition(false);
+
+	if(this->isComplete()){return other;}
+
+	if(other.isComplete()){return *this;}
+
+	Condition cond; 
+
+	for (int i = 0; i < this->rangeList.size(); i++)
+	{
+		Range ranI=this->rangeList[i];
+
+		for (int j = 0; j < other.rangeList.size(); j++)
+		{
+			cond.rangeList.push_back(ranI.AND(other.rangeList[j]));
+		}
+	}
+
+	cond.normalize();
+
+	return cond;
 
 }
 
 Condition Condition::OR(Condition other){
-	//TO DO
-	return Condition();
+	if(this->shouldBeIgnored && other.shouldBeIgnored)
+	return other;
 
+	if(this->shouldBeIgnored)
+		return other;
+
+	if(other.shouldBeIgnored)
+		return *this;
+
+	/////////////////////////////////////
+	Condition cond;
+	for (int i = 0; i < this->rangeList.size(); i++)
+	{
+		cond.rangeList.push_back(this->rangeList[i]);
+	}
+
+	for (int i = 0; i < other.rangeList.size(); i++)
+	{
+		cond.rangeList.push_back(other.rangeList[i]);
+	}
+
+	cond.normalize();
+
+	return cond;
+}
+
+
+string Condition::printConditionInfo(){
+	if(this->shouldBeIgnored)
+		return "{Empty Condition}";
+
+	if(this->isComplete())
+		return "{[0..N-1]}";
+
+	/////////////////////////////////////////////////
+
+	if(this->rangeList.size()==0)
+		return "{Empty Condition}";
+
+	string output="{";
+	for (int i = 0; i < this->rangeList.size(); i++)
+	{
+		Range ran=this->rangeList[i];
+		output+=ran.printRangeInfo();
+
+		//control the len of the line
+		if(i%4==0 && i!=0){
+			output+="\n ";
+		}
+
+		if(i!=this->rangeList.size()-1)
+			output+=", ";
+	}
+
+	output+="}";
+	return output;
 }
 
 /********************************************************************/
@@ -253,6 +351,20 @@ Condition Condition::OR(Condition other){
 /********************************************************************/
 //Class CommManager impl start										****
 /********************************************************************/
+
+void CommManager::insertVarName(string name){
+	this->varNames.push_back(name);
+}
+
+bool CommManager::isAVar(string name){
+	for (int i = 0; i < this->varNames.size(); i++)
+	{
+		if(varNames[i]==name)
+			return true;
+	}
+
+	return false;
+}
 
 Condition CommManager::extractCondFromExpr(Expr *expr){
 	cout<<"The expr "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),expr)<<" is obtained by Comm.cpp"<<endl;
@@ -280,7 +392,13 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 
 	else{cout <<"The expr can NOT be evaluated!"<<endl;}
 
+	if(isa<ParenExpr>(expr)){
+		ParenExpr *bracketExpr=cast<ParenExpr>(expr);
+		Expr *withoutParen=bracketExpr->getSubExpr();
+		cout<<"The expr without brackets is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),withoutParen)<<endl;
 
+		return extractCondFromExpr(withoutParen);
+	}
 	/////////////////////////////////////////////////////////////
 	//the expr is a bin op.
 	////////////////////////////////////////////////////////////
@@ -290,34 +408,49 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 		Expr *lhs=binOP->getLHS();
 		Expr *rhs=binOP->getRHS();
 
+		string lhsStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
+		string rhsStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs);
 		string op=binOP->getOpcodeStr();
 
 		cout<<"The bin op is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),binOP)<<"\n";
-		cout<<"The lhs is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),lhs)<<"\n";
-		cout<<"The rhs is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs)<<"\n";
+		cout<<"The lhs is "<<lhsStr<<"\n";
+		cout<<"The rhs is "<<rhs<<"\n";
 		cout<<"The operator is : "<<op<<endl;
 
 		
 
 
-		if(op=="&&")
-			return extractCondFromExpr(lhs).AND(extractCondFromExpr(rhs));
+		if(op=="&&"){
+			Condition andCond=extractCondFromExpr(lhs).AND(extractCondFromExpr(rhs));
 
-		else if(op=="||")
-			return extractCondFromExpr(lhs).OR(extractCondFromExpr(rhs));
+			cout <<"\n\n\n\n\n"<< andCond.printConditionInfo()<<"\n\n\n\n\n" <<endl;
+			return andCond;
+		}
 
+		else if(op=="||"){
+			Condition orCond=extractCondFromExpr(lhs).OR(extractCondFromExpr(rhs));
+
+			cout <<"\n\n\n\n\n"<< orCond.printConditionInfo()<<"\n\n\n\n\n" <<endl;
+			return orCond;
+		}
 		////it is a basic op
 		else {
 			
-			bool leftIsVar;
-			bool rightIsVar;
-			string lVarName;
-			string rVarName;
+			bool leftIsVar=false;
+			bool rightIsVar=false;
+			string lVarName=lhsStr;
+			string rVarName=rhsStr;
 
+			
+//check if the lhs or rhs are var decl.
+////////////////////////////////////////////////////////////////////////////////
 			if (DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(lhs)) {
 				// It's a reference to a declaration...
+				cout<<"//It's a reference to a declaration..."<<endl;
+
 				if (VarDecl *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
 				// It's a reference to a variable (a local, function parameter, global, or static data member).
+				cout<<"// It's a reference to a variable (a local, function parameter, global, or static data member)."<<endl;
 
 				lVarName=VD->getQualifiedNameAsString();
 				std::cout << "LHS is var: " << lVarName << std::endl;
@@ -325,10 +458,19 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 				}
 			}
 
+			//check if the lhs is a var ref
+			else{
+				if(this->isAVar(lVarName)){leftIsVar=true;}
+			}
+
+
 			if (DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(rhs)) {
+				
 				// It's a reference to a declaration...
+				cout<<"//It's a reference to a declaration..."<<endl;
 				if (VarDecl *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
 				// It's a reference to a variable (a local, function parameter, global, or static data member).
+				cout<<"// It's a reference to a variable (a local, function parameter, global, or static data member)."<<endl;
 				
 				rVarName=VD->getQualifiedNameAsString();
 				std::cout << "RHS is var: " << rVarName << std::endl;
@@ -336,7 +478,17 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 				}
 			}
 
+			else{
+				if(this->isAVar(rVarName)){rightIsVar=true;}
+			}
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+
 			if(leftIsVar && rightIsVar){
+				cout<<"Both lhs and rhs are var, so, all Range Condition!"<<endl;
+
 				return Condition(true);
 			}
 
@@ -344,6 +496,7 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 				&&  !this->isVarRelatedToRank(rVarName)){
 				//if one of the vars is non-rank var, then it might be true
 				//so return the "all" range.
+				cout<<"Either the lvar or rvar is a non-rank var. So All Range Condition!"<<endl;
 				return Condition(true);
 			}
 
@@ -374,7 +527,7 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 		}
 	}
 
-	return Condition();
+	return Condition(false);
 }
 
 
@@ -388,6 +541,10 @@ void CommManager::insertCondition(Expr *expr){
 				cond=top.AND(cond);
 			}
 			stackOfRankConditions.push_back(cond);
+
+			cout<<"\n\n\n\n\nThe inner condition is \n"
+				<<stackOfRankConditions.back().printConditionInfo()
+				<<"\n\n\n\n\n"<<endl;
 
 			CommNode *node=new CommNode(cond);
 			curNode->insert(node);
