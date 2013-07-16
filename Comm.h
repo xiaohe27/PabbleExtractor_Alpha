@@ -264,6 +264,7 @@ public:
 	this->group=group0;
 	}
 
+	int getOPType(){return this->opType;}
 
 };
 
@@ -297,10 +298,8 @@ public:
 	//construct an intermediate node
 	CommNode(int type);
 
-	CommNode(Condition cond){this->nodeType=ST_NODE_ROOT; this->condition=cond;}
-
-	//construct a leaf; needs to be re-implemented.
-	CommNode(MPIOperation *op0){this->op=op0;}
+	//construct a leaf; 
+	CommNode(MPIOperation *op0);
 
 	~CommNode(){
 	delete parent;
@@ -308,10 +307,13 @@ public:
 	delete sibling;
 	}
 
+	int getNodeType(){return this->nodeType;}
 
 	bool isLeaf();
 
 	Condition getCond(){return this->condition;}
+
+	void setCond(Condition cond){this->condition=cond;}
 
 	void setInfo(string info0){this->info=info0;}
 
@@ -348,11 +350,10 @@ private:
 
 	vector<string> varNames;
 
-	
+	CommNode *curNode;
 
 
 public:
-	CommNode *curNode;
 	
 	CommManager(CompilerInstance *ci0, int numOfProc0);
 
@@ -360,17 +361,13 @@ public:
 
 	void insertCondition(Expr *expr);
 
-	void insertNode(CommNode *node){this->curNode->insert(node);}
+	void insertNode(CommNode *node);
 
 	Condition popCondition();
 
 	void gotoParent();
 
 	void insertExistingCondition(Condition cond);
-	
-
-	Condition retrieveTopRankCondition(){return stackOfRankConditions.back();}
-
 	
 	void addCommActions(MPIOperation op);
 

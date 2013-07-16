@@ -63,10 +63,10 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	//cout <<"The if stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(), ifStmt) <<endl;
 	CommNode *choiceNode=new CommNode(ST_NODE_CHOICE);
 	
-	//The choice node is an intermediate node, so we need to reset the cur node in CommManager
-	this->commManager->curNode->insert(choiceNode);
+	//the choice node will become the cur node automatically
+	this->commManager->insertNode(choiceNode);
 
-	this->commManager->curNode=choiceNode;
+	
 
 	Expr *condExpr=ifStmt->getCond();
 	string typeOfCond=condExpr->getType().getAsString();
@@ -81,11 +81,10 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	cout<<"Going to visit then part of condition: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
 
 
-	//before traverse the then part, create a root node for it and change the cur node ref
+	//before traverse the then part, create a root node for it 
 	//only the processes that satisfy the then part conditon can enter the block!
-	CommNode *thenNode=new CommNode(this->commManager->getTopCondition());
-	this->commManager->curNode->insert(thenNode);
-	this->commManager->curNode= thenNode;
+	CommNode *thenNode=new CommNode(ST_NODE_ROOT);
+	this->commManager->insertNode(thenNode);
 
 	this->TraverseStmt(ifStmt->getThen());
 
@@ -105,9 +104,9 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 		<<"\n\n\n\n\n"<<endl;
 
 	//before visit else part, create a node for it
-	CommNode *elseNode=new CommNode(this->commManager->getTopCondition());
-	this->commManager->curNode->insert(elseNode);
-	this->commManager->curNode= elseNode;
+	CommNode *elseNode=new CommNode(ST_NODE_ROOT);
+	this->commManager->insertNode(elseNode);
+
 
 	//visit else part
 	cout<<"Going to visit else part of condition: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
@@ -118,7 +117,7 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	cout<<"//should remove the condition for the else part now."<<endl;
 	this->commManager->popCondition();
 
-
+	//the choice node does not add any extra condition, so just go to its parent node
 	this->commManager->gotoParent();
 	return true;
 }
@@ -290,7 +289,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			string group=args[5];
 
 			MPIOperation *mpiOP=new MPIOperation(ST_NODE_SEND, dataType,
-								this->commManager->curNode->getCond(), 
+								this->commManager->getTopCondition(), 
 								this->commManager->extractCondFromExpr(E->getArg(3)), tag, group);
 
 			CommNode *sendNode=new CommNode(mpiOP);

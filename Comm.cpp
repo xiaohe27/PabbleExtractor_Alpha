@@ -579,6 +579,24 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 }
 
 
+void CommManager::insertNode(CommNode *node){
+
+//set the condition for the node.
+node->setCond(this->getTopCondition());
+
+this->curNode->insert(node);
+
+int nodeT=node->getNodeType();
+
+if(nodeT==ST_NODE_CHOICE || nodeT==ST_NODE_RECUR
+   ||nodeT==ST_NODE_ROOT || nodeT==ST_NODE_PARALLEL){
+
+	   this->curNode=node;
+}
+
+
+}
+
 
 void CommManager::insertCondition(Expr *expr){
 		
@@ -594,8 +612,6 @@ void CommManager::insertCondition(Expr *expr){
 				<<stackOfRankConditions.back().printConditionInfo()
 				<<"\n\n\n\n\n"<<endl;
 
-			CommNode *node=new CommNode(cond);
-			curNode->insert(node);
 		}
 	
 
@@ -663,11 +679,14 @@ CommNode::CommNode(int type){
 	
 	this->nodeType=type;
 
-	if(type==ST_NODE_CHOICE || type==ST_NODE_ROOT){
-		//everybody has a chance to see the options
-		this->condition=Condition(true);
-	}
+}
 
+CommNode::CommNode(MPIOperation *op0){
+	//the condition of this Node can be retrieved from its parent
+	//no need to store it here.
+	this->op=op0;
+
+	this->nodeType=op0->getOPType();
 }
 
 void CommNode::setNodeType(int type){
