@@ -171,6 +171,9 @@ int main(int argc, char *argv[])
 		ci.getASTContext().Idents.PrintStats();
 
 
+		//print the tree
+		astConsumer->printTheTree();
+
 	}
 
 

@@ -83,6 +83,18 @@ public:
 	//translate to a special format so that the class Property can understand the string.
 	string extractConditionStrFromExpr(Expr* expr){return nullptr;}
 
+	void printTheTree(){
+		cout<<this->commManager->printTheTree()<<endl;
+	}
+
+
+
+
+
+
+
+
+
 	bool VisitAsmStmt(AsmStmt *S);
 
 	bool TraverseIfStmt(IfStmt *S);

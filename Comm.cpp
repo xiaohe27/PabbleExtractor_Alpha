@@ -372,10 +372,11 @@ string Condition::printConditionInfo(){
 		Range ran=this->rangeList[i];
 		output+=ran.printRangeInfo();
 
-		//control the len of the line
+		/*control the len of the line
 		if(i%4==0 && i!=0){
 			output+="\n ";
 		}
+		*/
 
 		if(i!=this->rangeList.size()-1)
 			output+=", ";
@@ -395,7 +396,10 @@ string Condition::printConditionInfo(){
 /********************************************************************/
 
 CommManager::CommManager(CompilerInstance *ci0, int numOfProc0):root(ST_NODE_ROOT){
+		root.setCond(Condition(true));
+	
 		curNode=&root;
+		
 		this->ci=ci0;
 		this->numOfProc=numOfProc0;
 }
@@ -675,22 +679,74 @@ this->curNode= this->curNode->getParent();
 //Class CommNode impl start										****
 /********************************************************************/
 
-CommNode::CommNode(int type){
+
+void CommNode::init(int type, MPIOperation *mpiOP){
 	
 	this->nodeType=type;
+	this->depth=0;
+	this->op=mpiOP;
+
+	switch(type){
+	case ST_NODE_CHOICE: this->nodeName="CHOICE"; break;
+
+	case ST_NODE_RECUR: this->nodeName="RECUR"; break;
+
+	case ST_NODE_ROOT: this->nodeName="ROOT"; break;
+
+	case ST_NODE_PARALLEL: this->nodeName="PARALLEL"; break;
+	
+	case ST_NODE_SEND: this->nodeName="SEND"; break;
+
+	case ST_NODE_RECV: this->nodeName="RECV"; break;
+
+	case ST_NODE_SENDRECV: this->nodeName="SENDRECV"; break;
+
+	case ST_NODE_CONTINUE: this->nodeName="CONTINUE"; break;
+
+	default: this->nodeName="UNKNOWN";
+
+	}
 
 }
 
-CommNode::CommNode(MPIOperation *op0){
-	//the condition of this Node can be retrieved from its parent
-	//no need to store it here.
-	this->op=op0;
+CommNode::CommNode(int type){
+	init(type, nullptr);
+}
 
-	this->nodeType=op0->getOPType();
+CommNode::CommNode(MPIOperation *op0){
+
+	init(op0->getOPType(),op0);
+	
 }
 
 void CommNode::setNodeType(int type){
 	this->nodeType=type;
+}
+
+//print the tree rooted at this node
+string CommNode::printTheNode(){
+	string output="";
+
+	string indent="";
+
+	for (int i = 0; i < this->depth; i++)
+	{
+		indent+="\t";
+	}
+
+	output+=indent+this->nodeName+": "+(this->nodeType==ST_NODE_ROOT?
+										this->condition.printConditionInfo():"");
+
+	output+="\n";
+
+	//print the children
+	for (int i = 0; i < this->children.size(); i++)
+	{
+		CommNode *childNode=this->children[i];
+		output+=childNode->printTheNode()+"\n";
+	}
+
+	return output;
 }
 
 bool CommNode::isLeaf(){
@@ -704,6 +760,8 @@ bool CommNode::isLeaf(){
 
 void CommNode::insert(CommNode *child){
 		child->parent=this; 
+
+		child->depth=this->depth+1;
 		
 		if(this->children.size()!=0){
 			this->children.back()->sibling=child;

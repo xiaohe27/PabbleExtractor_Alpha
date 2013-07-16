@@ -298,6 +298,24 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 
 		}
 
+		if(funcName=="MPI_Recv"){
+			
+			string dataType=args[2];
+			string dest=args[3];
+			string tag=args[4];
+			string group=args[5];
+
+			MPIOperation *mpiOP=new MPIOperation(ST_NODE_RECV, dataType,
+				    this->commManager->extractCondFromExpr(E->getArg(3)),
+								this->commManager->getTopCondition(), 
+								tag, group);
+
+			CommNode *recvNode=new CommNode(mpiOP);
+
+			this->commManager->insertNode(recvNode);
+
+		}
+
 
 		/*******************Enum the possible MPI OPs end***********************************/
 		/////////////////////////////////////////////////////////////////////

@@ -275,11 +275,17 @@ private:
 	//the CommNode is the node of the CommTree which reflects the charateristics of MPI program.
 	int nodeType;
 
+	string nodeName;
+
 	vector<CommNode*> children;
 
 	CommNode *parent;
 
 	MPIOperation *op;
+
+	int depth;
+
+	void init(int type,MPIOperation *op0);
 
 	//the role visitor will check whether it can 
 	//satisfy the condition in the node.
@@ -328,6 +334,8 @@ public:
 	CommNode* goDeeper();
 
 	CommNode* getSibling();
+
+	string printTheNode();
 
 };
 
@@ -383,7 +391,7 @@ public:
 
 	Condition getTopCondition();
 
-
+	string printTheTree(){return this->root.printTheNode();}
 };
 
 
