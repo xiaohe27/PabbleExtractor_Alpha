@@ -245,21 +245,23 @@ public:
 ////////////////////////////////////////////////////////////////////////////
 class MPIOperation{
 private:
-	string opType;
+	int opType;
 	string dataType;
 	
 	Condition src;
 
 	Condition dest;
 	string tag;
+	string group;
 
 public:
-	MPIOperation(string opType0, string dataType0,Condition src0, Condition dest0, string tag0){
+	MPIOperation(int opType0, string dataType0,Condition src0, Condition dest0, string tag0, string group0){
 	this->opType=opType0;
 	this->dataType=dataType0;
 	this->src=src0;
 	this->dest=dest0;
 	this->tag=tag0;
+	this->group=group0;
 	}
 
 
@@ -297,7 +299,7 @@ public:
 
 	CommNode(Condition cond){this->nodeType=ST_NODE_ROOT; this->condition=cond;}
 
-	//construct a leaf
+	//construct a leaf; needs to be re-implemented.
 	CommNode(MPIOperation *op0){this->op=op0;}
 
 	~CommNode(){
@@ -308,6 +310,8 @@ public:
 
 
 	bool isLeaf();
+
+	Condition getCond(){return this->condition;}
 
 	void setInfo(string info0){this->info=info0;}
 
@@ -344,7 +348,7 @@ private:
 
 	vector<string> varNames;
 
-	Condition extractCondFromExpr(Expr *expr);
+	
 
 
 public:
@@ -352,7 +356,11 @@ public:
 	
 	CommManager(CompilerInstance *ci0, int numOfProc0);
 
+	Condition extractCondFromExpr(Expr *expr);
+
 	void insertCondition(Expr *expr);
+
+	void insertNode(CommNode *node){this->curNode->insert(node);}
 
 	Condition popCondition();
 

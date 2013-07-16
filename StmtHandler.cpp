@@ -243,6 +243,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 
 	vector<string> args(numOfArgs);
 
+	//get all the args of the function call
 	for(int i=0, j=numOfArgs; i<j; i++)
 	{
 		string TypeS;
@@ -261,6 +262,10 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 	if (funcCall)
 	{
 		string funcName=funcCall->getQualifiedNameAsString();
+
+		/////////////////////////////////////////////////////////////////////////////////////
+		/*******************Enum the possible MPI OPs**************************************/
+
 		//get the var storing number of processes
 		if(funcName=="MPI_Comm_size"){
 			this->numOfProcessesVar=args[1].substr(1,args[1].length()-1);
@@ -277,6 +282,27 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			cout<<"Rank var is "<<this->rankVar<<endl;
 		}
 
+		if(funcName=="MPI_Send"){
+			
+			string dataType=args[2];
+			string dest=args[3];
+			string tag=args[4];
+			string group=args[5];
+
+			MPIOperation *mpiOP=new MPIOperation(ST_NODE_SEND, dataType,
+								this->commManager->curNode->getCond(), 
+								this->commManager->extractCondFromExpr(E->getArg(3)), tag, group);
+
+			CommNode *sendNode=new CommNode(mpiOP);
+
+			this->commManager->insertNode(sendNode);
+
+		}
+
+
+		/*******************Enum the possible MPI OPs end***********************************/
+		/////////////////////////////////////////////////////////////////////
+		if(funcCall->hasBody())
 		this->analyzeDecl(funcCall);
 	}
 

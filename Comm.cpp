@@ -394,7 +394,7 @@ string Condition::printConditionInfo(){
 //Class CommManager impl start										****
 /********************************************************************/
 
-CommManager::CommManager(CompilerInstance *ci0, int numOfProc0):root(ST_NODE_ROOT),curNode(ST_NODE_ROOT){
+CommManager::CommManager(CompilerInstance *ci0, int numOfProc0):root(ST_NODE_ROOT){
 		curNode=&root;
 		this->ci=ci0;
 		this->numOfProc=numOfProc0;
@@ -663,7 +663,7 @@ CommNode::CommNode(int type){
 	
 	this->nodeType=type;
 
-	if(type==ST_NODE_CHOICE){
+	if(type==ST_NODE_CHOICE || type==ST_NODE_ROOT){
 		//everybody has a chance to see the options
 		this->condition=Condition(true);
 	}
