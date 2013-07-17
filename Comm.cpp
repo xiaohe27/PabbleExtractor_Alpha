@@ -28,6 +28,16 @@ int maxEnd(int a, int b){
 
 }
 
+int compute(string op, int operand1, int operand2){
+	if(op=="+")
+		return operand1+operand2;
+
+	if(op=="-")
+		return operand1-operand2;
+
+	return -1;
+}
+
 bool areTheseTwoNumsAdjacent(int a, int b){
 	if(a==b) return true;
 
@@ -70,6 +80,8 @@ Range::Range(int s,int e){
 
 	startPos=s; endPos=e;
 
+	//init the start and end offset
+	init();
 }
 
 
@@ -113,6 +125,11 @@ Range::Range(int s,int e){
 	return Range();
 
 }
+
+ void Range::addNumber(int num){
+	this->startOffset+=num;
+	this->endOffset+=num;
+ }
 
 //ok. already considered the case of end < start
 Condition Range::AND(Range other){
@@ -380,7 +397,19 @@ string Range::printRangeInfo(){
 		return "[EMPTY]";
 	}
 
-	return "["+convertIntToStr(this->startPos)+".."+((this->endPos==InitEndIndex)?"N-1":convertIntToStr(this->endPos))+"]";
+	string sign="";
+	
+	string endOffsetStr="";
+
+	
+	if(endOffset==1){endOffsetStr="N";}
+	else if(endOffset>1){endOffsetStr="N+"+convertIntToStr(endOffset-1);}
+	else{
+		endOffsetStr="N"+convertIntToStr(endOffset-1);
+	}
+
+	return "["+convertIntToStr(this->startPos+this->startOffset)+
+		".."+((this->endPos==InitEndIndex)?endOffsetStr:convertIntToStr(this->endPos+this->endOffset))+"]";
 
 }
 
@@ -437,10 +466,6 @@ void Condition::normalize(){
 				Condition cond=rangeList[i].OR(rangeList[j]);
 				if(cond.rangeList.size()==1){
 				Range combinedRange=cond.rangeList.back();
-
-				if(combinedRange.isAllRange()){
-					combinedRange=Range(0,InitEndIndex);
-				}
 				
 				rangeList[i]=combinedRange;
 				//insert a dummy node to the pos of the deleted node.
@@ -552,6 +577,16 @@ Condition Condition::negateCondition(Condition cond){
 	}
 }
 
+
+Condition Condition::addANumber(int num){
+	for (int i = 0; i < this->rangeList.size(); i++)
+	{
+		this->rangeList[i].addNumber(num);
+	}
+
+	return *this;
+}
+
 string Condition::printConditionInfo(){
 	if(this->isIgnored())
 		return "{Empty Condition}";
@@ -621,6 +656,13 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 	
 	cout<<"The stmt class type is "<<expr->getStmtClassName()<<endl;
 
+	APSInt INT_Result0;
+
+	if (expr->EvaluateAsInt(INT_Result0, this->ci->getASTContext())){
+		int rankNum=atoi(INT_Result0.toString(10).c_str());
+		
+		return Condition(Range(rankNum,rankNum));
+	}
 
 	bool boolResult;
 	bool canBeEval=expr->EvaluateAsBooleanCondition(boolResult,this->ci->getASTContext());
@@ -668,7 +710,54 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 		cout<<"The operator is : "<<op<<endl;
 
 		
+///////////////////////////////////////////////////////////////////////////////////////////////////
+		if(op=="+" || op=="-"){
+			APSInt INT_Result;
+			bool lhsIsNum=false;
+			bool rhsIsNum=false;
+			int lhsNum=-1;
+			int rhsNum=-1;
 
+			if (lhs->EvaluateAsInt(INT_Result, this->ci->getASTContext())) {
+				lhsIsNum=true;
+				lhsNum=atoi(INT_Result.toString(10).c_str());
+			}
+
+			if (rhs->EvaluateAsInt(INT_Result, this->ci->getASTContext())) {
+				rhsIsNum=true;
+				rhsNum=atoi(INT_Result.toString(10).c_str());
+			}
+
+			/////////////////////////////////////////////////////
+			if (lhsIsNum && rhsIsNum)
+			{
+				int rankNum=compute(op,lhsNum,rhsNum);
+				return Condition(Range(rankNum,rankNum));
+			}
+
+			
+			if(op=="+"){
+				if(this->isVarRelatedToRank(lhsStr) && rhsIsNum){
+					return this->getTopCondition().addANumber(rhsNum);
+				}
+
+				if(this->isVarRelatedToRank(rhsStr) && lhsIsNum){
+					return this->getTopCondition().addANumber(lhsNum);
+				}
+
+				return Condition(false);
+			}
+
+			// minus
+			else{
+				if(this->isVarRelatedToRank(lhsStr) && rhsIsNum){
+					return this->getTopCondition().addANumber(-rhsNum);
+				}
+
+				return Condition(false);
+			}
+		
+		}
 
 		if(op=="&&"){
 			Condition andCond=extractCondFromExpr(lhs).AND(extractCondFromExpr(rhs));

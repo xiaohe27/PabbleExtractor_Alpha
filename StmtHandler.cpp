@@ -296,6 +296,10 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 
 			this->commManager->insertNode(sendNode);
 
+
+			cout <<"\n\n\n\n\nThe dest of mpi send is"
+				<< this->commManager->extractCondFromExpr(E->getArg(3)).printConditionInfo()<<"\n\n\n\n\n" <<endl;
+
 		}
 
 		if(funcName=="MPI_Recv"){
@@ -313,6 +317,10 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			CommNode *recvNode=new CommNode(mpiOP);
 
 			this->commManager->insertNode(recvNode);
+
+
+			cout <<"\n\n\n\n\nThe src of mpi recv is"<<
+				this->commManager->extractCondFromExpr(E->getArg(3)).printConditionInfo()<<"\n\n\n\n\n" <<endl;
 
 		}
 

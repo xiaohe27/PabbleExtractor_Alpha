@@ -68,6 +68,9 @@ private:
 	bool marked;
 	bool shouldBeIgnored;
 
+	int startOffset;
+	int endOffset;
+
 public:
 	
 
@@ -78,9 +81,16 @@ public:
 			marked=false;
 			startPos=InitStartIndex;
 			endPos=InitEndIndex;
+
+			init();	
 	}
 	
 	Range(int s,int e);
+
+	void init(){
+		startOffset=0;
+		endOffset=0;
+	}
 
 	bool isIgnored(){return shouldBeIgnored;}
 
@@ -103,6 +113,8 @@ public:
 	bool isEqualTo(Range ran);
 
 	static Condition negateOfRange(Range ran);
+
+	void addNumber(int num);
 
 	string printRangeInfo();
 };
@@ -166,6 +178,8 @@ public:
 	Condition AND(Condition other);
 	
 	Condition OR(Condition other);
+
+	Condition addANumber(int num);
 
 	string printConditionInfo();
 };
