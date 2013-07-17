@@ -28,6 +28,14 @@ int maxEnd(int a, int b){
 
 }
 
+bool areTheseTwoNumsAdjacent(int a, int b){
+	if(a==b) return true;
+
+	if(a==b-1 || a==b+1) return true;
+
+	return false;
+}
+
 string convertIntToStr(int number)
 {
 	stringstream ss;//create a stringstream
@@ -51,15 +59,6 @@ string stmt2str(SourceManager *sm, LangOptions lopt,clang::Stmt *stmt) {
 /********************************************************************/
 
 Range::Range(int s,int e){
-	/*
-	if(e<0)	{ //the end index should not be less than 0
-		this->shouldBeIgnored=true;
-		startPos=InvalidIndex;
-		endPos=InvalidIndex;
-
-		return;
-	}
-	*/
 
 	this->shouldBeIgnored=false;
 	this->marked=false;
@@ -115,30 +114,70 @@ Range::Range(int s,int e){
 
 }
 
-Range Range::AND(Range other){
-	if(this->isIgnored() || other.isIgnored()){
-		return Range();
+//ok. already considered the case of end < start
+Condition Range::AND(Range other){
+	if(!this->hasIntersectionWith(other)){
+		return Condition(false);
 	}
 
-	if(other.endPos!=InitEndIndex && other.endPos < this->startPos)
-		return Range();
-
-	if(this->endPos!=InitEndIndex && this->endPos < other.startPos)
-		return Range();
-
-
+	if( (!this->isSpecialRange() && !other.isSpecialRange())
+		|| (this->isSpecialRange() && other.isSpecialRange()) ){
 	int newStart=max(this->startPos,other.startPos);
 	int newEnd=minEnd(this->endPos,other.endPos);
 
-	return Range(newStart,newEnd);
+	return Condition(Range(newStart,newEnd));
+	}
+
+	//one is special and the other is not 
+	if(this->isSpecialRange()){
+		if(this->isSuperSetOf(other))
+			return Condition(other);
+
+		else{
+			if(other.isThisNumInside(this->endPos)){
+				if(other.endPos < this->startPos){
+					return Condition(Range(other.startPos,this->endPos));
+				}
+
+				else{
+					return Condition(Range(other.startPos,this->endPos),
+									Range(this->startPos,other.endPos));
+				}
+			}
+
+			else{
+				return Condition(Range(this->startPos, other.endPos));
+			}
+
+		}
+	}
+
+	else{return other.AND(*this);}
 }
 
+
+//ok. already considered the case of end < start
 bool Range::hasIntersectionWith(Range other){
+	if(this->isIgnored() || other.isIgnored())
+		return false;
 
-	return !this->AND(other).isIgnored();
+	if(other.isThisNumInside(this->startPos) ||
+		other.isThisNumInside(this->endPos) ||
+		this->isThisNumInside(other.startPos)||
+		this->isThisNumInside(other.endPos))
+		return true;
+
+	else
+	return false;
 }
 
+
+//ok. already considered the case of end < start
 Condition Range::OR(Range other){
+	if(this->isAllRange() || other.isAllRange()){
+		return Condition(true);
+	}
+
 	if(this->isIgnored() && other.isIgnored()){
 		return Condition(false);
 	}
@@ -151,10 +190,52 @@ Condition Range::OR(Range other){
 		return Condition(*this);
 	}
 
+	if(this->isSuperSetOf(other))
+		return Condition(*this);
+
+	if(other.isSuperSetOf(*this))
+		return Condition(other);
+
 	//the two ranges have no intersection
 	if(!this->hasIntersectionWith(other)){
+		if (areTheseTwoNumsAdjacent(other.endPos,this->startPos))
+		{
+			if(other.isSpecialRange()){
+				if(this->endPos>=other.startPos)
+					return Condition(true);
+			}
+			
+			return Condition(Range(other.startPos,this->endPos));
+		}
+
+		else if(areTheseTwoNumsAdjacent(this->endPos,other.startPos)){
+			if(this->isSpecialRange()){
+				if(other.endPos>=this->startPos)
+					return Condition(true);
+			}
+
+			return Condition(Range(this->startPos,other.endPos));
+		}
+
 		return Condition(*this,other);
 	}
+
+	//if the two ranges have intersection
+	/*****************************************************************/
+	//if both of them are special ranges (end < start)
+	if(this->isSpecialRange() && other.isSpecialRange()){
+		int newS=min(this->startPos, other.startPos);
+		int newE=max(this->endPos, other.endPos);
+
+		if(newE >= newS)
+			return Condition(true);
+
+		else
+			return Condition(Range(newS,newE));
+	}
+
+	if(!this->isSpecialRange() &&
+		!other.isSpecialRange()){
 
 	int newStart=min(this->startPos,other.startPos);
 	int newEnd=maxEnd(this->endPos,other.endPos);
@@ -162,10 +243,80 @@ Condition Range::OR(Range other){
 	Range ran= Range(newStart,newEnd);
 
 	return Condition(ran);
+	}
+
+	//one is special, the other is not special
+	if(this->isSpecialRange()){
+		if(other.isThisNumInside(this->endPos)){
+			int newS=this->startPos;
+			int newE=other.endPos;
+
+			if(newE >= newS-1)
+				return Condition(true);
+
+			else
+				return Condition(Range(newS,newE));
+		}
+
+		else{
+			if(other.isThisNumInside(this->startPos)){
+				int newS=other.startPos;
+				int newE=this->endPos;
+
+				return Condition(Range(newS,newE));
+			}
+
+			else{
+				return Condition(*this, other);
+			}
+		}
+	
+	}
+
+	else{return other.OR(*this);}
 }
 
+//ok. already considered the case of end < start
+bool Range::isSuperSetOf(Range ran){
+	if(this->isAllRange())
+		return true;
+
+	if(ran.isIgnored())
+		return true;
+	
+	if((this->isSpecialRange() && ran.isSpecialRange())
+		|| (!this->isSpecialRange() && !ran.isSpecialRange()))
+	{
+		if(this->startPos > ran.startPos)
+			return false;
+
+		if(this->endPos < ran.endPos)
+			return false;
+
+		return true;
+	}
+
+	if(this->isSpecialRange()){
+		if(ran.endPos <= this->endPos || ran.startPos >= this->startPos)
+			return true;
+
+		return false;
+	}
+
+	if(ran.isSpecialRange()){
+
+		return false;
+	}
+
+	return false;
+}
+
+//ok. already considered the case of end < start
 bool Range::isEqualTo(Range ran){
 	if(this->isIgnored() && ran.isIgnored())
+		return true;
+
+	if(this->isAllRange() && ran.isAllRange())
 		return true;
 
 	if(this->startPos == ran.startPos && 
@@ -175,6 +326,32 @@ bool Range::isEqualTo(Range ran){
 	return false;
 }
 
+//ok. already considered the case of end < start
+bool Range::isAllRange(){
+	 if(startPos==0 && endPos==InitEndIndex)
+		 return true;
+
+	 if(endPos==startPos-1)
+		 return true;
+
+	 return false;
+
+}
+
+//ok. already considered the case of end < start
+bool Range::isThisNumInside(int num){
+	if(num>=startPos && num<=endPos)
+		return true;
+
+	if(this->isSpecialRange()){
+		if(num >= startPos || num <= endPos)
+			return true;
+	}
+
+	return false;
+}
+
+//ok. already considered the case of end < start
 Condition Range::negateOfRange(Range ran){
 	if(ran.isIgnored()){
 		Range allRange=Range(0,InitEndIndex);
@@ -190,6 +367,10 @@ Condition Range::negateOfRange(Range ran){
 	}
 
 	else{
+		if(ran.isSpecialRange())
+			return Condition(Range(ran.endPos+1, ran.startPos-1));
+
+		else
 		return Condition(Range(0,ran.startPos-1),Range::createByStartIndex(ran.endPos+1));
 	}
 }
@@ -244,14 +425,23 @@ void Condition::normalize(){
 		if(rangeList[i].isIgnored())
 			continue;
 
+		if(rangeList[i].isAllRange())
+			rangeList[i]=Range(0,InitEndIndex);
+
 		for (int j = i+1; j < rangeList.size(); j++)
 		{
 			if (rangeList[j].isIgnored())
 				continue;
 			
-			if(rangeList[i].hasIntersectionWith(rangeList[j])){
+			
 				Condition cond=rangeList[i].OR(rangeList[j]);
+				if(cond.rangeList.size()==1){
 				Range combinedRange=cond.rangeList.back();
+
+				if(combinedRange.isAllRange()){
+					combinedRange=Range(0,InitEndIndex);
+				}
+				
 				rangeList[i]=combinedRange;
 				//insert a dummy node to the pos of the deleted node.
 				rangeList[j]=Range();
@@ -260,7 +450,7 @@ void Condition::normalize(){
 				//so repeat the analysis of node i.
 				i--;
 				break;
-			}
+				}
 		}
 	}
 
@@ -272,6 +462,10 @@ void Condition::normalize(){
 	}
 
 	this->rangeList=newRangeList;
+
+	if(this->isRangeConsecutive() && this->rangeList[0].isAllRange())
+	{this->complete=true;}
+
 }
 
 
@@ -293,7 +487,11 @@ Condition Condition::AND(Condition other){
 
 		for (int j = 0; j < other.rangeList.size(); j++)
 		{
-			cond.rangeList.push_back(ranI.AND(other.rangeList[j]));
+			Condition tmpCond=ranI.AND(other.rangeList[j]);
+
+			for (int k = 0; k < tmpCond.rangeList.size(); k++)
+				cond.rangeList.push_back(tmpCond.rangeList[k]);
+			
 		}
 	}
 

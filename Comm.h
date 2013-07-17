@@ -84,12 +84,18 @@ public:
 
 	bool isIgnored(){return shouldBeIgnored;}
 
-	bool isAllRange(){return (startPos==0 && endPos==InitEndIndex);}
+	bool isAllRange();
+
+	bool isThisNumInside(int num);
+
+	bool isSpecialRange(){return endPos < startPos;}
+
+	bool isSuperSetOf(Range ran);
 	
 	static Range createByOp(string op, int num);
 	static Range createByStartIndex(int start);
 	static Range createByEndIndex(int end);
-	Range AND(Range other);
+	Condition AND(Range other);
 	bool hasIntersectionWith(Range other);
 	
 	Condition OR(Range other);
@@ -117,7 +123,7 @@ public:
 			
 			this->complete=true;
 			this->shouldBeIgnored=false;
-			this->getRangeList().push_back(Range(0,InitEndIndex));
+			this->rangeList.push_back(Range(0,InitEndIndex));
 		}
 
 		else{
@@ -125,6 +131,8 @@ public:
 			this->complete=false;
 		}
 	}
+
+	vector<Range> getRangeList(){return this->rangeList;}
 
 	bool isIgnored(){
 		if(this->isComplete())
@@ -153,7 +161,7 @@ public:
 
 	bool isRangeConsecutive(){return this->rangeList.size()==1;}
 
-	vector<Range> getRangeList(){return rangeList;}
+//	vector<Range> getRangeList(){return rangeList;}
 
 	Condition AND(Condition other);
 	
