@@ -179,6 +179,8 @@ public:
 	
 	Condition OR(Condition other);
 
+	Condition Diff(Condition other);
+
 	Condition addANumber(int num);
 
 	string printConditionInfo();

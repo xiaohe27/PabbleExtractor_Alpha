@@ -95,9 +95,9 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	cout<<"//should remove the condition for the then part now."<<endl;
 	Condition condInIfPart=this->commManager->popCondition();
 
-	Condition curCond=Condition::negateCondition(condInIfPart);
+//	Condition curCond=Condition::negateCondition(condInIfPart);
 	Condition topCond=this->commManager->getTopCondition();
-	Condition condInElsePart=curCond.AND(topCond);
+	Condition condInElsePart=topCond.Diff(condInIfPart);
 	this->commManager->insertExistingCondition(condInElsePart);
 
 	cout << "\n\n\n\n\nThe condition in else part is \n"<<condInElsePart.printConditionInfo()

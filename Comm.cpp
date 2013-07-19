@@ -293,6 +293,27 @@ Condition Range::OR(Range other){
 	else{return other.OR(*this);}
 }
 
+/*
+Condition Range::Diff(Range other){
+	if (other.isAllRange())
+		return Condition(false);
+
+	if(other.isIgnored())
+		return *this;
+	
+	if (!this->hasIntersectionWith(other))
+		return *this;
+
+	if(other.isSuperSetOf(*this))
+		return Condition(false);
+
+	
+	return (Condition(*this)).AND(Range::negateOfRange(other));
+
+}
+*/
+
+
 //ok. already considered the case of end < start
 bool Range::isSuperSetOf(Range ran){
 	if(this->isAllRange())
@@ -577,6 +598,9 @@ Condition Condition::negateCondition(Condition cond){
 	}
 }
 
+Condition Condition::Diff(Condition other){
+	return this->AND(Condition::negateCondition(other));
+}
 
 Condition Condition::addANumber(int num){
 	for (int i = 0; i < this->rangeList.size(); i++)
