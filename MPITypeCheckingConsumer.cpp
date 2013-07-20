@@ -88,7 +88,7 @@ void MPITypeCheckingConsumer::analyzeDecl(FunctionDecl *funcDecl){
 		string errInfo=	"The decl "+decl2str(&ci->getSourceManager(),ci->getLangOpts(),funcDecl)
 			+ " has already started in the past and has NOT finished yet! A possible deadlock is detected. Program analysis stops here.";
 
-		throw new FunctionRecursionError(errInfo);
+		throw new MPI_TypeChecking_Error(errInfo);
 
 	}
 

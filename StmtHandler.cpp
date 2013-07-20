@@ -280,7 +280,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 
 			this->commManager->insertRankVarAndCommGroupMapping(this->rankVar,commGroup);
 		
-			cout<<"Rank var is "<<this->rankVar<<endl;
+			cout<<"Rank var is "<<this->rankVar <<".\t AND it is associated with group "<<commGroup<<endl;
 		}
 
 		if(funcName=="MPI_Send"){

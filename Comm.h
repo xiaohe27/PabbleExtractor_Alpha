@@ -46,10 +46,24 @@
 #define InitEndIndex -1
 #define InvalidIndex -3
 
-#define WORLD "world"
+#define WORLD "MPI_COMM_WORLD"
 
 using namespace std;
 using namespace clang;
+
+
+class MPI_TypeChecking_Error{
+private: string errInfo;
+
+public:
+		 MPI_TypeChecking_Error(string err){
+			this->errInfo=err;
+		 }
+
+		 void printErrInfo(){
+			cout<<errInfo<<endl;
+		 }
+};
 
 string convertIntToStr(int number);
 
@@ -189,7 +203,11 @@ public:
 
 	Condition addANumber(int num);
 
+	string getGroupName(){return this->groupName;}
+
 	void setCommGroup(string group){this->groupName=group;}
+
+	bool hasSameGroupComparedTo(Condition other);
 
 	string printConditionInfo();
 };
@@ -251,33 +269,13 @@ private:
 public:
 
 	ParamRole(){this->paramRoleName=WORLD;}
-	ParamRole(string name){this->paramRoleName=name;}
+
+	ParamRole(Condition cond);
 	
 
-	bool hasARoleSatisfiesRange(Range ran){
-		for (int i = 0; i < actualRoles.size(); i++)
-		{
-			Role* r=actualRoles[i];
-			if(r->hasRangeEqualTo(ran))
-				return true;
-		}
-	
-		return false;
-	}
+	bool hasARoleSatisfiesRange(Range ran);
 
-	void addAllTheRangesInTheCondition(Condition cond){
-		vector<Range> ranList=cond.getRangeList();
-		for (int i = 0; i < ranList.size(); i++)
-		{
-			Range r=ranList[i];
-			if(this->hasARoleSatisfiesRange(r))
-				continue;
-
-			else
-				this->insertActualRole(new Role(r));
-			
-		}
-	}
+	void addAllTheRangesInTheCondition(Condition cond);
 	
 };
 
@@ -385,11 +383,13 @@ public:
 class CommManager{
 
 private:
+	map<string,ParamRole>  paramRoleNameMapping;
 	vector<Condition> stackOfRankConditions;
 
 	CommNode root;
-	
-	//mapping between the rank var and the param role 
+	CommNode *curNode;
+
+	//mapping between the rank var name and the comm group name 
 	map<string,string> rankVarCommGroupMapping;
 
 	CompilerInstance *ci;
@@ -400,7 +400,7 @@ private:
 
 	vector<string> varNames;
 
-	CommNode *curNode;
+
 
 
 public:
@@ -408,6 +408,8 @@ public:
 	CommManager(CompilerInstance *ci0, int numOfProc0);
 
 	void insertRankVarAndCommGroupMapping(string rankVar, string commGroup);
+
+	string getCommGroup4RankVar(string rankVar);
 
 	Condition extractCondFromExpr(Expr *expr);
 

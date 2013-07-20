@@ -16,19 +16,6 @@ using namespace llvm;
 
 class MPITypeCheckingConsumer;
 
-class FunctionRecursionError{
-private: string errInfo;
-
-public:
-		 FunctionRecursionError(string err){
-			this->errInfo=err;
-		 }
-
-		 void printErrInfo(){
-			cout<<errInfo<<endl;
-		 }
-};
-
 
 
 

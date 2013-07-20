@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 	}
 
 
-	catch(FunctionRecursionError* funcErr){
+	catch(MPI_TypeChecking_Error* funcErr){
 		funcErr->printErrInfo();
 	}
 

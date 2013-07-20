@@ -575,6 +575,18 @@ Condition Condition::Diff(Condition other){
 	return this->AND(Condition::negateCondition(other));
 }
 
+
+bool Condition::hasSameGroupComparedTo(Condition other){
+	if (this->isComplete() || other.isComplete())
+		return true;
+
+	if(this->groupName==other.groupName)
+		return true;
+
+	return false;
+}
+
+
 Condition Condition::addANumber(int num){
 	for (int i = 0; i < this->rangeList.size(); i++)
 	{
@@ -632,6 +644,8 @@ CommManager::CommManager(CompilerInstance *ci0, int numOfProc0):root(ST_NODE_ROO
 		
 		this->ci=ci0;
 		this->numOfProc=numOfProc0;
+
+		this->paramRoleNameMapping[WORLD]=ParamRole();
 }
 
 void CommManager::insertVarName(string name){
@@ -757,14 +771,32 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 		}
 
 		if(op=="&&"){
-			Condition andCond=extractCondFromExpr(lhs).AND(extractCondFromExpr(rhs));
+			Condition lCond=extractCondFromExpr(lhs);
+			Condition rCond=extractCondFromExpr(rhs);
+			if(!lCond.hasSameGroupComparedTo(rCond))
+			{
+				string errInfo="ERROR: mixture of conditions in Group "+
+					lCond.getGroupName()+" AND Group "+rCond.getGroupName();
+				throw new MPI_TypeChecking_Error(errInfo);
+			}
+
+			Condition andCond=lCond.AND(rCond);
 
 			cout <<"\n\n\n\n\n"<< andCond.printConditionInfo()<<"\n\n\n\n\n" <<endl;
 			return andCond;
 		}
 
 		else if(op=="||"){
-			Condition orCond=extractCondFromExpr(lhs).OR(extractCondFromExpr(rhs));
+			Condition lCond=extractCondFromExpr(lhs);
+			Condition rCond=extractCondFromExpr(rhs);
+			if(!lCond.hasSameGroupComparedTo(rCond))
+			{
+				string errInfo="ERROR: mixture of conditions in Group "+
+					lCond.getGroupName()+" AND Group "+rCond.getGroupName();
+				throw new MPI_TypeChecking_Error(errInfo);
+			}
+
+			Condition orCond=lCond.OR(rCond);
 
 			cout <<"\n\n\n\n\n"<< orCond.printConditionInfo()<<"\n\n\n\n\n" <<endl;
 			return orCond;
@@ -840,25 +872,37 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 				APSInt Result;
 
 				if(leftIsVar){
+					string commGroupName=this->getCommGroup4RankVar(lVarName);
+
 					if (rhs->EvaluateAsInt(Result, this->ci->getASTContext())) {
 						int num=atoi(Result.toString(10).c_str());
 						std::cout << "The cond is created by (" <<op<<","<< num <<")"<< std::endl;
 
-						return Condition::createCondByOp(op,num);
+						Condition cond=Condition::createCondByOp(op,num);
+
+						if(commGroupName!=WORLD)
+							cond.setCommGroup(commGroupName);
+
+						return cond;
 					}
 				}
 
 				if(rightIsVar){
+					string commGroupName=this->getCommGroup4RankVar(rVarName);
+
 					if (lhs->EvaluateAsInt(Result, this->ci->getASTContext())) {
 						int num=atoi(Result.toString(10).c_str());
 						std::cout << "The cond is created by (" <<op<<","<< num <<")"<< std::endl;
 
-						return Condition::createCondByOp(op,num);
+						Condition cond=Condition::createCondByOp(op,num);
+
+						if(commGroupName!=WORLD)
+							cond.setCommGroup(commGroupName);
+
+						return cond;
 					}
 				}
-			}
-
-			
+			}			
 			
 		}
 	}
@@ -894,11 +938,22 @@ void CommManager::insertCondition(Expr *expr){
 				Condition top=stackOfRankConditions.back();
 				cond=top.AND(cond);
 			}
+
 			stackOfRankConditions.push_back(cond);
 
 			cout<<"\n\n\n\n\nThe inner condition is \n"
 				<<stackOfRankConditions.back().printConditionInfo()
 				<<"\n\n\n\n\n"<<endl;
+
+
+			string commGroupName=cond.getGroupName();
+			if(this->paramRoleNameMapping.count(commGroupName)>0)
+				paramRoleNameMapping[commGroupName].addAllTheRangesInTheCondition(cond);
+
+			else
+			{
+				paramRoleNameMapping[commGroupName]=ParamRole(cond);
+			}
 
 		}
 	
@@ -942,6 +997,16 @@ Condition CommManager::getTopCondition(){
 
 void CommManager::insertExistingCondition(Condition cond){
 		this->stackOfRankConditions.push_back(cond);
+
+		string commGroupName=cond.getGroupName();
+			if(this->paramRoleNameMapping.count(commGroupName)>0)
+				paramRoleNameMapping[commGroupName].addAllTheRangesInTheCondition(cond);
+
+			else
+			{
+				paramRoleNameMapping[commGroupName]=ParamRole(cond);
+			}
+
 }
 
 Condition CommManager::popCondition(){
@@ -957,6 +1022,10 @@ this->curNode= this->curNode->getParent();
 
 void CommManager::insertRankVarAndCommGroupMapping(string rankVar, string commGroup){
 	this->rankVarCommGroupMapping[rankVar]=commGroup;
+}
+
+string CommManager::getCommGroup4RankVar(string rankVar){
+	return this->rankVarCommGroupMapping[rankVar];
 }
 
 /********************************************************************/
@@ -1076,4 +1145,57 @@ CommNode* CommNode::goDeeper(){
 
 /********************************************************************/
 //Class CommNode impl end										****
+/********************************************************************/
+
+
+/********************************************************************/
+//Class ParamRole impl start										****
+/********************************************************************/
+
+	ParamRole::ParamRole(Condition cond){
+		this->paramRoleName=cond.getGroupName();
+		
+		this->addAllTheRangesInTheCondition(cond);
+	}
+
+	bool ParamRole::hasARoleSatisfiesRange(Range ran){
+		for (int i = 0; i < actualRoles.size(); i++)
+		{
+			Role* r=actualRoles[i];
+			if(r->hasRangeEqualTo(ran))
+				return true;
+		}
+	
+		return false;
+	}
+
+
+	void ParamRole::addAllTheRangesInTheCondition(Condition cond){
+		vector<Range> ranList=cond.getRangeList();
+		for (int i = 0; i < ranList.size(); i++)
+		{
+			Range r=ranList[i];
+			if(this->hasARoleSatisfiesRange(r))
+				continue;
+
+			else
+				this->insertActualRole(new Role(r));
+			
+		}
+	}
+	
+
+
+
+
+
+
+
+
+
+
+
+
+/********************************************************************/
+//Class ParamRole impl end										****
 /********************************************************************/
