@@ -53,13 +53,7 @@ string convertIntToStr(int number)
 	return ss.str();//return a string with the contents of the stream
 }
 
-string stmt2str(SourceManager *sm, LangOptions lopt,clang::Stmt *stmt) {
-	clang::SourceLocation b(stmt->getLocStart()), _e(stmt->getLocEnd());
-	clang::SourceLocation e(Lexer::getLocForEndOfToken(_e, 0, *sm, lopt));
-	return std::string(sm->getCharacterData(b),
-		sm->getCharacterData(e)-sm->getCharacterData(b));
 
-}
 
 
 
@@ -292,27 +286,6 @@ Condition Range::OR(Range other){
 
 	else{return other.OR(*this);}
 }
-
-/*
-Condition Range::Diff(Range other){
-	if (other.isAllRange())
-		return Condition(false);
-
-	if(other.isIgnored())
-		return *this;
-	
-	if (!this->hasIntersectionWith(other))
-		return *this;
-
-	if(other.isSuperSetOf(*this))
-		return Condition(false);
-
-	
-	return (Condition(*this)).AND(Range::negateOfRange(other));
-
-}
-*/
-
 
 //ok. already considered the case of end < start
 bool Range::isSuperSetOf(Range ran){
@@ -979,6 +952,11 @@ Condition CommManager::popCondition(){
 
 void CommManager::gotoParent(){
 this->curNode= this->curNode->getParent();
+}
+
+
+void CommManager::insertRankVarAndCommGroupMapping(string rankVar, string commGroup){
+	this->rankVarCommGroupMapping[rankVar]=commGroup;
 }
 
 /********************************************************************/

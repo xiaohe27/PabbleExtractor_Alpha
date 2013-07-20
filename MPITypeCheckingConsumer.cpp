@@ -127,9 +127,42 @@ string decl2str(SourceManager *sm, LangOptions lopt,clang::Decl *d) {
 }
 
 
+string stmt2str(SourceManager *sm, LangOptions lopt,clang::Stmt *stmt) {
+	SourceLocation b(stmt->getLocStart()), _e(stmt->getLocEnd());
+	SourceLocation e(Lexer::getLocForEndOfToken(_e, 0, *sm, lopt));
+	return string(sm->getCharacterData(b),
+		sm->getCharacterData(e)-sm->getCharacterData(b));
+
+}
+
+string expr2str(SourceManager *sm, LangOptions lopt,clang::Expr *expr){
 
 
+	SourceLocation b(expr->getLocStart()), _e(expr->getLocEnd());
 
+	SourceLocation e(Lexer::getLocForEndOfToken(_e, 0, *sm, lopt));
+
+	const char* endChar= sm->getCharacterData(e);
+	int offset=0;
+	endChar--;
+
+	while(*endChar!=',' && *endChar!='('){
+		offset++;
+		endChar--;
+	}
+	
+
+	string out=string(endChar+1,offset);
+
+	return delSpaces(out);
+
+}
+
+
+string delSpaces(string &str){
+   str.erase(std::remove(str.begin(), str.end(), ' '), str.end());
+   return str;
+}
 
 
 void checkIdTable(clang::CompilerInstance *ci){

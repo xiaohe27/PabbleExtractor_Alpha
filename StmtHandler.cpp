@@ -235,25 +235,24 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 	if(!this->visitStart)
 		return true;
 
-	//	cout <<"The function going to be called is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),op) <<endl;
+	cout <<"The function going to be called is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),E) <<endl;
 
-	PrintingPolicy Policy(ci->getLangOpts());
+
 	int numOfArgs=E->getNumArgs();
 
-	vector<string> args(numOfArgs);
+	
+	vector<string> args(numOfArgs+1);
+
 
 	//get all the args of the function call
-	for(int i=0, j=numOfArgs; i<j; i++)
-	{
-		string TypeS;
-		raw_string_ostream s(TypeS);
-		E->getArg(i)->printPretty(s, 0, Policy);
-//		errs() << "arg: " << s.str() << "\n";
-
-		args[i]=s.str();
+	for(int i=0; i<numOfArgs; i++)
+	{		
+		args[i]=expr2str(&ci->getSourceManager(),ci->getLangOpts(),E->getArg(i));
 	}
+	
 
-	Decl *decl=E->getCalleeDecl();
+//	Decl *decl=E->getCalleeDecl();
+
 
 	FunctionDecl *funcCall=E->getDirectCallee();
 	//perform a check. If the decl has been visited before, then throw err info
@@ -273,10 +272,13 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 		}
 
 		if(funcName=="MPI_Comm_rank"){
+			string commGroup=args[0];
 			
 			this->rankVar=args[1].substr(1,args[1].length()-1);
 
 			this->commManager->insertRankVarAndOffset(rankVar,0);
+
+			this->commManager->insertRankVarAndCommGroupMapping(this->rankVar,commGroup);
 		
 			cout<<"Rank var is "<<this->rankVar<<endl;
 		}
@@ -332,10 +334,11 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 	}
 
 	else{
-		this->TraverseDecl(decl);
+		this->TraverseDecl(E->getCalleeDecl());
 	}
 
 	
+	args.clear();
 	return true;
 }
 

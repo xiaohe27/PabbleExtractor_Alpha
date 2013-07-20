@@ -36,7 +36,8 @@ public:
 void checkIdTable(clang::CompilerInstance *ci);
 string decl2str(SourceManager *sm, LangOptions lopt,clang::Decl *d);
 string stmt2str(SourceManager *sm, LangOptions lopt,clang::Stmt *stmt);
-
+string expr2str(SourceManager *sm, LangOptions lopt,clang::Expr *stmt);
+string delSpaces(string &str);
 
 class MPITypeCheckingConsumer:
 	public ASTConsumer,

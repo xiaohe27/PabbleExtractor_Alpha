@@ -46,6 +46,8 @@
 #define InitEndIndex -1
 #define InvalidIndex -3
 
+#define WORLD "world"
+
 using namespace std;
 using namespace clang;
 
@@ -124,11 +126,15 @@ private:
 	vector<Range> rangeList;
 	bool shouldBeIgnored;
 	bool complete;
+	string groupName;
 
 public:
-	Condition(){this->shouldBeIgnored=false; this->complete=false;}
+	Condition(){this->shouldBeIgnored=false; this->complete=false;
+				this->groupName=WORLD;}
 
 	Condition(bool val){
+		this->groupName=WORLD;
+
 		rangeList.clear();
 
 		if(val){
@@ -156,12 +162,12 @@ public:
 	bool isComplete(){return this->complete;}
 
 	Condition(Range ran){
-		this->shouldBeIgnored=false; this->complete=false;
+		this->shouldBeIgnored=false; this->complete=false;this->groupName=WORLD;
 		this->rangeList.clear(); this->rangeList.push_back(ran);
 	}
 
 	Condition(Range ran1, Range ran2){
-	this->shouldBeIgnored=false; this->complete=false;
+	this->shouldBeIgnored=false; this->complete=false;this->groupName=WORLD;
 	rangeList.clear(); rangeList.push_back(ran1);rangeList.push_back(ran2);
 	}
 
@@ -183,6 +189,8 @@ public:
 
 	Condition addANumber(int num);
 
+	void setCommGroup(string group){this->groupName=group;}
+
 	string printConditionInfo();
 };
 
@@ -193,22 +201,29 @@ class Role{
 private:
 	Range range;
 
-
 	//the naming convention is 
 	//ParamRoleName[startIndex..endIndex]
-	string roleName;
+	string paramRoleName;
 
 	CommNode *curVisitNode;
 
 public:
-	Role(Range ran){range=ran;}
+	Role(Range ran){
+		this->paramRoleName=WORLD;
+		range=ran;
+	}
+
+	Role(string paramRoleName0, Range ran){
+		this->paramRoleName=paramRoleName0;
+		this->range=ran;
+	}
 
 	Range getRange(){return this->range;}
 
 	bool hasRangeEqualTo(Range ran){return this->range.isEqualTo(ran);}
 
 	string getRoleName(){
-	string name="world[";
+	string name=this->paramRoleName+"[";
 	name.append(convertIntToStr(this->range.getStart()));
 	name.append("..");
 	name.append(convertIntToStr(this->range.getEnd()));
@@ -234,7 +249,8 @@ private:
 	void insertActualRole(Role *r){actualRoles.push_back(r);}
 
 public:
-	ParamRole(){}
+
+	ParamRole(){this->paramRoleName=WORLD;}
 	ParamRole(string name){this->paramRoleName=name;}
 	
 
@@ -370,9 +386,11 @@ class CommManager{
 
 private:
 	vector<Condition> stackOfRankConditions;
-//	RoleManager roleManager;
+
 	CommNode root;
 	
+	//mapping between the rank var and the param role 
+	map<string,string> rankVarCommGroupMapping;
 
 	CompilerInstance *ci;
 
@@ -388,6 +406,8 @@ private:
 public:
 	
 	CommManager(CompilerInstance *ci0, int numOfProc0);
+
+	void insertRankVarAndCommGroupMapping(string rankVar, string commGroup);
 
 	Condition extractCondFromExpr(Expr *expr);
 
