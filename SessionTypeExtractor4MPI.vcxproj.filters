@@ -30,6 +30,12 @@
     <ClCompile Include="Comm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="InteractionNode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RanAndCond.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MPITypeCheckingConsumer.h">

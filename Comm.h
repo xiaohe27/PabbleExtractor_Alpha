@@ -72,6 +72,12 @@ string stmt2str(SourceManager *sm, LangOptions lopt,clang::Stmt *stmt);
 bool evalIntCmpTruth(int arg1, int arg2, string op);
 
 
+int min(int a, int b);
+int max(int a, int b);
+int minEnd(int a, int b);
+int maxEnd(int a, int b);
+int compute(string op, int operand1, int operand2);
+bool areTheseTwoNumsAdjacent(int a, int b);
 
 
 class CommNode;
@@ -93,20 +99,11 @@ public:
 	int getStart(){return startPos;}
 	int getEnd(){return endPos;}
 
-	Range(){shouldBeIgnored=true;
-			marked=false;
-			startPos=InitStartIndex;
-			endPos=InitEndIndex;
-
-			init();	
-	}
+	Range();
 	
 	Range(int s,int e);
 
-	void init(){
-		startOffset=0;
-		endOffset=0;
-	}
+	void init();
 
 	bool isIgnored(){return shouldBeIgnored;}
 
@@ -143,47 +140,19 @@ private:
 	string groupName;
 
 public:
-	Condition(){this->shouldBeIgnored=false; this->complete=false;
-				this->groupName=WORLD;}
+	Condition();
 
-	Condition(bool val){
-		this->groupName=WORLD;
-
-		rangeList.clear();
-
-		if(val){
-			
-			this->complete=true;
-			this->shouldBeIgnored=false;
-			this->rangeList.push_back(Range(0,InitEndIndex));
-		}
-
-		else{
-			this->shouldBeIgnored=true;
-			this->complete=false;
-		}
-	}
+	Condition(bool val);
 
 	vector<Range> getRangeList(){return this->rangeList;}
 
-	bool isIgnored(){
-		if(this->isComplete())
-			return false;
-
-		return shouldBeIgnored || this->rangeList.size()==0;
-	}
+	bool isIgnored();
 
 	bool isComplete(){return this->complete;}
 
-	Condition(Range ran){
-		this->shouldBeIgnored=false; this->complete=false;this->groupName=WORLD;
-		this->rangeList.clear(); this->rangeList.push_back(ran);
-	}
+	Condition(Range ran);
 
-	Condition(Range ran1, Range ran2){
-	this->shouldBeIgnored=false; this->complete=false;this->groupName=WORLD;
-	rangeList.clear(); rangeList.push_back(ran1);rangeList.push_back(ran2);
-	}
+	Condition(Range ran1, Range ran2);
 
 	static Condition negateCondition(Condition cond);
 
@@ -226,30 +195,15 @@ private:
 	CommNode *curVisitNode;
 
 public:
-	Role(Range ran){
-		this->paramRoleName=WORLD;
-		range=ran;
-	}
+	Role(Range ran);
 
-	Role(string paramRoleName0, Range ran){
-		this->paramRoleName=paramRoleName0;
-		this->range=ran;
-	}
+	Role(string paramRoleName0, Range ran);
 
 	Range getRange(){return this->range;}
 
 	bool hasRangeEqualTo(Range ran){return this->range.isEqualTo(ran);}
 
-	string getRoleName(){
-	string name=this->paramRoleName+"[";
-	name.append(convertIntToStr(this->range.getStart()));
-	name.append("..");
-	name.append(convertIntToStr(this->range.getEnd()));
-	name.append("]");
-
-	return name;
-}
-
+	string getRoleName();
 
 };
 
@@ -323,6 +277,8 @@ private:
 
 	int depth;
 
+	bool marked;
+
 	void init(int type,MPIOperation *op0);
 
 	//the role visitor will check whether it can 
@@ -361,6 +317,10 @@ public:
 
 	void setInfo(string info0){this->info=info0;}
 
+	void setMarked(){this->marked=true;}
+
+	bool isMarked(){return this->marked;}
+
 	CommNode* getParent(){return this->parent;}
 
 	void setNodeType(int nodeType);
@@ -377,7 +337,29 @@ public:
 
 };
 
+class RecurNode: public CommNode{
+private:
+	int remainingNumOfIterations;
 
+public:
+	RecurNode():CommNode(ST_NODE_RECUR){this->remainingNumOfIterations=-1;}
+	RecurNode(int size):CommNode(ST_NODE_RECUR){this->remainingNumOfIterations=size;}
+	bool hasKnownNumberOfIterations(){return this->remainingNumOfIterations!=-1;}
+	void visitOnce();
+	
+};
+
+class ContNode: public CommNode{
+private:
+	RecurNode* refNode;
+
+public:
+	ContNode(RecurNode *node):CommNode(ST_NODE_CONTINUE){this->refNode=node;}
+
+	void visit(){this->refNode->visitOnce();}
+
+	RecurNode* getRefNode(){return this->refNode;}
+};
 
 
 class CommManager{

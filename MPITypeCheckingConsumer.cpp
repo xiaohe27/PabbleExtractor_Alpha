@@ -118,7 +118,15 @@ void MPITypeCheckingConsumer::removeFuncFromList(){
 
 
 
-string decl2str(SourceManager *sm, LangOptions lopt,clang::Decl *d) {
+string decl2str(SourceManager *sm, LangOptions lopt,Decl *d) {
+	clang::SourceLocation b(d->getLocStart()), _e(d->getLocEnd());
+	clang::SourceLocation e(clang::Lexer::getLocForEndOfToken(_e, 0, *sm, lopt));
+	return std::string(sm->getCharacterData(b),
+		sm->getCharacterData(e)-sm->getCharacterData(b));
+
+}
+
+string decl2str(SourceManager *sm, LangOptions lopt,const Decl *d) {
 	clang::SourceLocation b(d->getLocStart()), _e(d->getLocEnd());
 	clang::SourceLocation e(clang::Lexer::getLocForEndOfToken(_e, 0, *sm, lopt));
 	return std::string(sm->getCharacterData(b),
@@ -127,7 +135,15 @@ string decl2str(SourceManager *sm, LangOptions lopt,clang::Decl *d) {
 }
 
 
-string stmt2str(SourceManager *sm, LangOptions lopt,clang::Stmt *stmt) {
+string stmt2str(SourceManager *sm, LangOptions lopt,Stmt *stmt) {
+	SourceLocation b(stmt->getLocStart()), _e(stmt->getLocEnd());
+	SourceLocation e(Lexer::getLocForEndOfToken(_e, 0, *sm, lopt));
+	return string(sm->getCharacterData(b),
+		sm->getCharacterData(e)-sm->getCharacterData(b));
+
+}
+
+string stmt2str(SourceManager *sm, LangOptions lopt,const Stmt *stmt) {
 	SourceLocation b(stmt->getLocStart()), _e(stmt->getLocEnd());
 	SourceLocation e(Lexer::getLocForEndOfToken(_e, 0, *sm, lopt));
 	return string(sm->getCharacterData(b),

@@ -85,7 +85,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Comm.cpp" />
+    <ClCompile Include="InteractionNode.cpp" />
     <ClCompile Include="MPITypeCheckingConsumer.cpp" />
+    <ClCompile Include="RanAndCond.cpp" />
     <ClCompile Include="SessionTypeExtractor.cpp" />
     <ClCompile Include="StmtHandler.cpp" />
   </ItemGroup>

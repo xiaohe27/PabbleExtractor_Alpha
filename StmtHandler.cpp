@@ -164,6 +164,31 @@ bool MPITypeCheckingConsumer::VisitForStmt(ForStmt *S){
 		return true;
 
 	cout <<"The for stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
+
+//	VarDecl *varDecl=S->getConditionVariable();
+//	string varDeclStr=decl2str(&ci->getSourceManager(),ci->getLangOpts(),varDecl);
+
+//	const Stmt* varDeclStmt=S->getConditionVariableDeclStmt();
+//	string varDeclStmtStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), varDeclStmt);
+
+	Expr *condOfFor=S->getCond();
+	string condOfForStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), condOfFor);
+
+	Stmt *initFor = S->getInit();
+	string initForStmtStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), initFor);
+
+	Expr *inc=S->getInc();
+	string incOfForStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), inc);
+
+	Stmt *bodyOfFor= S->getBody();
+	string bodyOfForStmtStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), bodyOfFor);
+
+//	cout<<"The var decl is "<<varDeclStr<<endl;
+	cout<<"The init is "<<initForStmtStr<<endl;
+	cout<<"The condition is "<<condOfForStr<<endl;
+	cout<<"The inc is "<<incOfForStr<<endl;
+	cout<<"The body of for stmt is "<<bodyOfForStmtStr<<endl;
+
 	return true;
 }
 
@@ -409,7 +434,3 @@ bool MPITypeCheckingConsumer::VisitFunctionDecl(FunctionDecl *funcDecl){
 
 	return true;
 }
-
-
-
-
