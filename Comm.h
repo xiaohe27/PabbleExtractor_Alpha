@@ -139,6 +139,9 @@ private:
 	bool complete;
 	string groupName;
 
+	//the non-rank var related condition might be important in determining the target of MPI op!
+	string nonRankVarName;
+
 public:
 	Condition();
 
@@ -162,8 +165,6 @@ public:
 
 	bool isRangeConsecutive(){return this->rangeList.size()==1;}
 
-//	vector<Range> getRangeList(){return rangeList;}
-
 	Condition AND(Condition other);
 	
 	Condition OR(Condition other);
@@ -177,6 +178,10 @@ public:
 	void setCommGroup(string group){this->groupName=group;}
 
 	bool hasSameGroupComparedTo(Condition other);
+
+	string getNonRankVarName(){return this->nonRankVarName;}
+
+	void setNonRankVarName(string name){this->nonRankVarName=name;}
 
 	string printConditionInfo();
 };
@@ -374,6 +379,10 @@ private:
 	//mapping between the rank var name and the comm group name 
 	map<string,string> rankVarCommGroupMapping;
 
+	map<string,stack<Condition>> nonRankVarAndStackOfCondMapping;
+
+	map<string,stack<Condition>> tmpNonRankVarCondMap;
+
 	CompilerInstance *ci;
 
 	int numOfProc;
@@ -390,6 +399,18 @@ public:
 	CommManager(CompilerInstance *ci0, int numOfProc0);
 
 	void insertRankVarAndCommGroupMapping(string rankVar, string commGroup);
+
+	void insertNonRankVarAndCondtion(string nonRankVar, Condition cond);
+
+	void insertTmpNonRankVarCond(string nonRankVar, Condition cond);
+
+	void clearTmpNonRankVarCondStackMap();
+
+	map<string,stack<Condition>> getTmpNonRankVarCondStackMap();
+
+	Condition getTopCond4NonRankVar(string nonRankVar);
+
+	void removeTopCond4NonRankVar(string nonRankVar);
 
 	string getCommGroup4RankVar(string rankVar);
 

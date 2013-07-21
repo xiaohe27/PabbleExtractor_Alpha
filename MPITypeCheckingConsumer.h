@@ -68,8 +68,14 @@ public:
 
 	void removeFuncFromList();
 
-	//translate to a special format so that the class Property can understand the string.
-	string extractConditionStrFromExpr(Expr* expr){return nullptr;}
+	//return the list of non-rank var names that have been inserted to the formal stack
+	vector<string> analyzeNonRankVarCond(map<string,stack<Condition>> tmpNonRankVarCondMap);
+
+	//remove the non-rank var from the stack after visiting the relevant block
+	void removeNonRankVarCondInStack(vector<string> stackOfNonRankVarNames);
+
+	//remove the old non-rank var from the stack and inserting the negation
+	void removeAndAddNewNonRankVarCondInStack(vector<string> stackOfNonRankVarNames);
 
 	void printTheTree(){
 		cout<<this->commManager->printTheTree()<<endl;

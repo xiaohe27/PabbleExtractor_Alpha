@@ -55,7 +55,46 @@ bool MPITypeCheckingConsumer::VisitAsmStmt(AsmStmt *S){
 	return true;
 }
 
-//almost finished
+//analyze and then insert the tuples to the formal nonRankVarCondStack
+vector<string> MPITypeCheckingConsumer::analyzeNonRankVarCond(map<string,stack<Condition>> tmpNonRankVarCondMap){
+	vector<string> stackOfNonRankVarNames;
+
+	for (map<string,stack<Condition>>::iterator it=tmpNonRankVarCondMap.begin(); it!=tmpNonRankVarCondMap.end(); ++it){
+		stack<Condition> stackOfCond=it->second;
+		Condition combinedCond=Condition(true);
+		for (int i = 0; i < stackOfCond.size(); i++)
+		{
+			combinedCond=combinedCond.AND(stackOfCond.top());
+			stackOfCond.pop();
+		}
+
+		//insert to the formal stack
+		this->commManager->insertNonRankVarAndCondtion(it->first,combinedCond);
+		stackOfNonRankVarNames.push_back(it->first);
+	}
+
+	return stackOfNonRankVarNames;
+}
+
+void MPITypeCheckingConsumer::removeNonRankVarCondInStack(vector<string> stackOfNonRankVarNames){
+	for (int i = 0; i < stackOfNonRankVarNames.size(); i++)
+	{
+		this->commManager->removeTopCond4NonRankVar(stackOfNonRankVarNames[i]);
+	}
+
+}
+
+void MPITypeCheckingConsumer::removeAndAddNewNonRankVarCondInStack(vector<string> stackOfNonRankVarNames){
+	for (int i = 0; i < stackOfNonRankVarNames.size(); i++)
+	{
+		Condition theCond=this->commManager->getTopCond4NonRankVar(stackOfNonRankVarNames[i]);
+		this->commManager->removeTopCond4NonRankVar(stackOfNonRankVarNames[i]);
+		theCond=Condition::negateCondition(theCond);
+		this->commManager->insertNonRankVarAndCondtion(stackOfNonRankVarNames[i],theCond);
+	}
+
+}
+
 bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	if(!this->visitStart)
 		return true;
@@ -76,6 +115,8 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	//after exec this stmt, the condition for the then part will be put on the top of the stack
 	this->commManager->insertCondition(condExpr);
 	
+	//insert the non-rank var conditions to formal stack, if any
+	vector<string> stackOfNonRankVarNames=this->analyzeNonRankVarCond(this->commManager->getTmpNonRankVarCondStackMap());
 	
 	//visit then part
 	cout<<"Going to visit then part of condition: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
@@ -94,6 +135,9 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	//should remove the condition for the then part now.
 	cout<<"//should remove the condition for the then part now."<<endl;
 	Condition condInIfPart=this->commManager->popCondition();
+	this->removeAndAddNewNonRankVarCondInStack(stackOfNonRankVarNames);
+
+
 
 //	Condition curCond=Condition::negateCondition(condInIfPart);
 	Condition topCond=this->commManager->getTopCondition();
@@ -116,6 +160,8 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 	cout<<"//should remove the condition for the else part now."<<endl;
 	this->commManager->popCondition();
+
+	this->removeNonRankVarCondInStack(stackOfNonRankVarNames);
 
 	//the choice node does not add any extra condition, so just go to its parent node
 	this->commManager->gotoParent();

@@ -375,11 +375,14 @@ string Range::printRangeInfo(){
 /********************************************************************/
 
 Condition::Condition(){this->shouldBeIgnored=false; this->complete=false;
-				this->groupName=WORLD;}
+				this->groupName=WORLD;
+
+			this->nonRankVarName="";
+}
 
 Condition::Condition(bool val){
 		this->groupName=WORLD;
-
+		this->nonRankVarName="";
 		rangeList.clear();
 
 		if(val){
@@ -396,11 +399,13 @@ Condition::Condition(bool val){
 }
 
 Condition::Condition(Range ran){
+		this->nonRankVarName="";
 		this->shouldBeIgnored=false; this->complete=false;this->groupName=WORLD;
 		this->rangeList.clear(); this->rangeList.push_back(ran);
-	}
+}
 
 Condition::Condition(Range ran1, Range ran2){
+	this->nonRankVarName="";
 	this->shouldBeIgnored=false; this->complete=false;this->groupName=WORLD;
 	rangeList.clear(); rangeList.push_back(ran1);rangeList.push_back(ran2);
 	}

@@ -198,6 +198,24 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 		if(op=="&&"){
 			Condition lCond=extractCondFromExpr(lhs);
 			Condition rCond=extractCondFromExpr(rhs);
+
+			string nonRankVarName="";
+			string lhsNonRankVarName=lCond.getNonRankVarName();
+			string rhsNonRankVarName=rCond.getNonRankVarName();
+
+			if(lhsNonRankVarName==rhsNonRankVarName && lhsNonRankVarName!=""){
+				nonRankVarName=lhsNonRankVarName;
+
+				Condition tmpCond1=this->tmpNonRankVarCondMap[lhsNonRankVarName].top();
+				this->tmpNonRankVarCondMap[lhsNonRankVarName].pop();
+				Condition tmpCond2=this->tmpNonRankVarCondMap[lhsNonRankVarName].top();
+				this->tmpNonRankVarCondMap[lhsNonRankVarName].pop();
+
+				Condition newTmpCond=tmpCond1.AND(tmpCond2);
+				newTmpCond.setNonRankVarName(lhsNonRankVarName);
+				this->tmpNonRankVarCondMap[lhsNonRankVarName].push(newTmpCond);
+			}
+
 			if(!lCond.hasSameGroupComparedTo(rCond))
 			{
 				string errInfo="ERROR: mixture of conditions in Group "+
@@ -207,6 +225,7 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 
 			Condition andCond=lCond.AND(rCond);
 
+			andCond.setNonRankVarName(nonRankVarName);
 			cout <<"\n\n\n\n\n"<< andCond.printConditionInfo()<<"\n\n\n\n\n" <<endl;
 			return andCond;
 		}
@@ -214,6 +233,24 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 		else if(op=="||"){
 			Condition lCond=extractCondFromExpr(lhs);
 			Condition rCond=extractCondFromExpr(rhs);
+
+			string nonRankVarName="";
+			string lhsNonRankVarName=lCond.getNonRankVarName();
+			string rhsNonRankVarName=rCond.getNonRankVarName();
+
+			if(lhsNonRankVarName==rhsNonRankVarName && lhsNonRankVarName!=""){
+				nonRankVarName=lhsNonRankVarName;
+
+				Condition tmpCond1=this->tmpNonRankVarCondMap[lhsNonRankVarName].top();
+				this->tmpNonRankVarCondMap[lhsNonRankVarName].pop();
+				Condition tmpCond2=this->tmpNonRankVarCondMap[lhsNonRankVarName].top();
+				this->tmpNonRankVarCondMap[lhsNonRankVarName].pop();
+
+				Condition newTmpCond=tmpCond1.OR(tmpCond2);
+				newTmpCond.setNonRankVarName(lhsNonRankVarName);
+				this->tmpNonRankVarCondMap[lhsNonRankVarName].push(newTmpCond);
+			}
+
 			if(!lCond.hasSameGroupComparedTo(rCond))
 			{
 				string errInfo="ERROR: mixture of conditions in Group "+
@@ -223,6 +260,7 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 
 			Condition orCond=lCond.OR(rCond);
 
+			orCond.setNonRankVarName(nonRankVarName);
 			cout <<"\n\n\n\n\n"<< orCond.printConditionInfo()<<"\n\n\n\n\n" <<endl;
 			return orCond;
 		}
@@ -287,10 +325,41 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 
 			else if(!this->isVarRelatedToRank(lVarName)
 				&&  !this->isVarRelatedToRank(rVarName)){
+					APSInt Result;
+					string nonRankVarName="";
+
+					if(leftIsVar){
+						nonRankVarName=lVarName;
+
+						if (rhs->EvaluateAsInt(Result, this->ci->getASTContext())) {
+						int num=atoi(Result.toString(10).c_str());
+						std::cout << "The cond is created by (" <<op<<","<< num <<")"<< std::endl;
+
+						Condition cond=Condition::createCondByOp(op,num);
+
+						this->insertTmpNonRankVarCond(lVarName,cond);
+						}
+					}
+
+					if(rightIsVar){
+						nonRankVarName=rVarName;
+
+						if (lhs->EvaluateAsInt(Result, this->ci->getASTContext())) {
+						int num=atoi(Result.toString(10).c_str());
+						std::cout << "The cond is created by (" <<op<<","<< num <<")"<< std::endl;
+
+						Condition cond=Condition::createCondByOp(op,num);
+						this->insertTmpNonRankVarCond(rVarName,cond);
+						}
+					}
+
 				//if one of the vars is non-rank var, then it might be true
 				//so return the "all" range.
 				cout<<"Either the lvar or rvar is a non-rank var. So All Range Condition!"<<endl;
-				return Condition(true);
+				//also set the name of the non-rank var
+				Condition nonRankCond=Condition(true);
+				nonRankCond.setNonRankVarName(nonRankVarName);
+				return nonRankCond;
 			}
 
 			else{
@@ -356,7 +425,8 @@ if(nodeT==ST_NODE_CHOICE || nodeT==ST_NODE_RECUR
 
 
 void CommManager::insertCondition(Expr *expr){
-		
+			this->clearTmpNonRankVarCondStackMap();	
+
 			Condition cond=this->extractCondFromExpr(expr);
 
 			if(!stackOfRankConditions.empty()){
@@ -380,7 +450,7 @@ void CommManager::insertCondition(Expr *expr){
 				paramRoleNameMapping[commGroupName]=ParamRole(cond);
 			}
 
-		}
+}
 	
 
 
@@ -451,6 +521,73 @@ void CommManager::insertRankVarAndCommGroupMapping(string rankVar, string commGr
 
 string CommManager::getCommGroup4RankVar(string rankVar){
 	return this->rankVarCommGroupMapping[rankVar];
+}
+
+void CommManager::insertNonRankVarAndCondtion(string nonRankVar, Condition cond){
+	if(this->nonRankVarAndStackOfCondMapping.count(nonRankVar)>0){
+		Condition top=this->getTopCond4NonRankVar(nonRankVar);
+		cond=cond.AND(top);
+		cond.setNonRankVarName(nonRankVar);
+		this->nonRankVarAndStackOfCondMapping[nonRankVar].push(cond);
+	}
+
+	else{
+		stack<Condition> newStack;
+		cond.setNonRankVarName(nonRankVar);
+		newStack.push(cond);
+		this->nonRankVarAndStackOfCondMapping[nonRankVar]=newStack;
+	}
+
+}
+
+void CommManager::insertTmpNonRankVarCond(string nonRankVar, Condition cond){
+	if(this->tmpNonRankVarCondMap.count(nonRankVar)>0){
+		this->tmpNonRankVarCondMap[nonRankVar].push(cond);
+	}
+
+	else{
+		stack<Condition> newStack;
+		newStack.push(cond);
+		this->tmpNonRankVarCondMap[nonRankVar]=newStack;
+	}
+
+}
+
+
+void CommManager::clearTmpNonRankVarCondStackMap(){
+	this->tmpNonRankVarCondMap.clear();
+}
+
+
+map<string,stack<Condition>> CommManager::getTmpNonRankVarCondStackMap()
+{
+	return tmpNonRankVarCondMap;
+}
+
+
+Condition CommManager::getTopCond4NonRankVar(string nonRankVar){
+	if(this->nonRankVarAndStackOfCondMapping.count(nonRankVar)>0){
+		if(this->nonRankVarAndStackOfCondMapping[nonRankVar].size()>0)
+		return this->nonRankVarAndStackOfCondMapping[nonRankVar].top();
+
+		else
+			return Condition(false);
+	}
+
+	else{return Condition(false);}
+}
+
+void CommManager::removeTopCond4NonRankVar(string nonRankVar){
+	if(this->nonRankVarAndStackOfCondMapping.count(nonRankVar)>0){
+		if(this->nonRankVarAndStackOfCondMapping[nonRankVar].size()>0)
+		this->nonRankVarAndStackOfCondMapping[nonRankVar].pop();
+
+		else
+			this->nonRankVarAndStackOfCondMapping.erase(nonRankVar);
+	}
+
+	else{}
+
 }
 
 /********************************************************************/
