@@ -73,6 +73,7 @@ vector<string> MPITypeCheckingConsumer::analyzeNonRankVarCond(map<string,stack<C
 		stackOfNonRankVarNames.push_back(it->first);
 	}
 
+	tmpNonRankVarCondMap.clear();
 	return stackOfNonRankVarNames;
 }
 
@@ -211,16 +212,11 @@ bool MPITypeCheckingConsumer::VisitForStmt(ForStmt *S){
 
 	cout <<"The for stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 
-//	VarDecl *varDecl=S->getConditionVariable();
-//	string varDeclStr=decl2str(&ci->getSourceManager(),ci->getLangOpts(),varDecl);
-
-//	const Stmt* varDeclStmt=S->getConditionVariableDeclStmt();
-//	string varDeclStmtStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), varDeclStmt);
-
 	Expr *condOfFor=S->getCond();
 	string condOfForStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), condOfFor);
 
 	Stmt *initFor = S->getInit();
+	cout<<"type of init stmt in for stmt is "<<initFor->getStmtClassName()<<endl;
 	string initForStmtStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), initFor);
 
 	Expr *inc=S->getInc();
@@ -228,6 +224,11 @@ bool MPITypeCheckingConsumer::VisitForStmt(ForStmt *S){
 
 	Stmt *bodyOfFor= S->getBody();
 	string bodyOfForStmtStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), bodyOfFor);
+
+	//The results will be stored in the vars below
+	string varName;int initVal; int endVal; int incVal; string opInCond; char trend;
+
+	this->analyzeForStmt(initFor,condOfFor,inc,bodyOfFor,&varName,&initVal,&endVal,&incVal,&opInCond,&trend);
 
 //	cout<<"The var decl is "<<varDeclStr<<endl;
 	cout<<"The init is "<<initForStmtStr<<endl;
@@ -479,4 +480,73 @@ bool MPITypeCheckingConsumer::VisitFunctionDecl(FunctionDecl *funcDecl){
 	}	
 
 	return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*************************************************************************
+Analyze For Stmt!
+*************************************************************************/
+void MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr* incExpr, Stmt* body,
+				string* varName,int* initVal, int* endVal, int* incVal, string* opInCond, char* trend){
+			
+					map<string,int> varValMap;
+
+					this->commManager->extractCondFromExpr(condExpr);
+
+					vector<string> nonRankVarList=this->analyzeNonRankVarCond(this->commManager->getTmpNonRankVarCondStackMap());
+
+					//visit each stmt inside the for loop
+					this->TraverseStmt(body);
+
+					this->removeNonRankVarCondInStack(nonRankVarList);
+
+					if (isa<DeclStmt>(initStmt))
+					{
+						DeclStmt initDeclStmt=cast<DeclStmt>(*initStmt);
+						DeclGroupRef dgr=initDeclStmt.getDeclGroup();
+
+						
+						for (DeclGroupRef::iterator it=dgr.begin();it!=dgr.end();++it)
+						{
+							Decl *decl=*it;
+							if (isa<VarDecl>(*decl))
+							{
+								VarDecl varDecl=cast<VarDecl>(*decl);
+								string varName=varDecl.getNameAsString();
+								Expr *initExprInVarDecl=varDecl.getInit();
+
+								APSInt result;
+								if (initExprInVarDecl->EvaluateAsInt(result,ci->getASTContext()))
+								{
+									int num=atoi(result.toString(10).c_str());
+									varValMap[varName]=num;
+								}
+
+								string initExpr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),initExprInVarDecl);
+								cout<<"the var "<<varName<<" is declared!"
+									<<"The init in the decl is "<<initExpr<<endl;
+							}
+						}
+
+			
+					}
 }

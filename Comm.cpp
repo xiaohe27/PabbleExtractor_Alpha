@@ -420,6 +420,20 @@ if(nodeT==ST_NODE_CHOICE || nodeT==ST_NODE_RECUR
 	   this->curNode=node;
 }
 
+if(node->getNodeType()==ST_NODE_CONTINUE){
+	CommNode *theParent=this->curNode;
+	while (theParent->getNodeType()!=ST_NODE_RECUR)
+	{
+		theParent=theParent->getParent();
+	}
+
+	if(theParent!=nullptr){
+		ContNode *contNode=(ContNode*)node;
+		RecurNode *loopNode=(RecurNode*)(theParent);
+
+		contNode->setRefNode(loopNode);
+	}
+}
 
 }
 

@@ -364,6 +364,7 @@ public:
 	void visit(){this->refNode->visitOnce();}
 
 	RecurNode* getRefNode(){return this->refNode;}
+	void setRefNode(RecurNode* refNode0){this->refNode=refNode0;}
 };
 
 
