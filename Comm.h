@@ -5,6 +5,7 @@
 #include "include/st_node.h"
 #include <vector>
 #include <stack>
+#include <array>
 #include <map>
 #include <string>
 #include <sstream>
@@ -71,6 +72,7 @@ string stmt2str(SourceManager *sm, LangOptions lopt,clang::Stmt *stmt);
 
 bool evalIntCmpTruth(int arg1, int arg2, string op);
 
+bool isCmpOp(string op);
 
 int min(int a, int b);
 int max(int a, int b);
@@ -246,7 +248,6 @@ private:
 	string dataType;
 	
 	Condition src;
-
 	Condition dest;
 	string tag;
 	string group;
@@ -262,6 +263,11 @@ public:
 	}
 
 	int getOPType(){return this->opType;}
+	string getDataType(){return this->dataType;}
+	Condition getSrcCond(){return this->src;}
+	Condition getDestCond(){return this->dest;}
+	string getTag(){return this->tag;}
+	string getGroup(){return this->group;}
 
 };
 
@@ -415,7 +421,9 @@ public:
 
 	string getCommGroup4RankVar(string rankVar);
 
-	Condition extractCondFromExpr(Expr *expr);
+	Condition extractCondFromBoolExpr(Expr *expr);
+
+	Condition extractCondFromTargetExpr(Expr *expr);
 
 	void insertCondition(Expr *expr);
 
@@ -431,6 +439,8 @@ public:
 
 	void insertRankVarAndOffset(string varName, int offset);
 
+	int getOffSet4RankRelatedVar(string varName);
+
 	bool isVarRelatedToRank(string varName);
 
 	void cancelRelation(string varName);
@@ -438,6 +448,8 @@ public:
 	void insertVarName(string varName);
 
 	bool isAVar(string str);
+
+	bool hasAssociatedWithCondition(string varName);
 
 	Condition getTopCondition();
 

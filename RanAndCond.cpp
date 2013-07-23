@@ -601,8 +601,6 @@ string Condition::printConditionInfo(){
 	if(this->isIgnored())
 		return "{Empty Condition}";
 
-	if(this->isComplete())
-		return "{[0..N-1]}";
 
 	/////////////////////////////////////////////////
 

@@ -28,6 +28,20 @@ int maxEnd(int a, int b){
 
 }
 
+bool isCmpOp(string op){
+	
+	array<string,6> cmpOPArr={"==","<",">","<=",">=","!="};
+	int size=cmpOPArr.size();
+	
+	for (int i = 0; i < size; i++)
+	{
+		if(op==cmpOPArr[i])
+			return true;
+	}
+
+	return false;
+}
+
 int compute(string op, int operand1, int operand2){
 	if(op=="+")
 		return operand1+operand2;
@@ -87,19 +101,15 @@ bool CommManager::isAVar(string name){
 	return false;
 }
 
-Condition CommManager::extractCondFromExpr(Expr *expr){
-	cout<<"The expr "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),expr)<<" is obtained by Comm.cpp"<<endl;
+Condition CommManager::extractCondFromBoolExpr(Expr *expr){
+	string exprStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),expr);
+	cout<<"The expr "<<exprStr<<" is obtained by Comm.cpp"<<endl;
 	
 	cout<<"The stmt class type is "<<expr->getStmtClassName()<<endl;
 
-	APSInt INT_Result0;
 
-	if (expr->EvaluateAsInt(INT_Result0, this->ci->getASTContext())){
-		int rankNum=atoi(INT_Result0.toString(10).c_str());
-		
-		return Condition(Range(rankNum,rankNum));
-	}
-
+	//**************************If the condition is a single item***********************************************
+	//if it is a single number
 	bool boolResult;
 	bool canBeEval=expr->EvaluateAsBooleanCondition(boolResult,this->ci->getASTContext());
 	
@@ -120,12 +130,19 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 
 	else{cout <<"The expr can NOT be evaluated!"<<endl;}
 
+	//if it is a single var
+	if(this->isAVar(exprStr)){
+		//a var can contain any value, so assume true.
+		return Condition(true);
+	}
+
+
 	if(isa<ParenExpr>(expr)){
 		ParenExpr *bracketExpr=cast<ParenExpr>(expr);
 		Expr *withoutParen=bracketExpr->getSubExpr();
 		cout<<"The expr without brackets is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),withoutParen)<<endl;
 
-		return extractCondFromExpr(withoutParen);
+		return extractCondFromBoolExpr(withoutParen);
 	}
 	/////////////////////////////////////////////////////////////
 	//the expr is a bin op.
@@ -146,58 +163,13 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 		cout<<"The operator is : "<<op<<endl;
 
 		
-///////////////////////////////////////////////////////////////////////////////////////////////////
-		if(op=="+" || op=="-"){
-			APSInt INT_Result;
-			bool lhsIsNum=false;
-			bool rhsIsNum=false;
-			int lhsNum=-1;
-			int rhsNum=-1;
-
-			if (lhs->EvaluateAsInt(INT_Result, this->ci->getASTContext())) {
-				lhsIsNum=true;
-				lhsNum=atoi(INT_Result.toString(10).c_str());
-			}
-
-			if (rhs->EvaluateAsInt(INT_Result, this->ci->getASTContext())) {
-				rhsIsNum=true;
-				rhsNum=atoi(INT_Result.toString(10).c_str());
-			}
-
-			/////////////////////////////////////////////////////
-			if (lhsIsNum && rhsIsNum)
-			{
-				int rankNum=compute(op,lhsNum,rhsNum);
-				return Condition(Range(rankNum,rankNum));
-			}
-
-			
-			if(op=="+"){
-				if(this->isVarRelatedToRank(lhsStr) && rhsIsNum){
-					return this->getTopCondition().addANumber(rhsNum);
-				}
-
-				if(this->isVarRelatedToRank(rhsStr) && lhsIsNum){
-					return this->getTopCondition().addANumber(lhsNum);
-				}
-
-				return Condition(false);
-			}
-
-			// minus
-			else{
-				if(this->isVarRelatedToRank(lhsStr) && rhsIsNum){
-					return this->getTopCondition().addANumber(-rhsNum);
-				}
-
-				return Condition(false);
-			}
 		
-		}
+///////////////////////////////////////////////////////////////////////////////////////////////////
+		
 
 		if(op=="&&"){
-			Condition lCond=extractCondFromExpr(lhs);
-			Condition rCond=extractCondFromExpr(rhs);
+			Condition lCond=extractCondFromBoolExpr(lhs);
+			Condition rCond=extractCondFromBoolExpr(rhs);
 
 			string nonRankVarName="";
 			string lhsNonRankVarName=lCond.getNonRankVarName();
@@ -231,8 +203,8 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 		}
 
 		else if(op=="||"){
-			Condition lCond=extractCondFromExpr(lhs);
-			Condition rCond=extractCondFromExpr(rhs);
+			Condition lCond=extractCondFromBoolExpr(lhs);
+			Condition rCond=extractCondFromBoolExpr(rhs);
 
 			string nonRankVarName="";
 			string lhsNonRankVarName=lCond.getNonRankVarName();
@@ -266,6 +238,15 @@ Condition CommManager::extractCondFromExpr(Expr *expr){
 		}
 		////it is a basic op
 		else {
+
+		//if the cur op is not a comparison op, then return true;
+		if(!isCmpOp(op))
+			return Condition(true);
+
+		//if either lhs or rhs are bin op, then return true;
+		if(isa<BinaryOperator>(lhs) || isa<BinaryOperator>(rhs))
+			return Condition(true);
+
 			
 			bool leftIsVar=false;
 			bool rightIsVar=false;
@@ -441,7 +422,7 @@ if(node->getNodeType()==ST_NODE_CONTINUE){
 void CommManager::insertCondition(Expr *expr){
 			this->clearTmpNonRankVarCondStackMap();	
 
-			Condition cond=this->extractCondFromExpr(expr);
+			Condition cond=this->extractCondFromBoolExpr(expr);
 
 			if(!stackOfRankConditions.empty()){
 				Condition top=stackOfRankConditions.back();
@@ -585,10 +566,10 @@ Condition CommManager::getTopCond4NonRankVar(string nonRankVar){
 		return this->nonRankVarAndStackOfCondMapping[nonRankVar].top();
 
 		else
-			return Condition(false);
+			return Condition(true);
 	}
 
-	else{return Condition(false);}
+	else{return Condition(true);}
 }
 
 void CommManager::removeTopCond4NonRankVar(string nonRankVar){
@@ -604,6 +585,160 @@ void CommManager::removeTopCond4NonRankVar(string nonRankVar){
 
 }
 
+
+Condition CommManager::extractCondFromTargetExpr(Expr *expr){
+	string errInfo="The current system does not support the operators other than + or - when constructing the target of MPI operation";
+	string errInfo2="the current system does not allow to use unknown non-rank vars to denote target processes";
+	string errInfo3="To represent the rank of a process using plus op, current system only support number plus number or rank-related var plus number";
+	string errInfo4="To represent the rank of a process using minus op, current system only support rank-related var minus number";
+	
+	
+	string exprStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),expr);
+	cout<<"The target expr "<<exprStr<<" is obtained by the extract method"<<endl;
+	
+	cout<<"The stmt class type is "<<expr->getStmtClassName()<<endl;
+
+
+	//**************************If the condition is a single item***********************************************
+	//if it is a single number
+	APSInt IntResult;
+	bool canBeEval=expr->EvaluateAsInt(IntResult,ci->getASTContext());
+	
+	if(canBeEval){
+		cout <<"The expr can be evaluated as int!"<<endl;
+
+		int rankNum=atoi(IntResult.toString(10).c_str());
+
+		cout<<"The rank here is "<<rankNum<<endl;
+		
+		return Condition(Range(rankNum,rankNum));
+	}
+
+	else{cout <<"The expr can NOT be evaluated as int!"<<endl;}
+
+	//if it is a single var
+	if(this->isAVar(exprStr)){
+		if(this->isVarRelatedToRank(exprStr))
+			return this->getTopCondition().addANumber(this->getOffSet4RankRelatedVar(exprStr));
+
+		else if(this->nonRankVarAndStackOfCondMapping.count(exprStr)>0){
+			if(this->nonRankVarAndStackOfCondMapping[exprStr].size()>0){
+				//we have identified the range of the non-rank var 
+				return this->getTopCond4NonRankVar(exprStr);
+			}
+
+		}
+
+		//the current system does not allow to use unknown non-rank vars to denote target processes.
+		throw new MPI_TypeChecking_Error(errInfo2);
+	}
+
+
+	if(isa<ParenExpr>(expr)){
+		ParenExpr *bracketExpr=cast<ParenExpr>(expr);
+		Expr *withoutParen=bracketExpr->getSubExpr();
+		cout<<"The expr without brackets is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),withoutParen)<<endl;
+
+		return extractCondFromTargetExpr(withoutParen);
+	}
+
+
+	if(isa<BinaryOperator>(expr)){
+		BinaryOperator *binOP=cast<BinaryOperator>(expr);
+
+		Expr *lhs=binOP->getLHS();
+		Expr *rhs=binOP->getRHS();
+
+		string lhsStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
+		string rhsStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs);
+		string op=binOP->getOpcodeStr();
+
+		cout<<"The bin op is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),binOP)<<"\n";
+		cout<<"The lhs is "<<lhsStr<<"\n";
+		cout<<"The rhs is "<<rhs<<"\n";
+		cout<<"The operator is : "<<op<<endl;
+
+		/*********************************************************************************************/
+		if(op=="+" || op=="-"){
+			APSInt INT_Result;
+			bool lhsIsNum=false;
+			bool rhsIsNum=false;
+			int lhsNum=-1;
+			int rhsNum=-1;
+
+			if (lhs->EvaluateAsInt(INT_Result, this->ci->getASTContext())) {
+				lhsIsNum=true;
+				lhsNum=atoi(INT_Result.toString(10).c_str());
+			}
+
+			if (rhs->EvaluateAsInt(INT_Result, this->ci->getASTContext())) {
+				rhsIsNum=true;
+				rhsNum=atoi(INT_Result.toString(10).c_str());
+			}
+
+			/////////////////////////////////////////////////////
+			if (lhsIsNum && rhsIsNum)
+			{
+				int rankNum=compute(op,lhsNum,rhsNum);
+				return Condition(Range(rankNum,rankNum));
+			}
+
+			
+			if(op=="+"){
+				if(this->hasAssociatedWithCondition(lhsStr) && rhsIsNum){
+					return this->extractCondFromTargetExpr(lhs).addANumber(rhsNum);
+				}
+
+	
+
+				if(this->hasAssociatedWithCondition(rhsStr) && lhsIsNum){
+					return this->extractCondFromTargetExpr(rhs).addANumber(lhsNum);
+				}
+
+
+				throw new MPI_TypeChecking_Error(errInfo3);
+			}
+
+			// minus
+			else{
+				if(this->hasAssociatedWithCondition(lhsStr) && rhsIsNum){
+					return this->extractCondFromTargetExpr(lhs).addANumber(-rhsNum);
+				}
+
+				throw new MPI_TypeChecking_Error(errInfo4);
+			}
+		
+		}
+
+		
+		
+		throw new MPI_TypeChecking_Error(errInfo);
+
+	}
+}
+
+bool CommManager::hasAssociatedWithCondition(string varName){
+	if(this->isVarRelatedToRank(varName))
+		return true;
+
+	if(this->nonRankVarAndStackOfCondMapping.count(varName)>0){
+		if(this->nonRankVarAndStackOfCondMapping[varName].size()>0)
+			return true;
+	}
+
+	return false;
+}
+
+
+int CommManager::getOffSet4RankRelatedVar(string varName){
+	if(this->rankVarOffsetMapping.count(varName)>0){
+		return rankVarOffsetMapping[varName];
+	}
+
+	else{
+		throw new MPI_TypeChecking_Error("The var "+varName+" is not related to rank but the method getOffSet4RankRelatedVar() is called");
+	}
+}
 /********************************************************************/
 //Class CommManager impl end										****
 /********************************************************************/

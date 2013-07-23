@@ -27,7 +27,7 @@ bool MPITypeCheckingConsumer::VisitBinaryOperator(BinaryOperator *op){
 	APSInt Result;
 	Expr *rhs=op->getRHS();
 
-//	cout << "RHS has textual content: \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs)<<"\n"<<endl;
+	//	cout << "RHS has textual content: \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs)<<"\n"<<endl;
 
 
 	if (rhs->EvaluateAsInt(Result, this->ci->getASTContext())) {
@@ -102,11 +102,11 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 	//cout <<"The if stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(), ifStmt) <<endl;
 	CommNode *choiceNode=new CommNode(ST_NODE_CHOICE);
-	
+
 	//the choice node will become the cur node automatically
 	this->commManager->insertNode(choiceNode);
 
-	
+
 
 	Expr *condExpr=ifStmt->getCond();
 	string typeOfCond=condExpr->getType().getAsString();
@@ -115,10 +115,10 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 	//after exec this stmt, the condition for the then part will be put on the top of the stack
 	this->commManager->insertCondition(condExpr);
-	
+
 	//insert the non-rank var conditions to formal stack, if any
 	vector<string> stackOfNonRankVarNames=this->analyzeNonRankVarCond(this->commManager->getTmpNonRankVarCondStackMap());
-	
+
 	//visit then part
 	cout<<"Going to visit then part of condition: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
 
@@ -140,7 +140,7 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 
 
-//	Condition curCond=Condition::negateCondition(condInIfPart);
+	//	Condition curCond=Condition::negateCondition(condInIfPart);
 	Condition topCond=this->commManager->getTopCondition();
 	Condition condInElsePart=topCond.Diff(condInIfPart);
 	this->commManager->insertExistingCondition(condInElsePart);
@@ -176,20 +176,20 @@ bool MPITypeCheckingConsumer::VisitDeclStmt(DeclStmt *S){
 
 	if(!this->visitStart){
 		DeclGroupRef d=S->getDeclGroup();
-		
+
 		DeclGroupRef::iterator it;
 
-	for( it = d.begin(); it != d.end(); it++)
-	{
+		for( it = d.begin(); it != d.end(); it++)
+		{
 
-		if(isa<VarDecl>(*it)){
-			VarDecl *var=cast<VarDecl>(*it);
-			string varName=var->getDeclName().getAsString();
-			cout<<"Find the var "<<varName<<endl;
+			if(isa<VarDecl>(*it)){
+				VarDecl *var=cast<VarDecl>(*it);
+				string varName=var->getDeclName().getAsString();
+				cout<<"Find the var "<<varName<<endl;
 
-			this->commManager->insertVarName(varName);
+				this->commManager->insertVarName(varName);
+			}
 		}
-	}
 		return true;
 	}
 
@@ -225,12 +225,33 @@ bool MPITypeCheckingConsumer::VisitForStmt(ForStmt *S){
 	Stmt *bodyOfFor= S->getBody();
 	string bodyOfForStmtStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), bodyOfFor);
 
+
+	//analyse the non-rank var 
+	this->commManager->extractCondFromBoolExpr(condOfFor);
+
+	vector<string> nonRankVarList=this->analyzeNonRankVarCond(this->commManager->getTmpNonRankVarCondStackMap());
+
+
+
+
+
 	//The results will be stored in the vars below
 	string varName;int initVal; int endVal; int incVal; string opInCond; char trend;
 
-	this->analyzeForStmt(initFor,condOfFor,inc,bodyOfFor,&varName,&initVal,&endVal,&incVal,&opInCond,&trend);
+	int size=this->analyzeForStmt(initFor,condOfFor,inc,bodyOfFor,&varName,&initVal,&endVal,&incVal,&opInCond,&trend);
 
-//	cout<<"The var decl is "<<varDeclStr<<endl;
+	//create node for 'for' stmt
+	RecurNode forNode=RecurNode(size);
+	this->commManager->insertNode(&forNode);
+
+	//visit each stmt inside the for loop
+	this->TraverseStmt(bodyOfFor);
+
+	this->removeNonRankVarCondInStack(nonRankVarList);
+
+
+
+	//	cout<<"The var decl is "<<varDeclStr<<endl;
 	cout<<"The init is "<<initForStmtStr<<endl;
 	cout<<"The condition is "<<condOfForStr<<endl;
 	cout<<"The inc is "<<incOfForStr<<endl;
@@ -312,7 +333,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 
 	int numOfArgs=E->getNumArgs();
 
-	
+
 	vector<string> args(numOfArgs+1);
 
 
@@ -321,9 +342,9 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 	{		
 		args[i]=expr2str(&ci->getSourceManager(),ci->getLangOpts(),E->getArg(i));
 	}
-	
 
-//	Decl *decl=E->getCalleeDecl();
+
+	//	Decl *decl=E->getCalleeDecl();
 
 
 	FunctionDecl *funcCall=E->getDirectCallee();
@@ -345,56 +366,59 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 
 		if(funcName=="MPI_Comm_rank"){
 			string commGroup=args[0];
-			
+
 			this->rankVar=args[1].substr(1,args[1].length()-1);
 
 			this->commManager->insertRankVarAndOffset(rankVar,0);
 
 			this->commManager->insertRankVarAndCommGroupMapping(this->rankVar,commGroup);
-		
+
 			cout<<"Rank var is "<<this->rankVar <<".\t AND it is associated with group "<<commGroup<<endl;
 		}
 
 		if(funcName=="MPI_Send"){
-			
+
 			string dataType=args[2];
 			string dest=args[3];
 			string tag=args[4];
 			string group=args[5];
 
-			MPIOperation *mpiOP=new MPIOperation(ST_NODE_SEND, dataType,
-								this->commManager->getTopCondition(), 
-								this->commManager->extractCondFromExpr(E->getArg(3)), tag, group);
+			MPIOperation *mpiOP=new MPIOperation(ST_NODE_SEND, 
+												dataType,
+												this->commManager->getTopCondition(), //the performer
+												this->commManager->extractCondFromTargetExpr(E->getArg(3)), //the dest
+												tag, 
+												group);
 
 			CommNode *sendNode=new CommNode(mpiOP);
-
+			sendNode->setNodeType(ST_NODE_SEND);
 			this->commManager->insertNode(sendNode);
 
 
 			cout <<"\n\n\n\n\nThe dest of mpi send is"
-				<< this->commManager->extractCondFromExpr(E->getArg(3)).printConditionInfo()<<"\n\n\n\n\n" <<endl;
+				<< mpiOP->getDestCond().printConditionInfo()<<"\n\n\n\n\n" <<endl;
 
 		}
 
 		if(funcName=="MPI_Recv"){
-			
+
 			string dataType=args[2];
-			string dest=args[3];
+			string src=args[3];
 			string tag=args[4];
 			string group=args[5];
 
 			MPIOperation *mpiOP=new MPIOperation(ST_NODE_RECV, dataType,
-				    this->commManager->extractCondFromExpr(E->getArg(3)),
+								this->commManager->extractCondFromTargetExpr(E->getArg(3)),
 								this->commManager->getTopCondition(), 
 								tag, group);
 
 			CommNode *recvNode=new CommNode(mpiOP);
-
+			recvNode->setNodeType(ST_NODE_RECV);
 			this->commManager->insertNode(recvNode);
 
 
 			cout <<"\n\n\n\n\nThe src of mpi recv is"<<
-				this->commManager->extractCondFromExpr(E->getArg(3)).printConditionInfo()<<"\n\n\n\n\n" <<endl;
+				mpiOP->getSrcCond().printConditionInfo()<<"\n\n\n\n\n" <<endl;
 
 		}
 
@@ -402,14 +426,14 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 		/*******************Enum the possible MPI OPs end***********************************/
 		/////////////////////////////////////////////////////////////////////
 		if(funcCall->hasBody())
-		this->analyzeDecl(funcCall);
+			this->analyzeDecl(funcCall);
 	}
 
 	else{
 		this->TraverseDecl(E->getCalleeDecl());
 	}
 
-	
+
 	args.clear();
 	return true;
 }
@@ -439,8 +463,8 @@ bool MPITypeCheckingConsumer::VisitFunctionDecl(FunctionDecl *funcDecl){
 		unsigned int index=(*it)->getFunctionScopeIndex();
 		unsigned int depth=(*it)->getFunctionScopeDepth();
 
-//		cout << "The index and depth of the parameter "<<decl2str(&ci->getSourceManager(),ci->getLangOpts(),*it);
-//		cout <<" is " << index << " and " << depth << endl;
+		//		cout << "The index and depth of the parameter "<<decl2str(&ci->getSourceManager(),ci->getLangOpts(),*it);
+		//		cout <<" is " << index << " and " << depth << endl;
 
 		Expr *argVal=(*it)->getDefaultArg();
 		if(argVal && argVal->isRValue()){
@@ -460,7 +484,7 @@ bool MPITypeCheckingConsumer::VisitFunctionDecl(FunctionDecl *funcDecl){
 		this->TraverseStmt(funcDecl->getBody());
 
 		string retType=funcDecl->getResultType().getAsString();
-		
+
 		if(retType.compare("void")==0){
 			if( !this->funcsList.empty() && this->funcsList.back().compare(funcName)==0){
 				//if the void function does not have a return stmt, then remove the function name from the list here.
@@ -505,48 +529,45 @@ bool MPITypeCheckingConsumer::VisitFunctionDecl(FunctionDecl *funcDecl){
 /*************************************************************************
 Analyze For Stmt!
 *************************************************************************/
-void MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr* incExpr, Stmt* body,
-				string* varName,int* initVal, int* endVal, int* incVal, string* opInCond, char* trend){
-			
-					map<string,int> varValMap;
+int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr* incExpr, Stmt* body,
+											 string* varName,int* initVal, int* endVal, int* incVal, string* opInCond, char* trend)
+{
 
-					this->commManager->extractCondFromExpr(condExpr);
+	map<string,int> varValMap;
 
-					vector<string> nonRankVarList=this->analyzeNonRankVarCond(this->commManager->getTmpNonRankVarCondStackMap());
 
-					//visit each stmt inside the for loop
-					this->TraverseStmt(body);
+	if (isa<DeclStmt>(initStmt))
+	{
+		DeclStmt initDeclStmt=cast<DeclStmt>(*initStmt);
+		DeclGroupRef dgr=initDeclStmt.getDeclGroup();
 
-					this->removeNonRankVarCondInStack(nonRankVarList);
 
-					if (isa<DeclStmt>(initStmt))
-					{
-						DeclStmt initDeclStmt=cast<DeclStmt>(*initStmt);
-						DeclGroupRef dgr=initDeclStmt.getDeclGroup();
+		for (DeclGroupRef::iterator it=dgr.begin();it!=dgr.end();++it)
+		{
+			Decl *decl=*it;
+			if (isa<VarDecl>(*decl))
+			{
+				VarDecl varDecl=cast<VarDecl>(*decl);
+				string varName=varDecl.getNameAsString();
+				Expr *initExprInVarDecl=varDecl.getInit();
 
-						
-						for (DeclGroupRef::iterator it=dgr.begin();it!=dgr.end();++it)
-						{
-							Decl *decl=*it;
-							if (isa<VarDecl>(*decl))
-							{
-								VarDecl varDecl=cast<VarDecl>(*decl);
-								string varName=varDecl.getNameAsString();
-								Expr *initExprInVarDecl=varDecl.getInit();
+				APSInt result;
+				if (initExprInVarDecl->EvaluateAsInt(result,ci->getASTContext()))
+				{
+					int num=atoi(result.toString(10).c_str());
+					varValMap[varName]=num;
+				}
 
-								APSInt result;
-								if (initExprInVarDecl->EvaluateAsInt(result,ci->getASTContext()))
-								{
-									int num=atoi(result.toString(10).c_str());
-									varValMap[varName]=num;
-								}
+				string initExpr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),initExprInVarDecl);
+				cout<<"the var "<<varName<<" is declared!"
+					<<"The init in the decl is "<<initExpr<<endl;
+			}
+		}
 
-								string initExpr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),initExprInVarDecl);
-								cout<<"the var "<<varName<<" is declared!"
-									<<"The init in the decl is "<<initExpr<<endl;
-							}
-						}
+	}
 
-			
-					}
+
+
+
+	return -1;
 }

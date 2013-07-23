@@ -77,7 +77,8 @@ public:
 	//remove the old non-rank var from the stack and inserting the negation
 	void removeAndAddNewNonRankVarCondInStack(vector<string> stackOfNonRankVarNames);
 
-	void analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr* incExpr, Stmt* body,
+	//return the expected iteration numbers. If it is not clear, then -1 will be returned
+	int analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr* incExpr, Stmt* body,
 				string* varName,int* initVal, int* endVal, int* incVal, string* opInCond, char* trend);
 
 	void printTheTree(){
