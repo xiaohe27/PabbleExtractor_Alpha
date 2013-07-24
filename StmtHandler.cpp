@@ -243,8 +243,6 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	//The results will be stored in the vars below
-	string varName;int initVal; int endVal; int incVal; string opInCond; char trend;
 
 	int size=this->analyzeForStmt(initFor,condOfFor,inc,bodyOfFor,nonRankVarList);
 
@@ -270,11 +268,36 @@ bool MPITypeCheckingConsumer::VisitDoStmt(DoStmt *S){
 	return true;
 }
 
-bool MPITypeCheckingConsumer::VisitWhileStmt(WhileStmt *S){
+bool MPITypeCheckingConsumer::TraverseWhileStmt(WhileStmt *S){
 	if(!this->visitStart)
 		return true;
 
 	cout <<"The While stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
+
+	Expr *condOfWhile=S->getCond();
+	string condOfWhileStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), condOfWhile);
+
+	Stmt *bodyOfWhile= S->getBody();
+	string bodyOfWhileStmtStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), bodyOfWhile);
+
+	//analyse the non-rank var 
+	Condition theCondOfWhile=this->commManager->extractCondFromBoolExpr(condOfWhile);
+	if(!theCondOfWhile.isComplete())
+		throw new MPI_TypeChecking_Error("The condition in while loop should not contain rank-related var!");
+
+	vector<string> nonRankVarList=this->analyzeNonRankVarCond(this->commManager->getTmpNonRankVarCondStackMap());
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	//create node for 'while' stmt
+	RecurNode *whileNode=new RecurNode(-1);
+	this->commManager->insertNode(whileNode);
+
+	//visit each stmt inside the for loop
+	this->TraverseStmt(bodyOfWhile);
+
+	this->removeNonRankVarCondInStack(nonRankVarList);
+
 	return true;
 }
 

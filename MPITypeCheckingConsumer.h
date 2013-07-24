@@ -102,7 +102,7 @@ public:
 
 	bool VisitDoStmt(DoStmt *S);
 
-	bool VisitWhileStmt(WhileStmt *S);
+	bool TraverseWhileStmt(WhileStmt *S);
 
 	bool VisitLabelStmt(LabelStmt *S);
 
