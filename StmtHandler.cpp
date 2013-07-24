@@ -206,7 +206,7 @@ bool MPITypeCheckingConsumer::VisitSwitchStmt(SwitchStmt *S){
 	return true;
 }
 
-bool MPITypeCheckingConsumer::VisitForStmt(ForStmt *S){
+bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 	if(!this->visitStart)
 		return true;
 
@@ -225,15 +225,21 @@ bool MPITypeCheckingConsumer::VisitForStmt(ForStmt *S){
 	Stmt *bodyOfFor= S->getBody();
 	string bodyOfForStmtStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), bodyOfFor);
 
+	
+	//	cout<<"The var decl is "<<varDeclStr<<endl;
+	cout<<"The init is "<<initForStmtStr<<endl;
+	cout<<"The condition is "<<condOfForStr<<endl;
+	cout<<"The inc is "<<incOfForStr<<endl;
+	cout<<"The body of for stmt is "<<bodyOfForStmtStr<<endl;
+
+
 
 	//analyse the non-rank var 
 	this->commManager->extractCondFromBoolExpr(condOfFor);
 
 	vector<string> nonRankVarList=this->analyzeNonRankVarCond(this->commManager->getTmpNonRankVarCondStackMap());
 
-
-
-
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//The results will be stored in the vars below
 	string varName;int initVal; int endVal; int incVal; string opInCond; char trend;
@@ -241,21 +247,13 @@ bool MPITypeCheckingConsumer::VisitForStmt(ForStmt *S){
 	int size=this->analyzeForStmt(initFor,condOfFor,inc,bodyOfFor,&varName,&initVal,&endVal,&incVal,&opInCond,&trend);
 
 	//create node for 'for' stmt
-	RecurNode forNode=RecurNode(size);
-	this->commManager->insertNode(&forNode);
+	RecurNode *forNode=new RecurNode(size);
+	this->commManager->insertNode(forNode);
 
 	//visit each stmt inside the for loop
 	this->TraverseStmt(bodyOfFor);
 
 	this->removeNonRankVarCondInStack(nonRankVarList);
-
-
-
-	//	cout<<"The var decl is "<<varDeclStr<<endl;
-	cout<<"The init is "<<initForStmtStr<<endl;
-	cout<<"The condition is "<<condOfForStr<<endl;
-	cout<<"The inc is "<<incOfForStr<<endl;
-	cout<<"The body of for stmt is "<<bodyOfForStmtStr<<endl;
 
 	return true;
 }
@@ -319,6 +317,9 @@ bool MPITypeCheckingConsumer::VisitContinueStmt(ContinueStmt *S){
 		return true;
 
 	cout <<"Call Continue stmt" <<endl;
+	
+	CommNode *cont=new CommNode(ST_NODE_CONTINUE);
+	this->commManager->insertNode(cont);
 	return true;
 }
 
@@ -566,8 +567,35 @@ int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr
 
 	}
 
+	else if (isa<BinaryOperator>(initStmt))
+	{
+		BinaryOperator binOP=cast<BinaryOperator>(*initStmt);
+		Expr *lhs=binOP.getLHS();
+		Expr *rhs=binOP.getRHS();
+		string op=binOP.getOpcodeStr();
+
+		if(op=="="){
+		string lhsStr=expr2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
+			if (this->commManager->isAVar(lhsStr))
+			{
+				APSInt Result;
+				if (rhs->EvaluateAsInt(Result, this->ci->getASTContext())) {
+					int num=atoi(Result.toString(10).c_str());
+
+					varValMap[lhsStr]=num;
+					}
+			}
+		}
+		
+	}
+
+
+	for (auto &x:varValMap)
+	{
+		cout<<x.first<< ":"<<x.second<<endl;
+	}
 
 
 
-	return -1;
+	return -1; 
 }

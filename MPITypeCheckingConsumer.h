@@ -101,7 +101,7 @@ public:
 
 	bool VisitSwitchStmt(SwitchStmt *S);
 
-	bool VisitForStmt(ForStmt *S);
+	bool TraverseForStmt(ForStmt *S);
 
 	bool VisitDoStmt(DoStmt *S);
 

@@ -314,7 +314,7 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 
 						if (rhs->EvaluateAsInt(Result, this->ci->getASTContext())) {
 						int num=atoi(Result.toString(10).c_str());
-						std::cout << "The cond is created by (" <<op<<","<< num <<")"<< std::endl;
+						std::cout << "The non-rank cond is created by (" <<op<<","<< num <<")"<< std::endl;
 
 						Condition cond=Condition::createCondByOp(op,num);
 
@@ -327,7 +327,7 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 
 						if (lhs->EvaluateAsInt(Result, this->ci->getASTContext())) {
 						int num=atoi(Result.toString(10).c_str());
-						std::cout << "The cond is created by (" <<op<<","<< num <<")"<< std::endl;
+						std::cout << "The non-rank cond is created by (" <<op<<","<< num <<")"<< std::endl;
 
 						Condition cond=Condition::createCondByOp(op,num);
 						this->insertTmpNonRankVarCond(rVarName,cond);
@@ -391,15 +391,8 @@ void CommManager::insertNode(CommNode *node){
 //set the condition for the node.
 node->setCond(this->getTopCondition());
 
-this->curNode->insert(node);
-
 int nodeT=node->getNodeType();
 
-if(nodeT==ST_NODE_CHOICE || nodeT==ST_NODE_RECUR
-   ||nodeT==ST_NODE_ROOT || nodeT==ST_NODE_PARALLEL){
-
-	   this->curNode=node;
-}
 
 if(node->getNodeType()==ST_NODE_CONTINUE){
 	CommNode *theParent=this->curNode;
@@ -414,6 +407,16 @@ if(node->getNodeType()==ST_NODE_CONTINUE){
 
 		contNode->setRefNode(loopNode);
 	}
+
+}
+
+//insert the node
+this->curNode->insert(node);
+
+if(nodeT==ST_NODE_CHOICE || nodeT==ST_NODE_RECUR
+   ||nodeT==ST_NODE_ROOT || nodeT==ST_NODE_PARALLEL){
+
+	   this->curNode=node;
 }
 
 }
@@ -574,14 +577,21 @@ Condition CommManager::getTopCond4NonRankVar(string nonRankVar){
 
 void CommManager::removeTopCond4NonRankVar(string nonRankVar){
 	if(this->nonRankVarAndStackOfCondMapping.count(nonRankVar)>0){
-		if(this->nonRankVarAndStackOfCondMapping[nonRankVar].size()>0)
+		if(this->nonRankVarAndStackOfCondMapping[nonRankVar].size()>0){
 		this->nonRankVarAndStackOfCondMapping[nonRankVar].pop();
+		
+		if(this->nonRankVarAndStackOfCondMapping[nonRankVar].size()==0)
+			this->nonRankVarAndStackOfCondMapping.erase(nonRankVar);
+		}
 
 		else
-			this->nonRankVarAndStackOfCondMapping.erase(nonRankVar);
+			throw new MPI_TypeChecking_Error("try to pop from an empty stack of non-rank var condtion");
+//			this->nonRankVarAndStackOfCondMapping.erase(nonRankVar);
 	}
 
-	else{}
+	else{
+		throw new MPI_TypeChecking_Error("try to pop from a non-existing non-rank var condtion stack");
+	}
 
 }
 
