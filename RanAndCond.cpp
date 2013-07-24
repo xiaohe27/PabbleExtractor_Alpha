@@ -309,13 +309,14 @@ bool Range::isAllRange(){
 
 //ok. already considered the case of end < start
 bool Range::isThisNumInside(int num){
-	if(num>=startPos && num<=endPos)
-		return true;
-
+	
 	if(this->isSpecialRange()){
 		if(num >= startPos || num <= endPos)
 			return true;
 	}
+
+	if(num>=startPos+startOffset && num<=endPos+endOffset)
+		return true;
 
 	return false;
 }
@@ -596,6 +597,28 @@ Condition Condition::addANumber(int num){
 
 	return *this;
 }
+
+
+bool Condition::isRankInside(int rankNum){
+	for (int i = 0; i < this->rangeList.size(); i++)
+	{
+		if(this->rangeList[i].isThisNumInside(rankNum))
+			return true;
+	}
+
+	return false;
+}
+
+Range Condition::getTheRangeContainingTheNum(int num){
+	for (int i = 0; i < this->rangeList.size(); i++)
+	{
+		if(this->rangeList[i].isThisNumInside(num))
+			return rangeList[i];
+	}
+
+	return Range();
+}
+
 
 string Condition::printConditionInfo(){
 	if(this->isIgnored())

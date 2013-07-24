@@ -522,9 +522,14 @@ string CommManager::getCommGroup4RankVar(string rankVar){
 }
 
 void CommManager::insertNonRankVarAndCondtion(string nonRankVar, Condition cond){
-	if(this->nonRankVarAndStackOfCondMapping.count(nonRankVar)>0){
-		Condition top=this->getTopCond4NonRankVar(nonRankVar);
-		cond=cond.AND(top);
+	if(this->nonRankVarAndStackOfCondMapping.count(nonRankVar)>0)
+	{
+		if (this->nonRankVarAndStackOfCondMapping[nonRankVar].size()>0)
+		{
+			Condition top=this->getTopCond4NonRankVar(nonRankVar);
+			cond=cond.AND(top);
+		}
+		
 		cond.setNonRankVarName(nonRankVar);
 		this->nonRankVarAndStackOfCondMapping[nonRankVar].push(cond);
 	}
@@ -569,10 +574,10 @@ Condition CommManager::getTopCond4NonRankVar(string nonRankVar){
 		return this->nonRankVarAndStackOfCondMapping[nonRankVar].top();
 
 		else
-			return Condition(true);
+			return Condition(false);
 	}
 
-	else{return Condition(true);}
+	else{return Condition(false);}
 }
 
 void CommManager::removeTopCond4NonRankVar(string nonRankVar){
@@ -725,6 +730,8 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 		throw new MPI_TypeChecking_Error(errInfo);
 
 	}
+
+	throw new MPI_TypeChecking_Error("Cannot find a proper condition for the target.");
 }
 
 bool CommManager::hasAssociatedWithCondition(string varName){

@@ -229,13 +229,15 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 	//	cout<<"The var decl is "<<varDeclStr<<endl;
 	cout<<"The init is "<<initForStmtStr<<endl;
 	cout<<"The condition is "<<condOfForStr<<endl;
-	cout<<"The inc is "<<incOfForStr<<endl;
+	cout<<"The inc is "<<incOfForStr<<"; It is of type "<<inc->getStmtClassName()<<endl;
 	cout<<"The body of for stmt is "<<bodyOfForStmtStr<<endl;
 
 
 
 	//analyse the non-rank var 
-	this->commManager->extractCondFromBoolExpr(condOfFor);
+	Condition theCondOfFor=this->commManager->extractCondFromBoolExpr(condOfFor);
+	if(!theCondOfFor.isComplete())
+		throw new MPI_TypeChecking_Error("The condition in for loop should not contain rank-related var!");
 
 	vector<string> nonRankVarList=this->analyzeNonRankVarCond(this->commManager->getTmpNonRankVarCondStackMap());
 
@@ -244,7 +246,9 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 	//The results will be stored in the vars below
 	string varName;int initVal; int endVal; int incVal; string opInCond; char trend;
 
-	int size=this->analyzeForStmt(initFor,condOfFor,inc,bodyOfFor,&varName,&initVal,&endVal,&incVal,&opInCond,&trend);
+	int size=this->analyzeForStmt(initFor,condOfFor,inc,bodyOfFor,nonRankVarList);
+
+	cout<<"The for loop will iterate "<<size<<" times!"<<endl;
 
 	//create node for 'for' stmt
 	RecurNode *forNode=new RecurNode(size);
@@ -530,8 +534,7 @@ bool MPITypeCheckingConsumer::VisitFunctionDecl(FunctionDecl *funcDecl){
 /*************************************************************************
 Analyze For Stmt!
 *************************************************************************/
-int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr* incExpr, Stmt* body,
-											 string* varName,int* initVal, int* endVal, int* incVal, string* opInCond, char* trend)
+int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr* incExpr, Stmt* body,vector<string> nonRankVarList)
 {
 
 	map<string,int> varValMap;
@@ -589,13 +592,91 @@ int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr
 		
 	}
 
+	
+	map<string,bool> isRelevant;
+	map<string,bool> isIn;
 
 	for (auto &x:varValMap)
 	{
-		cout<<x.first<< ":"<<x.second<<endl;
+		string theVarName=x.first;
+		Condition cond=this->commManager->getTopCond4NonRankVar(theVarName);
+
+		if(cond.isIgnored()){
+			isRelevant[theVarName]=false;
+			isIn[theVarName]=false;
+		}
+
+		else{
+			isRelevant[theVarName]=true;
+
+			if(cond.isRankInside(x.second))
+				isIn[theVarName]=true;
+			else
+				isIn[theVarName]=false;
+		}
+
 	}
 
+	bool allCondVarHaveBeenInitialized=true;
+	bool noneCondCanBeSatisfied=true;
 
+	for (int i = 0; i < nonRankVarList.size(); i++)
+	{
+		string nonRankVar=nonRankVarList[i];
+		if(varValMap.count(nonRankVar)==0)
+		{
+			allCondVarHaveBeenInitialized=false;
+			break;
+		}
+
+		if(isIn[nonRankVar]){
+			noneCondCanBeSatisfied=false;
+			break;
+		}
+	}
+
+	if(allCondVarHaveBeenInitialized && noneCondCanBeSatisfied){
+		//no condition can be satisfied, loop will iterate zero time
+		return 0;
+	}
+
+	if(nonRankVarList.size()>1)
+		return -1; //cannot estimate the number of iterations if there are more than 1 var involved.
+
+
+	if (nonRankVarList.size()==1)
+	{
+		if(!this->isChangingByOneUnit(incExpr)){
+			return -1;
+		}
+
+		string theVar=nonRankVarList.back();
+		int initValOfTheVar=varValMap[theVar];
+		Condition cond4TheVar=this->commManager->getTopCond4NonRankVar(theVar);
+		Range theTargetRange=cond4TheVar.getTheRangeContainingTheNum(initValOfTheVar);
+
+		string incStr=expr2str(&ci->getSourceManager(),ci->getLangOpts(),incExpr);
+		
+		//inc
+		size_t found1 = incStr.find("++");
+		size_t found2 = incStr.find("+=");
+		if (found1!=string::npos || found2!=string::npos)
+		{
+			//if the end pos is related to N, then no exact iteration numbers can be estimated
+			if(theTargetRange.getEnd()==InitEndIndex){return -1;}
+
+			else{return theTargetRange.getEnd()-initValOfTheVar+1;}
+		}
+
+		//dec
+		found1 = incStr.find("--");
+		found2 = incStr.find("-=");
+		if (found1!=string::npos || found2!=string::npos)
+		{
+			return initValOfTheVar-theTargetRange.getStart()+1;
+		}
+		
+	}
 
 	return -1; 
 }

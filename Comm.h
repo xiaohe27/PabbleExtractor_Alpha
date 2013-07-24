@@ -185,6 +185,10 @@ public:
 
 	void setNonRankVarName(string name){this->nonRankVarName=name;}
 
+	bool isRankInside(int rankNum);
+
+	Range getTheRangeContainingTheNum(int num);
+
 	string printConditionInfo();
 };
 

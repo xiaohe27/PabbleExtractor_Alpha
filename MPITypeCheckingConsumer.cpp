@@ -116,6 +116,63 @@ void MPITypeCheckingConsumer::removeFuncFromList(){
 }
 
 
+string MPITypeCheckingConsumer::getVarInIncExpr(Expr *inc){
+	if (isa<UnaryOperator>(inc)){
+		UnaryOperator *uOP=cast<UnaryOperator>(inc);
+		
+		return expr2str(&ci->getSourceManager(),ci->getLangOpts(),uOP->getSubExpr());
+	}
+
+	if (isa<BinaryOperator>(inc))
+	{
+		BinaryOperator *binOP=cast<BinaryOperator>(inc);
+		Expr *lhs=binOP->getLHS();
+		
+		return expr2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
+	}
+}
+
+bool MPITypeCheckingConsumer::isChangingByOneUnit(Expr *inc){
+	if (isa<UnaryOperator>(inc)){
+		UnaryOperator *uOP=cast<UnaryOperator>(inc);
+		
+		return uOP->isIncrementDecrementOp();
+	}
+	
+	if (isa<BinaryOperator>(inc))
+	{
+		BinaryOperator *binOP=cast<BinaryOperator>(inc);
+		Expr *lhs=binOP->getLHS();
+		Expr *rhs=binOP->getRHS();
+		string op=binOP->getOpcodeStr();
+
+		if(binOP->isCompoundAssignmentOp()){
+			if(op!="+=" && op!="-=")
+				return false;
+
+			APSInt result;
+			if(rhs->EvaluateAsInt(result,ci->getASTContext())){
+				int num=atoi(result.toString(10).c_str());
+				if(num==1)
+					return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 string decl2str(SourceManager *sm, LangOptions lopt,Decl *d) {
