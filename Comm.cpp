@@ -742,6 +742,11 @@ int CommManager::getOffSet4RankRelatedVar(string varName){
 		throw new MPI_TypeChecking_Error("The var "+varName+" is not related to rank but the method getOffSet4RankRelatedVar() is called");
 	}
 }
+
+
+map<string,ParamRole> CommManager::getParamRoleMapping(){
+	return this->paramRoleNameMapping;
+}
 /********************************************************************/
 //Class CommManager impl end										****
 /********************************************************************/

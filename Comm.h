@@ -241,6 +241,8 @@ public:
 	bool hasARoleSatisfiesRange(Range ran);
 
 	void addAllTheRangesInTheCondition(Condition cond);
+
+	vector<Role*> getTheRoles(){return this->actualRoles;}
 	
 };
 
@@ -381,11 +383,11 @@ public:
 class CommManager{
 
 private:
-	map<string,ParamRole>  paramRoleNameMapping;
 
 	vector<Condition> stackOfRankConditions;
 
-	
+	map<string,ParamRole>  paramRoleNameMapping;
+
 	//mapping between the rank var name and the comm group name 
 	map<string,string> rankVarCommGroupMapping;
 
@@ -403,8 +405,9 @@ private:
 
 
 
+
 public:
-	
+
 	CommManager(CompilerInstance *ci0, int numOfProc0);
 
 	void insertRankVarAndCommGroupMapping(string rankVar, string commGroup);
@@ -450,7 +453,7 @@ public:
 
 	Condition getTopCondition();
 
-	
+	map<string,ParamRole> getParamRoleMapping();
 };
 
 

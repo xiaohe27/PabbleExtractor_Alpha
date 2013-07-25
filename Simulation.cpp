@@ -58,8 +58,28 @@ this->curNode= this->curNode->getParent();
 
 ////////////////////////////////////////////////////////////////////////////
 void MPISimulator::simulate(){
-
+	
 	cout<<"Ready to simulate the execution of the MPI program now!"<<endl;
+	map<string,ParamRole> paramRoleMap=this->commManager->getParamRoleMapping();
+
+	cout<<"There are "<<paramRoleMap.size()<<" communicator groups involved"<<endl;
+
+	if(paramRoleMap.size()>0)
+	for (auto &x: paramRoleMap)
+	{
+		string paramRoleName=x.first;
+		cout<<"The param role name is "<<paramRoleName<<endl;
+		cout<<"The actual roles for this param role are:\n";
+
+		ParamRole paramRole=x.second;
+
+		vector<Role*> roles= paramRole.getTheRoles();
+
+		for (int i = 0; i < roles.size(); i++)
+		{
+			cout<<"The role "<<i<<" is "<< roles.at(i)->getRoleName()<<endl;
+		}
+	}
 }
 
 
