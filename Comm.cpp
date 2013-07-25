@@ -144,6 +144,31 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 
 		return extractCondFromBoolExpr(withoutParen);
 	}
+
+	//The bool expr is a negation
+	if(isa<UnaryOperator>(expr)){
+		UnaryOperator *uOP=cast<UnaryOperator>(expr);
+		string uopstr=UnaryOperator::getOpcodeStr(uOP->getOpcode());
+		Expr *subExpr=uOP->getSubExpr();
+		if (uopstr=="!")
+		{
+			Condition theCond=this->extractCondFromBoolExpr(subExpr);
+			string nonRankVarName=theCond.getNonRankVarName();
+			if (nonRankVarName!="")
+			{
+				Condition tmp=this->tmpNonRankVarCondMap[nonRankVarName].top();
+				this->tmpNonRankVarCondMap[nonRankVarName].pop();
+				Condition newC=Condition::negateCondition(tmp);
+				newC.setNonRankVarName(nonRankVarName);
+
+				this->insertTmpNonRankVarCond(nonRankVarName,newC);
+
+				return theCond;
+			}
+			return Condition::negateCondition(theCond);
+		}
+	}
+
 	/////////////////////////////////////////////////////////////
 	//the expr is a bin op.
 	////////////////////////////////////////////////////////////
@@ -185,7 +210,7 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 
 				Condition newTmpCond=tmpCond1.AND(tmpCond2);
 				newTmpCond.setNonRankVarName(lhsNonRankVarName);
-				this->tmpNonRankVarCondMap[lhsNonRankVarName].push(newTmpCond);
+				this->insertTmpNonRankVarCond(lhsNonRankVarName,newTmpCond);
 			}
 
 			if(!lCond.hasSameGroupComparedTo(rCond))
@@ -219,8 +244,8 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 				this->tmpNonRankVarCondMap[lhsNonRankVarName].pop();
 
 				Condition newTmpCond=tmpCond1.OR(tmpCond2);
-				newTmpCond.setNonRankVarName(lhsNonRankVarName);
-				this->tmpNonRankVarCondMap[lhsNonRankVarName].push(newTmpCond);
+				newTmpCond.setNonRankVarName(lhsNonRankVarName);		
+				this->insertTmpNonRankVarCond(lhsNonRankVarName,newTmpCond);
 			}
 
 			if(!lCond.hasSameGroupComparedTo(rCond))
@@ -240,7 +265,7 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 		else {
 
 		//if the cur op is not a comparison op, then return true;
-		if(!isCmpOp(op))
+		if(!binOP->isComparisonOp())
 			return Condition(true);
 
 		//if either lhs or rhs are bin op, then return true;
@@ -317,7 +342,7 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 						std::cout << "The non-rank cond is created by (" <<op<<","<< num <<")"<< std::endl;
 
 						Condition cond=Condition::createCondByOp(op,num);
-
+						cond.setNonRankVarName(lVarName);
 						this->insertTmpNonRankVarCond(lVarName,cond);
 						}
 					}
@@ -330,6 +355,7 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 						std::cout << "The non-rank cond is created by (" <<op<<","<< num <<")"<< std::endl;
 
 						Condition cond=Condition::createCondByOp(op,num);
+						cond.setNonRankVarName(rVarName);
 						this->insertTmpNonRankVarCond(rVarName,cond);
 						}
 					}

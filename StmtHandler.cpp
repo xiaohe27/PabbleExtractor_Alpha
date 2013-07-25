@@ -62,7 +62,8 @@ vector<string> MPITypeCheckingConsumer::analyzeNonRankVarCond(map<string,stack<C
 	for (map<string,stack<Condition>>::iterator it=tmpNonRankVarCondMap.begin(); it!=tmpNonRankVarCondMap.end(); ++it){
 		stack<Condition> stackOfCond=it->second;
 		Condition combinedCond=Condition(true);
-		for (int i = 0; i < stackOfCond.size(); i++)
+		int size=stackOfCond.size();
+		for (int i = 0; i < size; i++)
 		{
 			combinedCond=combinedCond.AND(stackOfCond.top());
 			stackOfCond.pop();
