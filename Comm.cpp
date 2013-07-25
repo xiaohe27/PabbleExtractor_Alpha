@@ -2,6 +2,7 @@
 
 using namespace llvm;
 using namespace clang;
+
 //some functions
 int min(int a, int b){if(a<b) return a; else return b;}
 int max(int a, int b){if(a<b) return b; else return a;}
@@ -76,15 +77,12 @@ string convertIntToStr(int number)
 //Class CommManager impl start										****
 /********************************************************************/
 
-CommManager::CommManager(CompilerInstance *ci0, int numOfProc0):root(ST_NODE_ROOT){
-		root.setCond(Condition(true));
-	
-		curNode=&root;
-		
+CommManager::CommManager(CompilerInstance *ci0, int numOfProc0){
+			
 		this->ci=ci0;
 		this->numOfProc=numOfProc0;
-
 		this->paramRoleNameMapping[WORLD]=ParamRole();
+
 }
 
 void CommManager::insertVarName(string name){
@@ -412,40 +410,6 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 }
 
 
-void CommManager::insertNode(CommNode *node){
-
-//set the condition for the node.
-node->setCond(this->getTopCondition());
-
-int nodeT=node->getNodeType();
-
-
-if(node->getNodeType()==ST_NODE_CONTINUE){
-	CommNode *theParent=this->curNode;
-	while (theParent->getNodeType()!=ST_NODE_RECUR)
-	{
-		theParent=theParent->getParent();
-	}
-
-	if(theParent!=nullptr){
-		ContNode *contNode=(ContNode*)node;
-		RecurNode *loopNode=(RecurNode*)(theParent);
-
-		contNode->setRefNode(loopNode);
-	}
-
-}
-
-//insert the node
-this->curNode->insert(node);
-
-if(nodeT==ST_NODE_CHOICE || nodeT==ST_NODE_RECUR
-   ||nodeT==ST_NODE_ROOT || nodeT==ST_NODE_PARALLEL){
-
-	   this->curNode=node;
-}
-
-}
 
 
 void CommManager::insertCondition(Expr *expr){
@@ -532,10 +496,6 @@ Condition CommManager::popCondition(){
 		Condition tmp=stackOfRankConditions.back();	
 		this->stackOfRankConditions.pop_back();
 		return tmp;
-}
-
-void CommManager::gotoParent(){
-this->curNode= this->curNode->getParent();
 }
 
 
@@ -786,73 +746,3 @@ int CommManager::getOffSet4RankRelatedVar(string varName){
 //Class CommManager impl end										****
 /********************************************************************/
 
-
-
-
-/********************************************************************/
-//Class Role impl start										****
-/********************************************************************/
-	Role::Role(Range ran){
-		this->paramRoleName=WORLD;
-		range=ran;
-	}
-
-	Role::Role(string paramRoleName0, Range ran){
-		this->paramRoleName=paramRoleName0;
-		this->range=ran;
-	}
-
-string Role::getRoleName(){
-	string name=this->paramRoleName+"[";
-	name.append(convertIntToStr(this->range.getStart()));
-	name.append("..");
-	name.append(convertIntToStr(this->range.getEnd()));
-	name.append("]");
-
-	return name;
-}
-
-/********************************************************************/
-//Class Role impl end										****
-/********************************************************************/
-
-
-/********************************************************************/
-//Class ParamRole impl start										****
-/********************************************************************/
-
-	ParamRole::ParamRole(Condition cond){
-		this->paramRoleName=cond.getGroupName();
-		
-		this->addAllTheRangesInTheCondition(cond);
-	}
-
-	bool ParamRole::hasARoleSatisfiesRange(Range ran){
-		for (int i = 0; i < actualRoles.size(); i++)
-		{
-			Role* r=actualRoles[i];
-			if(r->hasRangeEqualTo(ran))
-				return true;
-		}
-	
-		return false;
-	}
-
-
-	void ParamRole::addAllTheRangesInTheCondition(Condition cond){
-		vector<Range> ranList=cond.getRangeList();
-		for (int i = 0; i < ranList.size(); i++)
-		{
-			Range r=ranList[i];
-			if(this->hasARoleSatisfiesRange(r))
-				continue;
-
-			else
-				this->insertActualRole(new Role(r));
-			
-		}
-	}
-
-/********************************************************************/
-//Class ParamRole impl end										****
-/********************************************************************/

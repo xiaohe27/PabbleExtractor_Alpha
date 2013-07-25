@@ -36,6 +36,12 @@
     <ClCompile Include="RanAndCond.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Roles.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Simulation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MPITypeCheckingConsumer.h">

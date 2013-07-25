@@ -52,6 +52,8 @@ private:
 
 	CommManager *commManager;
 
+	MPISimulator *mpiSimulator;
+
 
 public:
 	MPITypeCheckingConsumer(CompilerInstance *ci);
@@ -80,7 +82,7 @@ public:
 	//return the expected iteration numbers. If it is not clear, then -1 will be returned
 	int analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr* incExpr, Stmt* body, vector<string> nonRankVarList);
 
-	void printTheTree(){cout<<this->commManager->printTheTree()<<endl;}
+	void printTheTree(){cout<<this->mpiSimulator->printTheTree()<<endl;}
 
 	bool isChangingByOneUnit(Expr *inc);
 	string getVarInIncExpr(Expr *inc);

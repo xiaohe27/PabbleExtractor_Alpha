@@ -14,6 +14,7 @@ MPITypeCheckingConsumer::MPITypeCheckingConsumer(CompilerInstance *ci, int numOf
 	this->visitStart=false;
 	this->numOfProcs=numOfProc;
 	this->commManager=new CommManager(ci, numOfProc);
+	this->mpiSimulator=new MPISimulator(this->commManager);
 }
 
 MPITypeCheckingConsumer::MPITypeCheckingConsumer(CompilerInstance *ci) {
@@ -32,6 +33,11 @@ void MPITypeCheckingConsumer::HandleTranslationUnit(ASTContext &Ctx) {
 	this->visitStart=true;
 
 	this->VisitDecl(this->mainFunc);
+
+	//after the main function has been visited, 
+	//the comm tree and roles will have been constructed,
+	//and the traversal of the comm tree can start
+	this->mpiSimulator->simulate();
 
 }
 

@@ -105,7 +105,7 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	CommNode *choiceNode=new CommNode(ST_NODE_CHOICE);
 
 	//the choice node will become the cur node automatically
-	this->commManager->insertNode(choiceNode);
+	this->mpiSimulator->insertNode(choiceNode);
 
 
 
@@ -127,12 +127,12 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	//before traverse the then part, create a root node for it 
 	//only the processes that satisfy the then part conditon can enter the block!
 	CommNode *thenNode=new CommNode(ST_NODE_ROOT);
-	this->commManager->insertNode(thenNode);
+	this->mpiSimulator->insertNode(thenNode);
 
 	this->TraverseStmt(ifStmt->getThen());
 
 	//after the stmt in the then block have been traversed, return the control to the choice node
-	this->commManager->gotoParent();
+	this->mpiSimulator->gotoParent();
 
 	//should remove the condition for the then part now.
 	cout<<"//should remove the condition for the then part now."<<endl;
@@ -151,14 +151,14 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 	//before visit else part, create a node for it
 	CommNode *elseNode=new CommNode(ST_NODE_ROOT);
-	this->commManager->insertNode(elseNode);
+	this->mpiSimulator->insertNode(elseNode);
 
 
 	//visit else part
 	cout<<"Going to visit else part of condition: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
 	this->TraverseStmt(ifStmt->getElse());
 
-	this->commManager->gotoParent();
+	this->mpiSimulator->gotoParent();
 
 	cout<<"//should remove the condition for the else part now."<<endl;
 	this->commManager->popCondition();
@@ -166,7 +166,7 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	this->removeNonRankVarCondInStack(stackOfNonRankVarNames);
 
 	//the choice node does not add any extra condition, so just go to its parent node
-	this->commManager->gotoParent();
+	this->mpiSimulator->gotoParent();
 	return true;
 }
 
@@ -251,7 +251,7 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 
 	//create node for 'for' stmt
 	RecurNode *forNode=new RecurNode(size);
-	this->commManager->insertNode(forNode);
+	this->mpiSimulator->insertNode(forNode);
 
 	//visit each stmt inside the for loop
 	this->TraverseStmt(bodyOfFor);
@@ -292,7 +292,7 @@ bool MPITypeCheckingConsumer::TraverseWhileStmt(WhileStmt *S){
 
 	//create node for 'while' stmt
 	RecurNode *whileNode=new RecurNode(-1);
-	this->commManager->insertNode(whileNode);
+	this->mpiSimulator->insertNode(whileNode);
 
 	//visit each stmt inside the for loop
 	this->TraverseStmt(bodyOfWhile);
@@ -347,7 +347,7 @@ bool MPITypeCheckingConsumer::VisitContinueStmt(ContinueStmt *S){
 	cout <<"Call Continue stmt" <<endl;
 	
 	CommNode *cont=new CommNode(ST_NODE_CONTINUE);
-	this->commManager->insertNode(cont);
+	this->mpiSimulator->insertNode(cont);
 	return true;
 }
 
@@ -421,7 +421,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 
 			CommNode *sendNode=new CommNode(mpiOP);
 			sendNode->setNodeType(ST_NODE_SEND);
-			this->commManager->insertNode(sendNode);
+			this->mpiSimulator->insertNode(sendNode);
 
 
 			cout <<"\n\n\n\n\nThe dest of mpi send is"
@@ -443,7 +443,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 
 			CommNode *recvNode=new CommNode(mpiOP);
 			recvNode->setNodeType(ST_NODE_RECV);
-			this->commManager->insertNode(recvNode);
+			this->mpiSimulator->insertNode(recvNode);
 
 
 			cout <<"\n\n\n\n\nThe src of mpi recv is"<<

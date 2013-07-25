@@ -382,11 +382,10 @@ class CommManager{
 
 private:
 	map<string,ParamRole>  paramRoleNameMapping;
+
 	vector<Condition> stackOfRankConditions;
 
-	CommNode root;
-	CommNode *curNode;
-
+	
 	//mapping between the rank var name and the comm group name 
 	map<string,string> rankVarCommGroupMapping;
 
@@ -401,7 +400,6 @@ private:
 	map<string,int> rankVarOffsetMapping;
 
 	vector<string> varNames;
-
 
 
 
@@ -429,17 +427,12 @@ public:
 
 	Condition extractCondFromTargetExpr(Expr *expr);
 
-	void insertCondition(Expr *expr);
-
-	void insertNode(CommNode *node);
+	void insertCondition(Expr *expr);	
 
 	Condition popCondition();
 
-	void gotoParent();
-
-	void insertExistingCondition(Condition cond);
 	
-	void addCommActions(MPIOperation op);
+	void insertExistingCondition(Condition cond);
 
 	void insertRankVarAndOffset(string varName, int offset);
 
@@ -457,8 +450,29 @@ public:
 
 	Condition getTopCondition();
 
-	string printTheTree(){return this->root.printTheNode();}
+	
 };
 
+
+
+//////////////////////////////////////////////////////////////////////////////
+class MPISimulator{
+private:
+	
+	CommNode root;
+	CommNode *curNode;
+
+	CommManager *commManager;
+
+
+public:
+	MPISimulator(CommManager *commManager);
+	void insertNode(CommNode *node);
+	void gotoParent();
+
+	void simulate();
+
+	string printTheTree(){return this->root.printTheNode();}
+};
 
 #endif
