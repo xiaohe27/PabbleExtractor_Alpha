@@ -84,6 +84,8 @@ bool areTheseTwoNumsAdjacent(int a, int b);
 
 class CommNode;
 class Condition;
+class MPIOperation;
+class Role;
 
 class Range{
 private:
@@ -193,6 +195,15 @@ public:
 };
 
 
+class VisitResult{
+public:
+	bool isBlocking;
+	MPIOperation *doableOP;
+	Role *escapableRole; //the role is escapable if it is not captured by the current node
+
+	VisitResult(bool b, MPIOperation *op, Role *r);
+
+};
 
 
 class Role{
@@ -216,6 +227,10 @@ public:
 
 	string getRoleName();
 
+	void setCurVisitNode(CommNode *node);
+
+	VisitResult visit();
+
 };
 
 class ParamRole{
@@ -233,7 +248,7 @@ private:
 
 public:
 
-	ParamRole(){this->paramRoleName=WORLD;}
+	ParamRole();
 
 	ParamRole(Condition cond);
 	
@@ -380,6 +395,8 @@ public:
 };
 
 
+
+
 class CommManager{
 
 private:
@@ -475,7 +492,13 @@ public:
 
 	void simulate();
 
+	void printTheRoles();
+
+	void initTheRoles();
+
 	string printTheTree(){return this->root.printTheNode();}
+
+	bool isDeadLockDetected();
 };
 
 #endif

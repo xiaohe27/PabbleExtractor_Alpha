@@ -747,6 +747,7 @@ int CommManager::getOffSet4RankRelatedVar(string varName){
 map<string,ParamRole> CommManager::getParamRoleMapping(){
 	return this->paramRoleNameMapping;
 }
+
 /********************************************************************/
 //Class CommManager impl end										****
 /********************************************************************/
