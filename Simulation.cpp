@@ -6,12 +6,23 @@ using namespace std;
 
 
 //////////////////////VisitResult//////////////////////////////////////////
-VisitResult::VisitResult(bool b, MPIOperation *op, Role *r){
+VisitResult::VisitResult(bool b, MPIOperation *op, vector<Role> roles){
 		this->isBlocking=b;
 		this->doableOP=op;
-		this->escapableRole=r;
+		this->escapableRoles=roles;
 }
 
+void VisitResult::printVisitInfo(){
+	cout<<"The doable MPI operation in this node is "<<endl;
+	this->doableOP->printMPIOP();
+	cout<<"It is "<<(this->isBlocking?"":"non-")<<"blocking operation!"<<endl;
+
+	for (int i = 0; i < escapableRoles.size(); i++)
+	{
+		cout<<"The role "<<escapableRoles[i].getRoleName()<<" is able to escape to the next node!"<<endl;
+	}
+	
+}
 /////////////////////VisitResult Ends///////////////////////////////////////
 
 
@@ -114,6 +125,25 @@ void MPISimulator::printTheRoles(){
 
 }
 
+bool MPISimulator::areAllRolesDone(){
+	map<string,ParamRole> paramRoleMap=this->commManager->getParamRoleMapping();
+
+	for (auto &x: paramRoleMap)
+	{
+		ParamRole paramRole=x.second;
+
+		vector<Role*> roles= paramRole.getTheRoles();
+
+		for (int i = 0; i < roles.size(); i++)
+		{
+			if (!roles[i]->hasFinished())
+				return false;
+		}
+	}
+
+	return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////
 void MPISimulator::simulate(){
 
@@ -145,8 +175,20 @@ void MPISimulator::simulate(){
 
 			for (int i = 0; i < roles.size(); i++)
 			{
-				cout<<"The role "<<i<<" is "<< roles.at(i)->getRoleName()<<endl;
+				cout<<"It is "<< roles.at(i)->getRoleName()<<" visiting the tree now."<<endl;
+				VisitResult vr=roles[i]->visit();
+
+				vr.printVisitInfo();
+
+				this->analyzeVisitResult(vr);
 			}
+		}
+
+		//////////////////////////////////////////////////////////////////////////////////
+		if (areAllRolesDone())
+		{
+			//if all the roles finished their work, then simulation completes successfully
+			this->root.setMarked();
 		}
 	}
 }
@@ -154,8 +196,14 @@ void MPISimulator::simulate(){
 
 
 
+/**
+Analyse the visit result. push the prospective MPI op into the proper stack,
+manage the newly created roles.
+*/
+void MPISimulator::analyzeVisitResult(VisitResult vr){
+	//TODO
 
-
+}
 
 /********************************************************************/
 //Class MPISimulator impl end									****

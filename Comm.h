@@ -189,7 +189,11 @@ public:
 
 	bool isRankInside(int rankNum);
 
+	bool isRangeInside(Range ran);
+
 	Range getTheRangeContainingTheNum(int num);
+
+	bool isSameAsCond(Condition other);
 
 	string printConditionInfo();
 };
@@ -199,10 +203,11 @@ class VisitResult{
 public:
 	bool isBlocking;
 	MPIOperation *doableOP;
-	Role *escapableRole; //the role is escapable if it is not captured by the current node
+	vector<Role> escapableRoles; //the role is escapable if it is not captured by the current node
 
-	VisitResult(bool b, MPIOperation *op, Role *r);
+	VisitResult(bool b, MPIOperation *op, vector<Role> roles);
 
+	void printVisitInfo();
 };
 
 
@@ -215,6 +220,8 @@ private:
 	string paramRoleName;
 
 	CommNode *curVisitNode;
+
+	bool finished;
 
 public:
 	Role(Range ran);
@@ -230,6 +237,8 @@ public:
 	void setCurVisitNode(CommNode *node);
 
 	VisitResult visit();
+
+	bool hasFinished(){return finished;}
 
 };
 
@@ -267,29 +276,31 @@ class MPIOperation{
 private:
 	int opType;
 	string dataType;
-	
-	Condition src;
-	Condition dest;
+	Condition executor;
+	Condition target;
+	Expr *targetExpr;
 	string tag;
 	string group;
+	bool isTargetDependOnExecutor;
+	string srcCode;
+
+	Condition analyzeTargetCondFromExecutorCond(Condition execCond, Expr *tarExpr);
 
 public:
-	MPIOperation(int opType0, string dataType0,Condition src0, Condition dest0, string tag0, string group0){
-	this->opType=opType0;
-	this->dataType=dataType0;
-	this->src=src0;
-	this->dest=dest0;
-	this->tag=tag0;
-	this->group=group0;
-	}
+	MPIOperation(int opType0, string dataType0,Condition executor0, Condition target0, string tag0, string group0);
+	MPIOperation(int opType0, string dataType0,Condition executor0, Expr *targetExpr0, string tag0, string group0);
 
 	int getOPType(){return this->opType;}
 	string getDataType(){return this->dataType;}
-	Condition getSrcCond(){return this->src;}
-	Condition getDestCond(){return this->dest;}
+	Condition getSrcCond();
+	Condition getDestCond();
+	Condition getTargetCond();
 	string getTag(){return this->tag;}
 	string getGroup(){return this->group;}
 
+	
+	void setSrcCode(string srcC){this->srcCode=srcC;}
+	void printMPIOP();
 };
 
 
@@ -362,6 +373,8 @@ public:
 	string getCommInfoAsString();
 
 	CommNode* goDeeper();
+
+	CommNode* skipToNextNode();
 
 	CommNode* getSibling();
 
@@ -498,7 +511,10 @@ public:
 
 	string printTheTree(){return this->root.printTheNode();}
 
+	bool areAllRolesDone();
 	bool isDeadLockDetected();
+
+	void analyzeVisitResult(VisitResult vr);
 };
 
 #endif

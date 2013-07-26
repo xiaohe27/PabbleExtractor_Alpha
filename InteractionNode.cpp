@@ -16,6 +16,9 @@ void CommNode::init(int type, MPIOperation *mpiOP){
 	this->op=mpiOP;
 	this->marked=false;
 
+	this->parent=nullptr;
+	this->sibling=nullptr;
+
 	switch(type){
 	case ST_NODE_CHOICE: this->nodeName="CHOICE"; break;
 
@@ -114,7 +117,22 @@ CommNode* CommNode::getSibling(){
 	return this->sibling;
 }
 
+CommNode* CommNode::skipToNextNode(){
+	if (!this->parent)
+	{
+		return nullptr;
+	}
 
+	if (this->sibling)
+	{
+		return this->sibling;
+	}
+
+	else
+	{
+		return this->parent->skipToNextNode();
+	}
+}
 
 /********************************************************************/
 //Class CommNode impl end										****

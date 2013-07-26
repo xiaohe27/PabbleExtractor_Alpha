@@ -409,7 +409,7 @@ Condition::Condition(Range ran1, Range ran2){
 	this->nonRankVarName="";
 	this->shouldBeIgnored=false; this->complete=false;this->groupName=WORLD;
 	rangeList.clear(); rangeList.push_back(ran1);rangeList.push_back(ran2);
-	}
+}
 
 
 bool Condition::isIgnored(){
@@ -417,7 +417,40 @@ bool Condition::isIgnored(){
 			return false;
 
 		return shouldBeIgnored || this->rangeList.size()==0;
+}
+
+bool Condition::isRangeInside(Range ran){
+	for (int i = 0; i < this->getRangeList().size(); i++)
+	{
+		if (getRangeList()[i].isEqualTo(ran))
+		{
+			return true;
+		}
 	}
+
+	return false;
+}
+
+bool Condition::isSameAsCond(Condition other){
+	int thisSize=this->getRangeList().size();
+	int otherSize=other.getRangeList().size();
+
+	if (thisSize!=otherSize)
+	{
+		return false;
+	}
+
+	for (int i = 0; i < thisSize; i++)
+	{
+		if (!other.isRangeInside(this->getRangeList()[i]) ||
+			!this->isRangeInside(other.getRangeList()[i]))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
 
 Condition Condition::createCondByOp(string op, int num){
 	if(op!="!="){

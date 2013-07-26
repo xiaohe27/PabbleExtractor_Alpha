@@ -10,11 +10,13 @@ using namespace std;
 Role::Role(Range ran){
 	this->paramRoleName=WORLD;
 	range=ran;
+	this->finished=false;
 }
 
 Role::Role(string paramRoleName0, Range ran){
 	this->paramRoleName=paramRoleName0;
 	this->range=ran;
+	this->finished=false;
 }
 
 string Role::getRoleName(){
@@ -31,11 +33,38 @@ void Role::setCurVisitNode(CommNode *node){
 	this->curVisitNode=node;
 }
 
+//perform one visit to the comm tree. It stops when encounter a blocking op.
 VisitResult Role::visit(){
 	//TODO
 
+	while (true)
+	{
+		vector<Role> escapedRoles;
+		
+		Condition curNodeCond=curVisitNode->getCond();
+		Condition myRoleCond=Condition(this->getRange());
 
-	return VisitResult(true,nullptr,nullptr);
+		Condition escapedCond=myRoleCond.Diff(curNodeCond);
+		Condition stayHereCond=myRoleCond.Diff(escapedCond);
+
+		//get all the roles who are able to escape
+		for (int i = 0; i < escapedCond.getRangeList().size(); i++)
+		{
+			escapedRoles.push_back(Role(escapedCond.getRangeList()[i]));
+		}
+
+		if (escapedCond.isSameAsCond(myRoleCond))
+		{
+			//the complete role escaped from the cur node
+			this->curVisitNode=
+		}
+
+
+	}
+
+
+	vector<Role> roles;
+	return VisitResult(true,nullptr,roles);
 }
 /********************************************************************/
 //Class Role impl end										****

@@ -357,7 +357,9 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 	if(!this->visitStart)
 		return true;
 
-	cout <<"The function going to be called is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),E) <<endl;
+	string funcSrcCode=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),E);
+
+//	cout <<"The function going to be called is "<< funcSrcCode<<endl;
 
 
 	int numOfArgs=E->getNumArgs();
@@ -419,8 +421,10 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 												tag, 
 												group);
 
+			mpiOP->setSrcCode(funcSrcCode);
+
 			CommNode *sendNode=new CommNode(mpiOP);
-			sendNode->setNodeType(ST_NODE_SEND);
+			
 			this->mpiSimulator->insertNode(sendNode);
 
 
@@ -441,8 +445,9 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 								this->commManager->getTopCondition(), 
 								tag, group);
 
+			mpiOP->setSrcCode(funcSrcCode);
 			CommNode *recvNode=new CommNode(mpiOP);
-			recvNode->setNodeType(ST_NODE_RECV);
+			
 			this->mpiSimulator->insertNode(recvNode);
 
 
