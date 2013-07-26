@@ -33,13 +33,39 @@ void Role::setCurVisitNode(CommNode *node){
 	this->curVisitNode=node;
 }
 
-//perform one visit to the comm tree. It stops when encounter a blocking op.
+//perform one visit to the comm tree. It stops when encounter a doable op.
 VisitResult Role::visit(){
 	//TODO
 
 	while (true)
 	{
 		vector<Role> escapedRoles;
+		
+		if (this->curVisitNode==nullptr)
+		{
+			this->finished=true;
+
+			cout<<"The role "<<this->getRoleName()<<" has visited all the nodes in the comm tree!"<<endl;
+
+			return VisitResult(false,nullptr,escapedRoles); 
+		}
+
+		string nodeName=this->curVisitNode->getNodeName();
+		
+		if (this->curVisitNode->isMarked())
+		{
+			//if the cur node has been marked, then skip
+			this->curVisitNode=curVisitNode->skipToNextNode();
+
+			cout<<"The current "<<nodeName<<" node has been marked;"<<endl;
+				
+			if (curVisitNode){
+			cout<<this->getRoleName()<<" skip to the next "<<curVisitNode->getNodeName()<<" node."<<endl;
+			}
+
+			continue;
+		}
+	
 		
 		Condition curNodeCond=curVisitNode->getCond();
 		Condition myRoleCond=Condition(this->getRange());
@@ -50,15 +76,78 @@ VisitResult Role::visit(){
 		//get all the roles who are able to escape
 		for (int i = 0; i < escapedCond.getRangeList().size(); i++)
 		{
-			escapedRoles.push_back(Role(escapedCond.getRangeList()[i]));
+			Role runaway=Role(escapedCond.getRangeList()[i]);
+			runaway.setCurVisitNode(this->curVisitNode->skipToNextNode());
+			escapedRoles.push_back(runaway);
 		}
 
 		if (escapedCond.isSameAsCond(myRoleCond))
 		{
 			//the complete role escaped from the cur node
-			this->curVisitNode=
+			this->curVisitNode=curVisitNode->skipToNextNode();
+
+			cout<<"The current "<<nodeName<<" node has nothing to do with the role "<<this->getRoleName()<<endl;
+				
+			if (curVisitNode){
+			cout<<this->getRoleName()<<" skip to the next "<<curVisitNode->getNodeName()<<" node."<<endl;
+			}
+
+			continue;
 		}
 
+
+		////////some can escape and some needs to do the op////////
+		/********************************************************/
+		MPIOperation *theOP=this->curVisitNode->getOP();
+		//The cur node is an MPI op node
+		if (theOP)
+		{
+			cout<<this->getRoleName()<<" visits the MPI "<<curVisitNode->getNodeName()<<" node"<<endl;
+			
+			MPIOperation *doableOP=new MPIOperation(*theOP);
+			doableOP->setExecutorCond(stayHereCond);
+
+			bool isBlocking=doableOP->isBlockingOP();
+
+			return VisitResult(isBlocking,doableOP,escapedRoles);
+		}
+
+		else{
+			//enumerate the node types
+			cout<<this->getRoleName()<<" visits the "<<curVisitNode->getNodeName()<<" node"<<endl;
+
+			if (curVisitNode->isLeaf())
+			{
+				curVisitNode->setMarked();
+
+				this->curVisitNode=curVisitNode->skipToNextNode();
+
+				cout<<"The current "<<nodeName<<" node has nothing to do with the role "<<this->getRoleName()<<endl;
+				
+				if (curVisitNode){
+				cout<<this->getRoleName()<<" skip to the next "<<curVisitNode->getNodeName()<<" node."<<endl;
+				}
+
+				continue;
+			}
+
+			else
+			{
+				//there are two branches, some processes in the role will go deeper
+				//and the others will go to the next sibling.
+				//BOTH runaway and goDeeper roles escape successfully!
+
+				//get all the roles who are able to go deeper
+				for (int i = 0; i < stayHereCond.getRangeList().size(); i++)
+				{
+					Role goDeeperRole=Role(stayHereCond.getRangeList()[i]);
+					goDeeperRole.setCurVisitNode(this->curVisitNode->goDeeper());
+					escapedRoles.push_back(goDeeperRole);
+				}
+			
+				return VisitResult(false,nullptr,escapedRoles);
+			}
+		}
 
 	}
 

@@ -205,7 +205,7 @@ public:
 	MPIOperation *doableOP;
 	vector<Role> escapableRoles; //the role is escapable if it is not captured by the current node
 
-	VisitResult(bool b, MPIOperation *op, vector<Role> roles);
+	VisitResult(bool blocking, MPIOperation *mpiOP, vector<Role> escapedRoles);
 
 	void printVisitInfo();
 };
@@ -298,8 +298,9 @@ public:
 	string getTag(){return this->tag;}
 	string getGroup(){return this->group;}
 
-	
+	bool isBlockingOP();
 	void setSrcCode(string srcC){this->srcCode=srcC;}
+	void setExecutorCond(Condition execCond){this->executor=execCond;}
 	void printMPIOP();
 };
 
@@ -350,9 +351,13 @@ public:
 	delete sibling;
 	}
 
+	bool isLeaf();
+	
 	int getNodeType(){return this->nodeType;}
 
-	bool isLeaf();
+	string getNodeName(){return this->nodeName;}
+
+	MPIOperation* getOP(){return this->op;}
 
 	Condition getCond(){return this->condition;}
 
@@ -372,11 +377,9 @@ public:
 
 	string getCommInfoAsString();
 
-	CommNode* goDeeper();
+	CommNode* goDeeper();//get first child
 
 	CommNode* skipToNextNode();
-
-	CommNode* getSibling();
 
 	string printTheNode();
 

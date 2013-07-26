@@ -50,7 +50,6 @@ void MPIOperation::printMPIOP(){
 }
 
 
-
 Condition MPIOperation::getSrcCond(){
 	if (this->getOPType()==ST_NODE_SEND)
 	{
@@ -88,6 +87,19 @@ Condition MPIOperation::getTargetCond(){
 	else{
 		return this->target;
 	}
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+bool MPIOperation::isBlockingOP(){
+	//TODO
+
+	if (this->opType==ST_NODE_RECV)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 

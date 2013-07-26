@@ -13,9 +13,14 @@ VisitResult::VisitResult(bool b, MPIOperation *op, vector<Role> roles){
 }
 
 void VisitResult::printVisitInfo(){
-	cout<<"The doable MPI operation in this node is "<<endl;
-	this->doableOP->printMPIOP();
-	cout<<"It is "<<(this->isBlocking?"":"non-")<<"blocking operation!"<<endl;
+	if (this->doableOP)
+	{
+		cout<<"The doable MPI operation in this node is "<<endl;
+		this->doableOP->printMPIOP();
+
+		cout<<"It is "<<(this->isBlocking?"":"non-")<<"blocking operation!"<<endl;
+	}
+	
 
 	for (int i = 0; i < escapableRoles.size(); i++)
 	{
