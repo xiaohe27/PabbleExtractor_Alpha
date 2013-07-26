@@ -234,6 +234,8 @@ public:
 
 	string getRoleName();
 
+	string getParamRoleName(){return this->paramRoleName;}
+
 	void setCurVisitNode(CommNode *node);
 
 	VisitResult visit();
@@ -253,7 +255,6 @@ private:
 	
 	vector<Role*> actualRoles;
 
-	void insertActualRole(Role *r){actualRoles.push_back(r);}
 
 public:
 
@@ -267,6 +268,8 @@ public:
 	void addAllTheRangesInTheCondition(Condition cond);
 
 	vector<Role*> getTheRoles(){return this->actualRoles;}
+
+	void insertActualRole(Role *r);
 	
 };
 
@@ -481,6 +484,9 @@ public:
 	void insertVarName(string varName);
 
 	bool isAVar(string str);
+
+	//test whether a string contains a rank-related var name
+	bool containsRankStr(string str);
 
 	bool hasAssociatedWithCondition(string varName);
 

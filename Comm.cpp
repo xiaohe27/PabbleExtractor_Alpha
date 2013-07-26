@@ -98,6 +98,22 @@ bool CommManager::isAVar(string name){
 	return false;
 }
 
+//test whether a string contains a rank-related var name
+bool CommManager::containsRankStr(string str){
+	
+	for (auto &x:this->rankVarOffsetMapping)
+	{
+		string rankRelatedVarName=x.first;
+
+		size_t found = str.find(rankRelatedVarName);
+		if (found!=string::npos){
+			return true;
+		}
+	}
+
+	return false;
+}
+
 Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 	string exprStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),expr);
 	cout<<"The expr "<<exprStr<<" is obtained by Comm.cpp"<<endl;

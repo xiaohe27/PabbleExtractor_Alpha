@@ -96,7 +96,7 @@ VisitResult Role::visit(){
 		}
 
 
-		////////some can escape and some needs to do the op////////
+		////////some can escape and some may need to stay////////
 		/********************************************************/
 		MPIOperation *theOP=this->curVisitNode->getOP();
 		//The cur node is an MPI op node
@@ -136,6 +136,20 @@ VisitResult Role::visit(){
 				//there are two branches, some processes in the role will go deeper
 				//and the others will go to the next sibling.
 				//BOTH runaway and goDeeper roles escape successfully!
+
+				/******************************************************************/
+				//if everyone needs to go deeper
+				if (stayHereCond.isSameAsCond(myRoleCond))
+				{
+					this->curVisitNode=this->curVisitNode->goDeeper();
+
+					if (curVisitNode)
+					{
+						cout<<this->getRoleName()<<" goes deeper to "<<curVisitNode->getNodeName()<<endl;
+					}
+					
+					continue;
+				}
 
 				//get all the roles who are able to go deeper
 				for (int i = 0; i < stayHereCond.getRangeList().size(); i++)
@@ -201,6 +215,25 @@ void ParamRole::addAllTheRangesInTheCondition(Condition cond){
 	}
 }
 
+
+void ParamRole::insertActualRole(Role *r){
+	if (!r)
+	{
+		return;
+	}
+
+	int size=this->actualRoles.size();
+	for (int i = 0; i <size ; i++)
+	{
+		if (actualRoles[i]->hasRangeEqualTo(r->getRange()))
+		{
+			actualRoles[i]=r;
+			return;
+		}
+	}
+
+	this->actualRoles.push_back(r);
+}
 /********************************************************************/
 //Class ParamRole impl end										****
 /********************************************************************/

@@ -179,8 +179,6 @@ bool MPITypeCheckingConsumer::isChangingByOneUnit(Expr *inc){
 
 
 
-
-
 string decl2str(SourceManager *sm, LangOptions lopt,Decl *d) {
 	clang::SourceLocation b(d->getLocStart()), _e(d->getLocEnd());
 	clang::SourceLocation e(clang::Lexer::getLocForEndOfToken(_e, 0, *sm, lopt));

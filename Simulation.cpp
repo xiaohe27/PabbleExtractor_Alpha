@@ -207,7 +207,20 @@ manage the newly created roles.
 */
 void MPISimulator::analyzeVisitResult(VisitResult vr){
 	//TODO
+	vector<Role> escapedRoles=vr.escapableRoles;
+	int siz=escapedRoles.size();
 
+	if (siz>0)
+	{
+		string paramName=escapedRoles.at(0).getParamRoleName();
+		ParamRole paramRole=this->commManager->getParamRoleMapping().at(paramName);
+
+		for (int i = 0; i <siz ; i++)
+		{
+			paramRole.insertActualRole(&escapedRoles[i]);
+		}
+	}
+	
 }
 
 /********************************************************************/

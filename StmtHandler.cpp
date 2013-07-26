@@ -414,12 +414,32 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			string tag=args[4];
 			string group=args[5];
 
-			MPIOperation *mpiOP=new MPIOperation(ST_NODE_SEND, 
+			MPIOperation *mpiOP;
+
+			if (this->commManager->containsRankStr(dest))
+			{
+				//if the target is related to the executor of the op,
+				//then the change of executor will affect the target condition
+				//so use the target expr instead of target condition in constructor
+				mpiOP=new MPIOperation(			ST_NODE_SEND, 
+												dataType,
+												this->commManager->getTopCondition(), //the performer
+												E->getArg(3), //the dest
+												tag, 
+												group);
+
+			}
+
+			else{
+
+					mpiOP=new MPIOperation(		ST_NODE_SEND, 
 												dataType,
 												this->commManager->getTopCondition(), //the performer
 												this->commManager->extractCondFromTargetExpr(E->getArg(3)), //the dest
 												tag, 
 												group);
+
+			}
 
 			mpiOP->setSrcCode(funcSrcCode);
 
@@ -440,10 +460,22 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			string tag=args[4];
 			string group=args[5];
 
-			MPIOperation *mpiOP=new MPIOperation(ST_NODE_RECV, dataType,
-								this->commManager->extractCondFromTargetExpr(E->getArg(3)),
+			MPIOperation *mpiOP;
+
+			if (this->commManager->containsRankStr(src)){
+			mpiOP=new MPIOperation(ST_NODE_RECV, dataType,							
 								this->commManager->getTopCondition(), 
+								E->getArg(3),
 								tag, group);
+			}
+			else{
+			mpiOP=new MPIOperation(ST_NODE_RECV, dataType,								
+								this->commManager->getTopCondition(), 
+								this->commManager->extractCondFromTargetExpr(E->getArg(3)),
+								tag, group);
+			}
+
+			
 
 			mpiOP->setSrcCode(funcSrcCode);
 			CommNode *recvNode=new CommNode(mpiOP);

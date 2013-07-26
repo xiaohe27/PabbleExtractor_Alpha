@@ -106,7 +106,7 @@ void CommNode::insert(CommNode *child){
 
 CommNode* CommNode::goDeeper(){
 	if(this->children.size()==0)
-	{return this->sibling;}
+	{return this->skipToNextNode();}
 
 	else{
 		return children[0];

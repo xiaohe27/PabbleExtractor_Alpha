@@ -1,0 +1,47 @@
+if(op=="+" || op=="-"){
+			APSInt INT_Result;
+			bool lhsIsNum=false;
+			bool rhsIsNum=false;
+			int lhsNum=-1;
+			int rhsNum=-1;
+
+			if (lhs->EvaluateAsInt(INT_Result, this->ci->getASTContext())) {
+				lhsIsNum=true;
+				lhsNum=atoi(INT_Result.toString(10).c_str());
+			}
+
+			if (rhs->EvaluateAsInt(INT_Result, this->ci->getASTContext())) {
+				rhsIsNum=true;
+				rhsNum=atoi(INT_Result.toString(10).c_str());
+			}
+
+			/////////////////////////////////////////////////////
+			if (lhsIsNum && rhsIsNum)
+			{
+				int rankNum=compute(op,lhsNum,rhsNum);
+				return Condition(Range(rankNum,rankNum));
+			}
+
+			
+			if(op=="+"){
+				if(this->isVarRelatedToRank(lhsStr) && rhsIsNum){
+					return this->getTopCondition().addANumber(rhsNum);
+				}
+
+				if(this->isVarRelatedToRank(rhsStr) && lhsIsNum){
+					return this->getTopCondition().addANumber(lhsNum);
+				}
+
+				return Condition(false);
+			}
+
+			// minus
+			else{
+				if(this->isVarRelatedToRank(lhsStr) && rhsIsNum){
+					return this->getTopCondition().addANumber(-rhsNum);
+				}
+
+				return Condition(false);
+			}
+		
+		}
