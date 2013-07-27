@@ -6,6 +6,7 @@
 #include <vector>
 #include <stack>
 #include <array>
+#include <set>
 #include <map>
 #include <string>
 #include <sstream>
@@ -221,6 +222,8 @@ private:
 
 	CommNode *curVisitNode;
 
+	bool blocked;
+
 	bool finished;
 
 public:
@@ -238,7 +241,9 @@ public:
 
 	void setCurVisitNode(CommNode *node);
 
-	VisitResult visit();
+	VisitResult* visit();
+
+	bool IsBlocked(){return this->blocked;}
 
 	bool hasFinished(){return finished;}
 
@@ -282,30 +287,44 @@ private:
 	Condition executor;
 	Condition target;
 	Expr *targetExpr;
+	string targetExprStr;
 	string tag;
 	string group;
 	bool isTargetDependOnExecutor;
 	string srcCode;
+	string opName;
+
+	static set<string> blockingOPSet;
 
 	Condition analyzeTargetCondFromExecutorCond(Condition execCond, Expr *tarExpr);
 
 public:
-	MPIOperation(int opType0, string dataType0,Condition executor0, Condition target0, string tag0, string group0);
-	MPIOperation(int opType0, string dataType0,Condition executor0, Expr *targetExpr0, string tag0, string group0);
+	
+	MPIOperation(string opName0,int opType0, string dataType0,Condition executor0, Condition target0, string tag0, string group0);
+	MPIOperation(string opName0,int opType0, string dataType0,Condition executor0, Expr *targetExpr0, string tag0, string group0);
 
+	string getOpName(){return this->opName;}
 	int getOPType(){return this->opType;}
 	string getDataType(){return this->dataType;}
 	Condition getSrcCond();
 	Condition getDestCond();
+	Condition getExecutor();
 	Condition getTargetCond();
+	Expr* getTargetExpr(){return this->targetExpr;}
 	string getTag(){return this->tag;}
 	string getGroup(){return this->group;}
 
+	static bool isOpBlocking(string opStr);
 	bool isBlockingOP();
+	bool isDependentOnExecutor(){return this->isTargetDependOnExecutor;}
 	void setSrcCode(string srcC){this->srcCode=srcC;}
 	void setExecutorCond(Condition execCond){this->executor=execCond;}
+	void setTargetCond(Condition target0){this->target=target0;}
+	void setTargetExprStr(string str){this->targetExprStr=str;}
 	void printMPIOP();
+
 };
+
 
 
 class CommNode{
@@ -435,12 +454,9 @@ private:
 
 	int numOfProc;
 
-	map<string,int> rankVarOffsetMapping;
-
 	vector<string> varNames;
 
-
-
+	map<string,int> rankVarOffsetMapping;
 
 public:
 
@@ -467,6 +483,8 @@ public:
 	Condition extractCondFromTargetExpr(Expr *expr);
 
 	void insertCondition(Expr *expr);	
+
+	void simplyInsertCond(Condition cond);
 
 	Condition popCondition();
 
@@ -506,6 +524,7 @@ private:
 
 	CommManager *commManager;
 
+	vector<MPIOperation*> pendingOPs;
 
 public:
 	MPISimulator(CommManager *commManager);
@@ -523,7 +542,10 @@ public:
 	bool areAllRolesDone();
 	bool isDeadLockDetected();
 
-	void analyzeVisitResult(VisitResult vr);
+	Condition analyzeTargetCondFromExecutorCond(Condition execCond, Expr *tarExpr);
+	void analyzeVisitResult(VisitResult *vr);
+
+	void insertOpToPendingList(MPIOperation *op);
 };
 
 #endif

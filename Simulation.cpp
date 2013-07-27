@@ -7,9 +7,9 @@ using namespace std;
 
 //////////////////////VisitResult//////////////////////////////////////////
 VisitResult::VisitResult(bool b, MPIOperation *op, vector<Role> roles){
-		this->isBlocking=b;
-		this->doableOP=op;
-		this->escapableRoles=roles;
+	this->isBlocking=b;
+	this->doableOP=op;
+	this->escapableRoles=roles;
 }
 
 void VisitResult::printVisitInfo(){
@@ -20,13 +20,13 @@ void VisitResult::printVisitInfo(){
 
 		cout<<"It is "<<(this->isBlocking?"":"non-")<<"blocking operation!"<<endl;
 	}
-	
+
 
 	for (int i = 0; i < escapableRoles.size(); i++)
 	{
 		cout<<"The role "<<escapableRoles[i].getRoleName()<<" is able to escape to the next node!"<<endl;
 	}
-	
+
 }
 /////////////////////VisitResult Ends///////////////////////////////////////
 
@@ -149,6 +149,13 @@ bool MPISimulator::areAllRolesDone(){
 	return true;
 }
 
+
+Condition MPISimulator::analyzeTargetCondFromExecutorCond(Condition execCond, Expr *tarExpr){
+
+
+	return Condition(false);
+}
+
 ////////////////////////////////////////////////////////////////////////////
 void MPISimulator::simulate(){
 
@@ -178,14 +185,19 @@ void MPISimulator::simulate(){
 
 			vector<Role*> roles= paramRole.getTheRoles();
 
-			for (int i = 0; i < roles.size(); i++)
+			int size=roles.size();
+
+			for (int i = 0; i < size; i++)
 			{
 				cout<<"It is "<< roles.at(i)->getRoleName()<<" visiting the tree now."<<endl;
-				VisitResult vr=roles[i]->visit();
+				VisitResult *vr=roles[i]->visit();
 
-				vr.printVisitInfo();
+				if (vr){
+					vr->printVisitInfo();
 
-				this->analyzeVisitResult(vr);
+					this->analyzeVisitResult(vr);
+				}
+
 			}
 		}
 
@@ -205,22 +217,46 @@ void MPISimulator::simulate(){
 Analyse the visit result. push the prospective MPI op into the proper stack,
 manage the newly created roles.
 */
-void MPISimulator::analyzeVisitResult(VisitResult vr){
+void MPISimulator::analyzeVisitResult(VisitResult *vr){
 	//TODO
-	vector<Role> escapedRoles=vr.escapableRoles;
-	int siz=escapedRoles.size();
+	vector<Role> escapedRoles=vr->escapableRoles;
+	int size=escapedRoles.size();
 
-	if (siz>0)
+	if (size>0)
 	{
 		string paramName=escapedRoles.at(0).getParamRoleName();
 		ParamRole paramRole=this->commManager->getParamRoleMapping().at(paramName);
 
-		for (int i = 0; i <siz ; i++)
+		for (int i = 0; i <size ; i++)
 		{
 			paramRole.insertActualRole(&escapedRoles[i]);
 		}
 	}
-	
+
+	MPIOperation *op=vr->doableOP;
+	if (op)
+	{
+		//if the target condition has not been built, then build it
+		if(op->isDependentOnExecutor()){
+			Condition exec=op->getExecutor();
+
+			this->commManager->simplyInsertCond(exec);
+
+			Condition newTarget=this->commManager->extractCondFromTargetExpr(op->getTargetExpr());
+
+			op->setTargetCond(newTarget);
+
+			this->commManager->popCondition();
+		}
+
+		this->insertOpToPendingList(op);
+	}
+
+}
+
+
+void MPISimulator::insertOpToPendingList(MPIOperation *op){
+	//TODO
 }
 
 /********************************************************************/

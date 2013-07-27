@@ -136,6 +136,8 @@ string MPITypeCheckingConsumer::getVarInIncExpr(Expr *inc){
 		
 		return expr2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
 	}
+
+	return "";
 }
 
 bool MPITypeCheckingConsumer::isChangingByOneUnit(Expr *inc){
@@ -167,11 +169,6 @@ bool MPITypeCheckingConsumer::isChangingByOneUnit(Expr *inc){
 
 	return false;
 }
-
-
-
-
-
 
 
 

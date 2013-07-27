@@ -11,12 +11,14 @@ Role::Role(Range ran){
 	this->paramRoleName=WORLD;
 	range=ran;
 	this->finished=false;
+	this->blocked=false;
 }
 
 Role::Role(string paramRoleName0, Range ran){
 	this->paramRoleName=paramRoleName0;
 	this->range=ran;
 	this->finished=false;
+	this->blocked=false;
 }
 
 string Role::getRoleName(){
@@ -34,39 +36,47 @@ void Role::setCurVisitNode(CommNode *node){
 }
 
 //perform one visit to the comm tree. It stops when encounter a doable op.
-VisitResult Role::visit(){
+VisitResult* Role::visit(){
 	//TODO
+
+	if (blocked)
+		return nullptr;
+
+	if (finished)
+		return nullptr;
+
+	
 
 	while (true)
 	{
 		vector<Role> escapedRoles;
-		
+
 		if (this->curVisitNode==nullptr)
 		{
 			this->finished=true;
 
 			cout<<"The role "<<this->getRoleName()<<" has visited all the nodes in the comm tree!"<<endl;
 
-			return VisitResult(false,nullptr,escapedRoles); 
+			return nullptr; 
 		}
 
 		string nodeName=this->curVisitNode->getNodeName();
-		
+
 		if (this->curVisitNode->isMarked())
 		{
 			//if the cur node has been marked, then skip
 			this->curVisitNode=curVisitNode->skipToNextNode();
 
 			cout<<"The current "<<nodeName<<" node has been marked;"<<endl;
-				
+
 			if (curVisitNode){
-			cout<<this->getRoleName()<<" skip to the next "<<curVisitNode->getNodeName()<<" node."<<endl;
+				cout<<this->getRoleName()<<" skip to the next "<<curVisitNode->getNodeName()<<" node."<<endl;
 			}
 
 			continue;
 		}
-	
-		
+
+
 		Condition curNodeCond=curVisitNode->getCond();
 		Condition myRoleCond=Condition(this->getRange());
 
@@ -87,9 +97,9 @@ VisitResult Role::visit(){
 			this->curVisitNode=curVisitNode->skipToNextNode();
 
 			cout<<"The current "<<nodeName<<" node has nothing to do with the role "<<this->getRoleName()<<endl;
-				
+
 			if (curVisitNode){
-			cout<<this->getRoleName()<<" skip to the next "<<curVisitNode->getNodeName()<<" node."<<endl;
+				cout<<this->getRoleName()<<" skip to the next "<<curVisitNode->getNodeName()<<" node."<<endl;
 			}
 
 			continue;
@@ -103,13 +113,18 @@ VisitResult Role::visit(){
 		if (theOP)
 		{
 			cout<<this->getRoleName()<<" visits the MPI "<<curVisitNode->getNodeName()<<" node"<<endl;
-			
+
 			MPIOperation *doableOP=new MPIOperation(*theOP);
 			doableOP->setExecutorCond(stayHereCond);
 
 			bool isBlocking=doableOP->isBlockingOP();
 
-			return VisitResult(isBlocking,doableOP,escapedRoles);
+			if (isBlocking)
+			{
+				this->blocked=true;
+			}
+
+			return new VisitResult(isBlocking,doableOP,escapedRoles);
 		}
 
 		else{
@@ -123,9 +138,9 @@ VisitResult Role::visit(){
 				this->curVisitNode=curVisitNode->skipToNextNode();
 
 				cout<<"The current "<<nodeName<<" node has nothing to do with the role "<<this->getRoleName()<<endl;
-				
+
 				if (curVisitNode){
-				cout<<this->getRoleName()<<" skip to the next "<<curVisitNode->getNodeName()<<" node."<<endl;
+					cout<<this->getRoleName()<<" skip to the next "<<curVisitNode->getNodeName()<<" node."<<endl;
 				}
 
 				continue;
@@ -147,7 +162,7 @@ VisitResult Role::visit(){
 					{
 						cout<<this->getRoleName()<<" goes deeper to "<<curVisitNode->getNodeName()<<endl;
 					}
-					
+
 					continue;
 				}
 
@@ -158,16 +173,14 @@ VisitResult Role::visit(){
 					goDeeperRole.setCurVisitNode(this->curVisitNode->goDeeper());
 					escapedRoles.push_back(goDeeperRole);
 				}
-			
-				return VisitResult(false,nullptr,escapedRoles);
+
+				return new VisitResult(false,nullptr,escapedRoles);
 			}
 		}
 
 	}
 
-
-	vector<Role> roles;
-	return VisitResult(true,nullptr,roles);
+	return nullptr;
 }
 /********************************************************************/
 //Class Role impl end										****

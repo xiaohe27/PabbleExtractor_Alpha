@@ -76,6 +76,7 @@ string convertIntToStr(int number)
 //Class CommManager impl start										****
 /********************************************************************/
 
+
 CommManager::CommManager(CompilerInstance *ci0, int numOfProc0){
 			
 		this->ci=ci0;
@@ -491,6 +492,10 @@ Condition CommManager::getTopCondition(){
 		else{
 			return this->stackOfRankConditions.back();
 		}
+}
+
+void CommManager::simplyInsertCond(Condition cond){
+	this->stackOfRankConditions.push_back(cond);
 }
 
 void CommManager::insertExistingCondition(Condition cond){
