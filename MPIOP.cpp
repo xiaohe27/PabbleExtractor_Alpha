@@ -129,6 +129,7 @@ string tmp[]= {"MPI_Recv","MPI_Ssend"};
 set<string> MPIOperation::blockingOPSet(begin(tmp),end(tmp));
 
 bool MPIOperation::isOpBlocking(string opStr){
+
 	set<string>::iterator it;
 	it=MPIOperation::blockingOPSet.find(opStr);
 	if (it!=blockingOPSet.end())
@@ -142,10 +143,75 @@ bool MPIOperation::isOpBlocking(string opStr){
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 bool MPIOperation::isBlockingOP(){
+	if (this->isCollectiveOp())
+		return true;
+
 	return MPIOperation::isOpBlocking(this->opName);
 }
 
 
+string tmp1[]= {"MPI_Send","MPI_Ssend","MPI_Rsend","MPI_Isend"};
+set<string> MPIOperation::sendingOPSet(begin(tmp1),end(tmp1));
+
+string tmp2[]={"MPI_Recv","MPI_Irecv"};
+set<string> MPIOperation::recvingOPSet(begin(tmp2),end(tmp2));
+
+string tmp3[]={"MPI_Bcast","MPI_Gather","MPI_Reduce","MPI_Scatter","MPI_Barrier"
+	,"MPI_Allgather","MPI_allreduce"};
+set<string> MPIOperation::collectiveOPSet(begin(tmp3),end(tmp3));
+
+bool MPIOperation::isSendingOp(){
+	set<string>::iterator it;
+	it=MPIOperation::sendingOPSet.find(this->getOpName());
+	if (it!=sendingOPSet.end())
+	{
+		return true;
+	}
+
+	else
+		return false;
+}
+
+
+bool MPIOperation::isRecvingOp(){
+	set<string>::iterator it;
+	it=MPIOperation::recvingOPSet.find(this->getOpName());
+	if (it!=recvingOPSet.end())
+	{
+		return true;
+	}
+
+	else
+		return false;
+}
+
+
+bool MPIOperation::isCollectiveOp(){
+	set<string>::iterator it;
+	it=MPIOperation::collectiveOPSet.find(this->getOpName());
+	if (it!=collectiveOPSet.end())
+	{
+		return true;
+	}
+
+	else
+		return false;
+}
+
+//test whether this op is a complementary op of the other op.
+bool MPIOperation::isComplementaryOpOf(MPIOperation *otherOP){
+	if (this->isRecvingOp())
+	{
+		return otherOP->isSendingOp();
+	}
+
+	if (this->isSendingOp())
+	{
+		return otherOP->isRecvingOp();
+	}
+
+	return false;
+}
 
 /********************************************************************/
 //Class MPIOperation impl end										****

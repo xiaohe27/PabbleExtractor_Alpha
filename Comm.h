@@ -295,6 +295,9 @@ private:
 	string opName;
 
 	static set<string> blockingOPSet;
+	static set<string> sendingOPSet;
+	static set<string> recvingOPSet;
+	static set<string> collectiveOPSet;
 
 	Condition analyzeTargetCondFromExecutorCond(Condition execCond, Expr *tarExpr);
 
@@ -321,6 +324,13 @@ public:
 	void setExecutorCond(Condition execCond){this->executor=execCond;}
 	void setTargetCond(Condition target0){this->target=target0;}
 	void setTargetExprStr(string str){this->targetExprStr=str;}
+
+	bool isSendingOp();
+	bool isRecvingOp();
+	bool isCollectiveOp();
+
+	bool isComplementaryOpOf(MPIOperation *otherOP);
+
 	void printMPIOP();
 
 };
