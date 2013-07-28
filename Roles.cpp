@@ -45,7 +45,11 @@ VisitResult* Role::visit(){
 	if (finished)
 		return nullptr;
 
-	
+	if (this->range.isAllRange() &&
+		this->curVisitNode && !this->curVisitNode->getCond().isComplete() &&
+		!this->curVisitNode->isMarked())
+		return nullptr;
+
 
 	while (true)
 	{
@@ -240,7 +244,28 @@ void ParamRole::insertActualRole(Role *r){
 	{
 		if (actualRoles[i]->hasRangeEqualTo(r->getRange()))
 		{
+			if (actualRoles[i]->hasFinished())
+				return;
+
+					
+			const CommNode *curVisitNodeOfRoleI=actualRoles[i]->getCurVisitNode();
+			if (curVisitNodeOfRoleI==nullptr)
+				return;
+
+			int curPosForI=curVisitNodeOfRoleI->getPosIndex();
+
+			if (r->getCurVisitNode()==nullptr)
+				return;
+
+			int curPosForRoleR=r->getCurVisitNode()->getPosIndex();
+
+			if(curPosForRoleR > curPosForI)
 			actualRoles[i]=r;
+			
+			else{
+				cout<<"The cur role i has pos "<<curPosForI<<", which is newer than role r's "<<
+					curPosForRoleR<<"; so do nothing"<<endl;
+			}
 			return;
 		}
 	}

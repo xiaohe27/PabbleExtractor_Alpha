@@ -92,14 +92,14 @@ bool MPISimulator::isDeadLockDetected(){
 }
 
 void MPISimulator::initTheRoles(){
-	map<string,ParamRole> paramRoleMap=this->commManager->getParamRoleMapping();
+	const map<string,ParamRole*> paramRoleMap=this->commManager->getParamRoleMapping();
 
 	for (auto &x: paramRoleMap)
 	{
 
-		ParamRole paramRole=x.second;
+		ParamRole *paramRole=x.second;
 
-		vector<Role*> roles= paramRole.getTheRoles();
+		vector<Role*> roles= paramRole->getTheRoles();
 
 		for (int i = 0; i < roles.size(); i++)
 		{
@@ -110,7 +110,7 @@ void MPISimulator::initTheRoles(){
 }
 
 void MPISimulator::printTheRoles(){
-	map<string,ParamRole> paramRoleMap=this->commManager->getParamRoleMapping();
+	const map<string,ParamRole*> paramRoleMap=this->commManager->getParamRoleMapping();
 
 	for (auto &x: paramRoleMap)
 	{
@@ -118,9 +118,9 @@ void MPISimulator::printTheRoles(){
 		cout<<"The param role name is "<<paramRoleName<<endl;
 		cout<<"The actual roles for this param role are:\n";
 
-		ParamRole paramRole=x.second;
+		ParamRole *paramRole=x.second;
 
-		vector<Role*> roles= paramRole.getTheRoles();
+		vector<Role*> roles= paramRole->getTheRoles();
 
 		for (int i = 0; i < roles.size(); i++)
 		{
@@ -131,13 +131,13 @@ void MPISimulator::printTheRoles(){
 }
 
 bool MPISimulator::areAllRolesDone(){
-	map<string,ParamRole> paramRoleMap=this->commManager->getParamRoleMapping();
+	map<string,ParamRole*> paramRoleMap=this->commManager->getParamRoleMapping();
 
 	for (auto &x: paramRoleMap)
 	{
-		ParamRole paramRole=x.second;
+		ParamRole *paramRole=x.second;
 
-		vector<Role*> roles= paramRole.getTheRoles();
+		vector<Role*> roles= paramRole->getTheRoles();
 
 		for (int i = 0; i < roles.size(); i++)
 		{
@@ -160,7 +160,7 @@ Condition MPISimulator::analyzeTargetCondFromExecutorCond(Condition execCond, Ex
 void MPISimulator::simulate(){
 
 	cout<<"Ready to simulate the execution of the MPI program now!"<<endl;
-	map<string,ParamRole> paramRoleMap=this->commManager->getParamRoleMapping();
+	const map<string,ParamRole*> paramRoleMap=this->commManager->getParamRoleMapping();
 
 	cout<<"There are "<<paramRoleMap.size()<<" communicator groups involved"<<endl;
 
@@ -181,9 +181,9 @@ void MPISimulator::simulate(){
 		{
 			string paramRoleName=x.first;			
 
-			ParamRole paramRole=x.second;
+			ParamRole *paramRole=x.second;
 
-			vector<Role*> roles= paramRole.getTheRoles();
+			vector<Role*> roles= paramRole->getTheRoles();
 
 			int size=roles.size();
 
@@ -225,11 +225,11 @@ void MPISimulator::analyzeVisitResult(VisitResult *vr){
 	if (size>0)
 	{
 		string paramName=escapedRoles.at(0).getParamRoleName();
-		ParamRole paramRole=this->commManager->getParamRoleMapping().at(paramName);
+		ParamRole *paramRole=this->commManager->getParamRoleWithName(paramName);
 
 		for (int i = 0; i <size ; i++)
 		{
-			paramRole.insertActualRole(&escapedRoles[i]);
+			paramRole->insertActualRole(&escapedRoles[i]);
 		}
 	}
 
@@ -257,6 +257,43 @@ void MPISimulator::analyzeVisitResult(VisitResult *vr){
 
 void MPISimulator::insertOpToPendingList(MPIOperation *op){
 	//TODO
+	cout<<"The mpi op "<<op->getOpName()<<" is going to be inserted into the pending list."<<endl;
+
+	int size=this->pendingOPs.size();
+	for (int i = 0; i < size; i++)
+	{
+		MPIOperation *curVisitOP=pendingOPs[i];
+
+		cout<<"The cur visited mpi op is "<<curVisitOP->getOpName()<<endl;
+
+		//if the operations are complementary
+		if (op->isComplementaryOpOf(curVisitOP))
+		{
+			Condition targetOfOp=op->getTargetCond();
+			Condition execCondOfCurVisitOp=curVisitOP->getExecutor();
+			Condition thisTarCurExec=targetOfOp.AND(execCondOfCurVisitOp);
+
+			Condition execOfOp=op->getExecutor();
+			Condition targetOfCurOp=curVisitOP->getTargetCond();
+			Condition thisExecCurTarget=execOfOp.AND(targetOfCurOp);
+
+			cout<<"The condition for the target of inserted op and executor of the cur visit op is : "<<
+				thisTarCurExec.printConditionInfo()<<endl;
+
+			cout<<"The condition for the executor of inserted op and target of the cur visit op is : "<<
+				thisExecCurTarget.printConditionInfo()<<endl;
+
+			if(thisTarCurExec.isIgnored())
+				continue;
+
+
+		}
+	}
+
+	//non of the existing ops have anything to do with the inserted op.
+	this->pendingOPs.push_back(op);
+
+	cout<<"Insert "<<op->getOpName()<<" to the back of the pending list."<<endl;
 
 }
 

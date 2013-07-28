@@ -13,8 +13,10 @@ void CommNode::init(int type, MPIOperation *mpiOP){
 
 	this->nodeType=type;
 	this->depth=0;
+	this->posIndex=0;
 	this->op=mpiOP;
 	this->marked=false;
+	
 
 	this->parent=nullptr;
 	this->sibling=nullptr;
@@ -49,7 +51,6 @@ CommNode::CommNode(int type){
 CommNode::CommNode(MPIOperation *op0){
 
 	init(op0->getOPType(),op0);
-
 }
 
 void CommNode::setNodeType(int type){
@@ -96,6 +97,8 @@ void CommNode::insert(CommNode *child){
 
 	child->depth=this->depth+1;
 
+	child->posIndex= this->posIndex+this->sizeOfTheNode();
+
 	if(this->children.size()!=0){
 		this->children.back()->sibling=child;
 	}
@@ -128,6 +131,20 @@ CommNode* CommNode::skipToNextNode(){
 	{
 		return this->parent->skipToNextNode();
 	}
+}
+
+
+int CommNode::sizeOfTheNode(){
+	if (this->isLeaf())
+		return 1;
+
+	int sum=0;
+	for (int i = 0; i < this->children.size(); i++)
+	{
+		sum+=children[i]->sizeOfTheNode();
+	}
+
+	return sum+1;
 }
 
 /********************************************************************/

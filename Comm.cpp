@@ -81,7 +81,7 @@ CommManager::CommManager(CompilerInstance *ci0, int numOfProc0){
 			
 		this->ci=ci0;
 		this->numOfProc=numOfProc0;
-		this->paramRoleNameMapping[WORLD]=ParamRole();
+		this->paramRoleNameMapping[WORLD]=new ParamRole();
 
 }
 
@@ -447,11 +447,11 @@ void CommManager::insertCondition(Expr *expr){
 
 			string commGroupName=cond.getGroupName();
 			if(this->paramRoleNameMapping.count(commGroupName)>0)
-				paramRoleNameMapping[commGroupName].addAllTheRangesInTheCondition(cond);
+				paramRoleNameMapping[commGroupName]->addAllTheRangesInTheCondition(cond);
 
 			else
 			{
-				paramRoleNameMapping[commGroupName]=ParamRole(cond);
+				paramRoleNameMapping[commGroupName]=new ParamRole(cond);
 			}
 
 }
@@ -503,11 +503,11 @@ void CommManager::insertExistingCondition(Condition cond){
 
 		string commGroupName=cond.getGroupName();
 			if(this->paramRoleNameMapping.count(commGroupName)>0)
-				paramRoleNameMapping[commGroupName].addAllTheRangesInTheCondition(cond);
+				paramRoleNameMapping[commGroupName]->addAllTheRangesInTheCondition(cond);
 
 			else
 			{
-				paramRoleNameMapping[commGroupName]=ParamRole(cond);
+				paramRoleNameMapping[commGroupName]=new ParamRole(cond);
 			}
 
 }
@@ -764,8 +764,18 @@ int CommManager::getOffSet4RankRelatedVar(string varName){
 }
 
 
-map<string,ParamRole> CommManager::getParamRoleMapping(){
+const map<string,ParamRole*> CommManager::getParamRoleMapping() const{
 	return this->paramRoleNameMapping;
+}
+
+ParamRole* CommManager::getParamRoleWithName(string name) const{
+	if (this->paramRoleNameMapping.count(name)>0)
+	{
+		return this->paramRoleNameMapping.at(name);
+	}
+
+	else
+		return nullptr;
 }
 
 /********************************************************************/

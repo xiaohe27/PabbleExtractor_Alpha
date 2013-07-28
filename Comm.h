@@ -243,6 +243,8 @@ public:
 
 	VisitResult* visit();
 
+	const CommNode* getCurVisitNode(){return this->curVisitNode;}
+
 	bool IsBlocked(){return this->blocked;}
 
 	bool hasFinished(){return finished;}
@@ -353,6 +355,9 @@ private:
 
 	int depth;
 
+	//the pos number indicates the time of insertion, the smaller the earlier
+	int posIndex;
+
 	bool marked;
 
 	void init(int type,MPIOperation *op0);
@@ -415,6 +420,10 @@ public:
 
 	string printTheNode();
 
+	int sizeOfTheNode();
+
+	int getPosIndex() const{return this->posIndex;}
+
 };
 
 class RecurNode: public CommNode{
@@ -451,7 +460,7 @@ private:
 
 	vector<Condition> stackOfRankConditions;
 
-	map<string,ParamRole>  paramRoleNameMapping;
+	map<string,ParamRole*>  paramRoleNameMapping;
 
 	//mapping between the rank var name and the comm group name 
 	map<string,string> rankVarCommGroupMapping;
@@ -520,7 +529,8 @@ public:
 
 	Condition getTopCondition();
 
-	map<string,ParamRole> getParamRoleMapping();
+	const map<string,ParamRole*> getParamRoleMapping() const;
+	ParamRole* getParamRoleWithName(string name) const;
 };
 
 
