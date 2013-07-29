@@ -769,13 +769,16 @@ const map<string,ParamRole*> CommManager::getParamRoleMapping() const{
 }
 
 ParamRole* CommManager::getParamRoleWithName(string name) const{
+
 	if (this->paramRoleNameMapping.count(name)>0)
 	{
 		return this->paramRoleNameMapping.at(name);
 	}
 
-	else
+	else{
 		return nullptr;
+	}
+		
 }
 
 /********************************************************************/

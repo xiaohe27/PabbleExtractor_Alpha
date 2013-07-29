@@ -204,9 +204,9 @@ class VisitResult{
 public:
 	bool isBlocking;
 	MPIOperation *doableOP;
-	vector<Role> escapableRoles; //the role is escapable if it is not captured by the current node
+	vector<Role*> escapableRoles; //the role is escapable if it is not captured by the current node
 
-	VisitResult(bool blocking, MPIOperation *mpiOP, vector<Role> escapedRoles);
+	VisitResult(bool blocking, MPIOperation *mpiOP, vector<Role*> escapedRoles);
 
 	void printVisitInfo();
 };
@@ -301,7 +301,6 @@ private:
 	static set<string> recvingOPSet;
 	static set<string> collectiveOPSet;
 
-	Condition analyzeTargetCondFromExecutorCond(Condition execCond, Expr *tarExpr);
 
 public:
 	
@@ -539,7 +538,7 @@ public:
 class MPISimulator{
 private:
 	
-	CommNode root;
+	CommNode *root;
 	CommNode *curNode;
 
 	CommManager *commManager;
@@ -557,12 +556,11 @@ public:
 
 	void initTheRoles();
 
-	string printTheTree(){return this->root.printTheNode();}
+	string printTheTree(){return this->root->printTheNode();}
 
 	bool areAllRolesDone();
 	bool isDeadLockDetected();
 
-	Condition analyzeTargetCondFromExecutorCond(Condition execCond, Expr *tarExpr);
 	void analyzeVisitResult(VisitResult *vr);
 
 	void insertOpToPendingList(MPIOperation *op);

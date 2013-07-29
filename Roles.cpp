@@ -53,7 +53,7 @@ VisitResult* Role::visit(){
 
 	while (true)
 	{
-		vector<Role> escapedRoles;
+		vector<Role*> escapedRoles;
 
 		if (this->curVisitNode==nullptr)
 		{
@@ -90,8 +90,8 @@ VisitResult* Role::visit(){
 		//get all the roles who are able to escape
 		for (int i = 0; i < escapedCond.getRangeList().size(); i++)
 		{
-			Role runaway=Role(escapedCond.getRangeList()[i]);
-			runaway.setCurVisitNode(this->curVisitNode->skipToNextNode());
+			Role *runaway=new Role(escapedCond.getRangeList()[i]);
+			runaway->setCurVisitNode(this->curVisitNode->skipToNextNode());
 			escapedRoles.push_back(runaway);
 		}
 
@@ -128,8 +128,14 @@ VisitResult* Role::visit(){
 				this->blocked=true;
 			}
 
+			else{
+				//if it is non-blocking op, then the whole role can goto next node
+				this->curVisitNode= this->curVisitNode->skipToNextNode();
+				escapedRoles.clear();
+			}
 			return new VisitResult(isBlocking,doableOP,escapedRoles);
 		}
+
 
 		else{
 			//enumerate the node types
@@ -173,11 +179,13 @@ VisitResult* Role::visit(){
 				//get all the roles who are able to go deeper
 				for (int i = 0; i < stayHereCond.getRangeList().size(); i++)
 				{
-					Role goDeeperRole=Role(stayHereCond.getRangeList()[i]);
-					goDeeperRole.setCurVisitNode(this->curVisitNode->goDeeper());
+					Role *goDeeperRole=new Role(stayHereCond.getRangeList()[i]);
+					goDeeperRole->setCurVisitNode(this->curVisitNode->goDeeper());
 					escapedRoles.push_back(goDeeperRole);
 				}
 
+				//the role is split into two parts, it will be blocked unless all the parts combine
+				this->blocked=true;
 				return new VisitResult(false,nullptr,escapedRoles);
 			}
 		}

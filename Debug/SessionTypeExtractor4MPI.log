@@ -1,4 +1,4 @@
-﻿Build started 28/07/2013 11:50:40.
+﻿Build started 29/07/2013 11:47:59.
      1>Project "A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI.vcxproj" on node 2 (Rebuild target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt Comm.cpp InteractionNode.cpp MPIOP.cpp MPITypeCheckingConsumer.cpp RanAndCond.cpp Roles.cpp SessionTypeExtractor.cpp Simulation.cpp StmtHandler.cpp
@@ -399,9 +399,9 @@
      1>s:\clang\sw\llvm\tools\clang\include\clang\analysis\cfg.h(272): warning C4800: 'const clang::Stmt *' : forcing value to bool 'true' or 'false' (performance warning)
      1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decltemplate.h(1568): warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized
      1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(25): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(104): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(125): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(142): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(127): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(148): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(165): warning C4018: '<' : signed/unsigned mismatch
      1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(366): warning C4244: '=' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
                  s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(363) : while compiling class template member function 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getExtraLocalData(void) const'
                  with
@@ -1003,9 +1003,9 @@
      1>s:\clang\sw\llvm\tools\clang\include\clang\analysis\cfg.h(272): warning C4800: 'const clang::Stmt *' : forcing value to bool 'true' or 'false' (performance warning)
      1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decltemplate.h(1568): warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized
      1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\roles.cpp(91): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\roles.cpp(174): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\roles.cpp(210): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\roles.cpp(223): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\roles.cpp(180): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\roles.cpp(218): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\roles.cpp(231): warning C4018: '<' : signed/unsigned mismatch
      1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(366): warning C4244: '=' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
                  s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(363) : while compiling class template member function 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getExtraLocalData(void) const'
                  with
@@ -2745,4 +2745,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:58.55
+Time Elapsed 00:01:11.59

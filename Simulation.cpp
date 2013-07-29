@@ -6,7 +6,7 @@ using namespace std;
 
 
 //////////////////////VisitResult//////////////////////////////////////////
-VisitResult::VisitResult(bool b, MPIOperation *op, vector<Role> roles){
+VisitResult::VisitResult(bool b, MPIOperation *op, vector<Role*> roles){
 	this->isBlocking=b;
 	this->doableOP=op;
 	this->escapableRoles=roles;
@@ -15,16 +15,17 @@ VisitResult::VisitResult(bool b, MPIOperation *op, vector<Role> roles){
 void VisitResult::printVisitInfo(){
 	if (this->doableOP)
 	{
-		cout<<"The doable MPI operation in this node is "<<endl;
+		cout<<"\n\n\nThe doable MPI operation in this node is "<<endl;
 		this->doableOP->printMPIOP();
 
-		cout<<"It is "<<(this->isBlocking?"":"non-")<<"blocking operation!"<<endl;
+		cout<<"It is "<<(this->isBlocking?"":"non-")<<"blocking operation!\n\n\n"<<endl;
 	}
 
 
 	for (int i = 0; i < escapableRoles.size(); i++)
 	{
-		cout<<"The role "<<escapableRoles[i].getRoleName()<<" is able to escape to the next node!"<<endl;
+		cout<<"The role "<<escapableRoles[i]->getRoleName()<<" is able to escape to the node with index "
+			<<escapableRoles[i]->getCurVisitNode()->getPosIndex()<<endl;
 	}
 
 }
@@ -37,12 +38,13 @@ void VisitResult::printVisitInfo(){
 /********************************************************************/
 
 
-MPISimulator::MPISimulator(CommManager *commMgr):root(ST_NODE_ROOT){
+MPISimulator::MPISimulator(CommManager *commMgr){
 	this->commManager=commMgr;
 
-	root.setCond(Condition(true));
+	root=new CommNode(ST_NODE_ROOT);
+	root->setCond(true);
 
-	curNode=&root;
+	curNode=root;
 
 }
 
@@ -88,7 +90,28 @@ void MPISimulator::gotoParent(){
 
 
 bool MPISimulator::isDeadLockDetected(){
-	return false;
+	bool blocking=false;
+
+	for (auto &x:this->commManager->getParamRoleMapping())
+	{
+		int size=x.second ->getTheRoles().size();
+		for (int i = 0; i < size; i++)
+		{
+			if (x.second->getTheRoles()[i]->hasFinished())
+			{
+				continue;
+			}
+
+			blocking=x.second->getTheRoles()[i]->IsBlocked();
+
+			if (!blocking)
+			{
+				return false;
+			}
+		}
+	}
+
+	return blocking;
 }
 
 void MPISimulator::initTheRoles(){
@@ -103,7 +126,7 @@ void MPISimulator::initTheRoles(){
 
 		for (int i = 0; i < roles.size(); i++)
 		{
-			roles[i]->setCurVisitNode(&this->root);
+			roles[i]->setCurVisitNode(this->root);
 		}
 	}
 
@@ -150,18 +173,12 @@ bool MPISimulator::areAllRolesDone(){
 }
 
 
-Condition MPISimulator::analyzeTargetCondFromExecutorCond(Condition execCond, Expr *tarExpr){
-
-
-	return Condition(false);
-}
 
 ////////////////////////////////////////////////////////////////////////////
 void MPISimulator::simulate(){
 
 	cout<<"Ready to simulate the execution of the MPI program now!"<<endl;
 	const map<string,ParamRole*> paramRoleMap=this->commManager->getParamRoleMapping();
-
 	cout<<"There are "<<paramRoleMap.size()<<" communicator groups involved"<<endl;
 
 	this->printTheRoles();
@@ -174,10 +191,9 @@ void MPISimulator::simulate(){
 	}
 
 
-
-	while (!this->root.isMarked() && !isDeadLockDetected())
+	while (!this->root->isMarked() && !isDeadLockDetected())
 	{
-		for (auto &x: paramRoleMap)
+		for (auto &x: commManager->getParamRoleMapping())
 		{
 			string paramRoleName=x.first;			
 
@@ -205,9 +221,17 @@ void MPISimulator::simulate(){
 		if (areAllRolesDone())
 		{
 			//if all the roles finished their work, then simulation completes successfully
-			this->root.setMarked();
+			this->root->setMarked();
 		}
 	}
+
+	if (root->isMarked())
+	{
+		cout<<"\n\n\nThe comm tree has been traversed successfully!!!"<<endl;
+	}
+
+	else
+	cout<<"\n\n\nDeadlock occurs!!!";
 }
 
 
@@ -219,17 +243,15 @@ manage the newly created roles.
 */
 void MPISimulator::analyzeVisitResult(VisitResult *vr){
 	//TODO
-	vector<Role> escapedRoles=vr->escapableRoles;
-	int size=escapedRoles.size();
-
+	int size=vr->escapableRoles.size();
 	if (size>0)
 	{
-		string paramName=escapedRoles.at(0).getParamRoleName();
+		string paramName=vr->escapableRoles.at(0)->getParamRoleName();
 		ParamRole *paramRole=this->commManager->getParamRoleWithName(paramName);
 
 		for (int i = 0; i <size ; i++)
 		{
-			paramRole->insertActualRole(&escapedRoles[i]);
+			paramRole->insertActualRole(vr->escapableRoles.at(i));
 		}
 	}
 
