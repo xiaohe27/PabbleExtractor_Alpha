@@ -22,13 +22,7 @@ Role::Role(string paramRoleName0, Range ran){
 }
 
 string Role::getRoleName(){
-	string name=this->paramRoleName+"[";
-	name.append(convertIntToStr(this->range.getStart()));
-	name.append("..");
-	name.append(convertIntToStr(this->range.getEnd()));
-	name.append("]");
-
-	return name;
+	return this->paramRoleName+this->getRange().printRangeInfo();
 }
 
 void Role::setCurVisitNode(CommNode *node){

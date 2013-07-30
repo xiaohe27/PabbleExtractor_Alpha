@@ -279,7 +279,7 @@ void MPISimulator::analyzeVisitResult(VisitResult *vr){
 
 void MPISimulator::insertOpToPendingList(MPIOperation *op){
 	//TODO
-	cout<<"The mpi op "<<op->getOpName()<<" is going to be inserted into the pending list."<<endl;
+//	cout<<"The mpi op "<<op->getOpName()<<" is going to be inserted into the pending list."<<endl;
 
 	
 	for (int i = 0; i < this->pendingOPs.size(); i++)
@@ -305,11 +305,11 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 			Condition remainingExecCond4ThisOp=execOfOp.Diff(thisExecCurTarget);
 			Condition remainingTarCond4ThisOp=targetOfOp.Diff(thisTarCurExec);
 
-			cout<<"The condition for the target of inserted op and executor of the cur visit op is : "<<
-				thisTarCurExec.printConditionInfo()<<endl;
+//			cout<<"The condition for the target of inserted op and executor of the cur visit op is : "<<
+//				thisTarCurExec.printConditionInfo()<<endl;
 
-			cout<<"The condition for the executor of inserted op and target of the cur visit op is : "<<
-				thisExecCurTarget.printConditionInfo()<<endl;
+//			cout<<"The condition for the executor of inserted op and target of the cur visit op is : "<<
+//				thisExecCurTarget.printConditionInfo()<<endl;
 
 			if(thisTarCurExec.isIgnored())
 				continue;
