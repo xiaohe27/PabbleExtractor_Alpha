@@ -12,12 +12,10 @@ Range::Range(int s,int e){
 	this->shouldBeIgnored=false;
 	this->marked=false;
 
-	if(s<0)
-	{
+	if(s<0 || s>=InitEndIndex)
 		s=0;
-	}
 
-	startPos=s; endPos=e;
+	this->startPos=s; this->endPos=e;
 
 	//init the start and end offset
 	init();
@@ -26,8 +24,8 @@ Range::Range(int s,int e){
 Range::Range(){
 	shouldBeIgnored=true;
 	marked=false;
-	startPos=InitStartIndex;
-	endPos=InitEndIndex;
+	this->startPos=InitStartIndex;
+	this->endPos=InitEndIndex;
 
 	init();	
 }
@@ -38,32 +36,49 @@ void Range::init(){
 	}
 
 Range Range::createByStartIndex(int start){
+	if(start>=InitEndIndex)
+		return Range();
 
 	return Range(start,InitEndIndex);
 }
 
 Range Range::createByEndIndex(int end){
+	if (end<0)
+		return Range();
 
 	return Range(0,end);
 }
 
 
 Range Range::createByOp(string op, int num){
-	if(op=="==")
+	if(op=="=="){
+		if(num<0 || num>= InitEndIndex)
+			return Range();
+
+		else
 		return Range(num,num);
+	}
 
 	if(op=="<"){
 		if(num<=0)
 			return Range();
 
-		return Range(0,num-1);
+		else if(num<= InitEndIndex)
+			return Range(0,num-1);
+
+		else
+			return Range(0,InitEndIndex-1);
 	}
 
 	if(op=="<="){
 		if(num<0)
 			return Range();
 
-		return Range(0,num);
+		else if(num<InitEndIndex)
+			return Range(0,num);
+
+		else
+			return Range(0,InitEndIndex-1);
 	}
 
 	if(op==">"){	
@@ -84,6 +99,7 @@ void Range::addNumber(int num){
 }
 
 //ok. already considered the case of end < start
+//considered the offset
 Condition Range::AND(Range other){
 	if(!this->hasIntersectionWith(other)){
 		return Condition(false);
@@ -91,8 +107,8 @@ Condition Range::AND(Range other){
 
 	if( (!this->isSpecialRange() && !other.isSpecialRange())
 		|| (this->isSpecialRange() && other.isSpecialRange()) ){
-			int newStart=max(this->startPos,other.startPos);
-			int newEnd=minEnd(this->endPos,other.endPos);
+			int newStart=max(this->getStart(),other.getStart());
+			int newEnd=minEnd(this->getEnd(),other.getEnd());
 
 			return Condition(Range(newStart,newEnd));
 	}
@@ -103,19 +119,19 @@ Condition Range::AND(Range other){
 			return Condition(other);
 
 		else{
-			if(other.isThisNumInside(this->endPos)){
-				if(other.endPos < this->startPos){
-					return Condition(Range(other.startPos,this->endPos));
+			if(other.isThisNumInside(this->getEnd())){
+				if(other.getEnd() < this->getStart()){
+					return Condition(Range(other.getStart(),this->getEnd()));
 				}
 
 				else{
-					return Condition(Range(other.startPos,this->endPos),
-						Range(this->startPos,other.endPos));
+					return Condition(Range(other.getStart(),this->getEnd()),
+						Range(this->getStart(),other.getEnd()));
 				}
 			}
 
 			else{
-				return Condition(Range(this->startPos, other.endPos));
+				return Condition(Range(this->getStart(), other.getEnd()));
 			}
 
 		}
@@ -130,10 +146,10 @@ bool Range::hasIntersectionWith(Range other){
 	if(this->isIgnored() || other.isIgnored())
 		return false;
 
-	if(other.isThisNumInside(this->startPos) ||
-		other.isThisNumInside(this->endPos) ||
-		this->isThisNumInside(other.startPos)||
-		this->isThisNumInside(other.endPos))
+	if(other.isThisNumInside(this->getStart()) ||
+		other.isThisNumInside(this->getEnd()) ||
+		this->isThisNumInside(other.getStart())||
+		this->isThisNumInside(other.getEnd()))
 		return true;
 
 	else
@@ -167,23 +183,23 @@ Condition Range::OR(Range other){
 
 	//the two ranges have no intersection
 	if(!this->hasIntersectionWith(other)){
-		if (areTheseTwoNumsAdjacent(other.endPos,this->startPos))
+		if (areTheseTwoNumsAdjacent(other.getEnd(),this->getStart()))
 		{
 			if(other.isSpecialRange()){
-				if(this->endPos>=other.startPos)
+				if(this->getEnd()>=other.getStart())
 					return Condition(true);
 			}
 
-			return Condition(Range(other.startPos,this->endPos));
+			return Condition(Range(other.getStart(),this->getEnd()));
 		}
 
-		else if(areTheseTwoNumsAdjacent(this->endPos,other.startPos)){
+		else if(areTheseTwoNumsAdjacent(this->getEnd(),other.getStart())){
 			if(this->isSpecialRange()){
-				if(other.endPos>=this->startPos)
+				if(other.getEnd()>=this->getStart())
 					return Condition(true);
 			}
 
-			return Condition(Range(this->startPos,other.endPos));
+			return Condition(Range(this->getStart(),other.getEnd()));
 		}
 
 		return Condition(*this,other);
@@ -193,8 +209,8 @@ Condition Range::OR(Range other){
 	/*****************************************************************/
 	//if both of them are special ranges (end < start)
 	if(this->isSpecialRange() && other.isSpecialRange()){
-		int newS=min(this->startPos, other.startPos);
-		int newE=max(this->endPos, other.endPos);
+		int newS=min(this->getStart(), other.getStart());
+		int newE=max(this->getEnd(), other.getEnd());
 
 		if(newE >= newS)
 			return Condition(true);
@@ -206,8 +222,8 @@ Condition Range::OR(Range other){
 	if(!this->isSpecialRange() &&
 		!other.isSpecialRange()){
 
-			int newStart=min(this->startPos,other.startPos);
-			int newEnd=maxEnd(this->endPos,other.endPos);
+			int newStart=min(this->getStart(),other.getStart());
+			int newEnd=maxEnd(this->getEnd(),other.getEnd());
 
 			Range ran= Range(newStart,newEnd);
 
@@ -216,9 +232,9 @@ Condition Range::OR(Range other){
 
 	//one is special, the other is not special
 	if(this->isSpecialRange()){
-		if(other.isThisNumInside(this->endPos)){
-			int newS=this->startPos;
-			int newE=other.endPos;
+		if(other.isThisNumInside(this->getEnd())){
+			int newS=this->getStart();
+			int newE=other.getEnd();
 
 			if(newE >= newS-1)
 				return Condition(true);
@@ -228,9 +244,9 @@ Condition Range::OR(Range other){
 		}
 
 		else{
-			if(other.isThisNumInside(this->startPos)){
-				int newS=other.startPos;
-				int newE=this->endPos;
+			if(other.isThisNumInside(this->getStart())){
+				int newS=other.getStart();
+				int newE=this->getEnd();
 
 				return Condition(Range(newS,newE));
 			}
@@ -256,17 +272,17 @@ bool Range::isSuperSetOf(Range ran){
 	if((this->isSpecialRange() && ran.isSpecialRange())
 		|| (!this->isSpecialRange() && !ran.isSpecialRange()))
 	{
-		if(this->startPos > ran.startPos)
+		if(this->getStart() > ran.getStart())
 			return false;
 
-		if(this->endPos < ran.endPos)
+		if(this->getEnd() < ran.getEnd())
 			return false;
 
 		return true;
 	}
 
 	if(this->isSpecialRange()){
-		if(ran.endPos <= this->endPos || ran.startPos >= this->startPos)
+		if(ran.getEnd() <= this->getEnd() || ran.getStart() >= this->getStart())
 			return true;
 
 		return false;
@@ -288,8 +304,8 @@ bool Range::isEqualTo(Range ran){
 	if(this->isAllRange() && ran.isAllRange())
 		return true;
 
-	if(this->startPos == ran.startPos && 
-		this->endPos == ran.endPos)
+	if(this->getStart() == ran.getStart() && 
+		this->getEnd() == ran.getEnd())
 		return true;
 
 	return false;
@@ -297,10 +313,10 @@ bool Range::isEqualTo(Range ran){
 
 //ok. already considered the case of end < start
 bool Range::isAllRange(){
-	if(startPos==0 && endPos==InitEndIndex)
+	if(getStart()==0 && getEnd()==InitEndIndex)
 		return true;
 
-	if(endPos==startPos-1)
+	if(getEnd()==getStart()-1)
 		return true;
 
 	return false;
@@ -311,11 +327,11 @@ bool Range::isAllRange(){
 bool Range::isThisNumInside(int num){
 	
 	if(this->isSpecialRange()){
-		if(num >= startPos || num <= endPos)
+		if(num >= getStart() || num <= getEnd())
 			return true;
 	}
 
-	if(num>=startPos+startOffset && num<=endPos+endOffset)
+	if(num>=getStart() && num<=getEnd())
 		return true;
 
 	return false;
@@ -332,16 +348,16 @@ Condition Range::negateOfRange(Range ran){
 		return Condition(false);
 	}
 
-	if(ran.startPos<=0){
-		return Condition(Range::createByStartIndex(ran.endPos+1));
+	if(ran.getStart()<=0){
+		return Condition(Range::createByStartIndex(ran.getEnd()+1));
 	}
 
 	else{
 		if(ran.isSpecialRange())
-			return Condition(Range(ran.endPos+1, ran.startPos-1));
+			return Condition(Range(ran.getEnd()+1, ran.getStart()-1));
 
 		else
-			return Condition(Range(0,ran.startPos-1),Range::createByStartIndex(ran.endPos+1));
+			return Condition(Range(0,ran.getStart()-1),Range::createByStartIndex(ran.getEnd()+1));
 	}
 }
 
@@ -361,8 +377,8 @@ string Range::printRangeInfo(){
 		endOffsetStr="N"+convertIntToStr(endOffset-1);
 	}
 
-	return "["+convertIntToStr(this->startPos+this->startOffset)+
-		".."+((this->endPos==InitEndIndex)?endOffsetStr:convertIntToStr(this->endPos+this->endOffset))+"]";
+	return "["+convertIntToStr(this->getStart())+
+		".."+((this->getEnd()==InitEndIndex)?endOffsetStr:convertIntToStr(this->getEnd()))+"]";
 
 }
 
@@ -376,7 +392,7 @@ string Range::printRangeInfo(){
 /********************************************************************/
 
 Condition::Condition(){this->shouldBeIgnored=false; this->complete=false;
-				this->groupName=WORLD;
+			this->groupName=WORLD;
 
 			this->nonRankVarName="";
 }

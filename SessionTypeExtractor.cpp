@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 {
 	if(argc==2){
 		filePath=argv[1];
-
+		InitEndIndex=100;
 		cout<<"The path of src file is "<<argv[1]<<endl;
 	}
 	else if(argc==3){	
@@ -32,6 +32,8 @@ int main(int argc, char *argv[])
 		cout<<"The path of src file is "<<argv[1]<<endl;
 
 		numOfProcesses=atoi(argv[2]);
+
+		InitEndIndex=numOfProcesses;
 
 		cout<<"There are "<<numOfProcesses<<" processes!"<<endl;
 	}

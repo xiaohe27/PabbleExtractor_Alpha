@@ -44,8 +44,8 @@
 
 
 #define InitStartIndex -2
-//the init end index is N
-#define InitEndIndex -1
+//the init end index is N, the default num of proc is 100
+extern int InitEndIndex;
 #define InvalidIndex -3
 
 #define WORLD "MPI_COMM_WORLD"
@@ -100,9 +100,8 @@ private:
 
 public:
 	
-
-	int getStart(){return startPos;}
-	int getEnd(){return endPos;}
+	int getStart(){return startPos+startOffset;}
+	int getEnd(){return endPos+endOffset;}
 
 	Range();
 	
@@ -116,7 +115,7 @@ public:
 
 	bool isThisNumInside(int num);
 
-	bool isSpecialRange(){return endPos < startPos;}
+	bool isSpecialRange(){return getEnd() < getStart();}
 
 	bool isSuperSetOf(Range ran);
 	

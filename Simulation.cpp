@@ -281,8 +281,8 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 	//TODO
 	cout<<"The mpi op "<<op->getOpName()<<" is going to be inserted into the pending list."<<endl;
 
-	int size=this->pendingOPs.size();
-	for (int i = 0; i < size; i++)
+	
+	for (int i = 0; i < this->pendingOPs.size(); i++)
 	{
 		MPIOperation *curVisitOP=pendingOPs[i];
 
@@ -299,6 +299,12 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 			Condition targetOfCurOp=curVisitOP->getTargetCond();
 			Condition thisExecCurTarget=execOfOp.AND(targetOfCurOp);
 
+			Condition remainingExecCond4CurVisitOp=execCondOfCurVisitOp.Diff(thisTarCurExec);
+			Condition remainingTarCond4CurVisitOp=targetOfCurOp.Diff(thisExecCurTarget);
+
+			Condition remainingExecCond4ThisOp=execOfOp.Diff(thisExecCurTarget);
+			Condition remainingTarCond4ThisOp=targetOfOp.Diff(thisTarCurExec);
+
 			cout<<"The condition for the target of inserted op and executor of the cur visit op is : "<<
 				thisTarCurExec.printConditionInfo()<<endl;
 
@@ -309,6 +315,47 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 				continue;
 
 
+			MPIOperation *actuallyHappenedOP=new MPIOperation(*op);
+			actuallyHappenedOP->setExecutorCond(thisExecCurTarget);
+			actuallyHappenedOP->setTargetCond(thisTarCurExec);
+
+			cout<<"\n\n\nThe actually happened MPI OP is :\n";
+			actuallyHappenedOP->printMPIOP();
+			cout<<"\n\n\n"<<endl;
+
+			//////////////////////////////////////////////////////////////
+			//update the inserted op
+			if (remainingExecCond4ThisOp.isIgnored())
+			{
+				if(remainingExecCond4CurVisitOp.isIgnored()){
+				//remove the elem at index i
+				this->pendingOPs.erase(this->pendingOPs.begin()+i);	
+				}
+
+				else{
+					curVisitOP->setExecutorCond(remainingExecCond4CurVisitOp);
+					curVisitOP->setTargetCond(remainingTarCond4CurVisitOp);
+				}
+
+				//no proc is going to exec the op
+				return;
+			}
+			
+			op->setExecutorCond(remainingExecCond4ThisOp);
+			op->setTargetCond(remainingTarCond4ThisOp);
+
+			//update the cur op in the vector
+			if(remainingExecCond4CurVisitOp.isIgnored()){
+				//remove the elem at index i
+				this->pendingOPs.erase(this->pendingOPs.begin()+i);	
+				i--;
+				continue;
+			}
+
+			else{
+			curVisitOP->setExecutorCond(remainingExecCond4CurVisitOp);
+			curVisitOP->setTargetCond(remainingTarCond4CurVisitOp);
+			}
 		}
 	}
 
