@@ -58,7 +58,9 @@ int compute(string op, int operand1, int operand2){
 bool areTheseTwoNumsAdjacent(int a, int b){
 	if(a==b) return true;
 
-	if(a==b-1 || a==b+1) return true;
+	if(a==(b-1+InitEndIndex)%InitEndIndex ||
+		a==(b+1)%InitEndIndex)
+		return true;
 
 	return false;
 }
@@ -497,10 +499,14 @@ Condition CommManager::getTopCondition(){
 }
 
 void CommManager::simplyInsertCond(Condition cond){
+	cond.normalize();
+
 	this->stackOfRankConditions.push_back(cond);
 }
 
 void CommManager::insertExistingCondition(Condition cond){
+		cond.normalize();
+
 		this->stackOfRankConditions.push_back(cond);
 
 		string commGroupName=cond.getGroupName();

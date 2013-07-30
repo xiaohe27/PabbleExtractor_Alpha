@@ -10,41 +10,36 @@ using namespace clang;
 Range::Range(int s,int e){
 
 	this->shouldBeIgnored=false;
-	this->marked=false;
 
 	if(s<0 || s>=InitEndIndex)
 		s=0;
 
 	this->startPos=s; this->endPos=e;
 
-	//init the start and end offset
-	init();
 }
 
 Range::Range(){
 	shouldBeIgnored=true;
-	marked=false;
+
 	this->startPos=InitStartIndex;
 	this->endPos=InitEndIndex;
 
-	init();	
 }
 
-void Range::init(){
-		startOffset=0;
-		endOffset=0;
-	}
 
 Range Range::createByStartIndex(int start){
 	if(start>=InitEndIndex)
 		return Range();
 
-	return Range(start,InitEndIndex);
+	return Range(start,InitEndIndex-1);
 }
 
 Range Range::createByEndIndex(int end){
 	if (end<0)
 		return Range();
+
+	else if(end>=InitEndIndex)
+		return Range(0,InitEndIndex-1);
 
 	return Range(0,end);
 }
@@ -56,7 +51,7 @@ Range Range::createByOp(string op, int num){
 			return Range();
 
 		else
-		return Range(num,num);
+			return Range(num,num);
 	}
 
 	if(op=="<"){
@@ -94,8 +89,22 @@ Range Range::createByOp(string op, int num){
 }
 
 void Range::addNumber(int num){
-	this->startOffset+=num;
-	this->endOffset+=num;
+	if (!this->isSpecialRange())
+	{
+		this->startPos+=num;
+		this->endPos+=num;
+
+		Condition cond=this->AND(Range(0,InitEndIndex-1));
+		if (cond.isIgnored())
+		{
+			this->shouldBeIgnored=true;
+		}
+
+		else{
+			*this=cond.getRangeList().at(0);
+		}
+	}
+
 }
 
 //ok. already considered the case of end < start
@@ -325,7 +334,7 @@ bool Range::isAllRange(){
 
 //ok. already considered the case of end < start
 bool Range::isThisNumInside(int num){
-	
+
 	if(this->isSpecialRange()){
 		if(num >= getStart() || num <= getEnd())
 			return true;
@@ -366,19 +375,13 @@ string Range::printRangeInfo(){
 		return "[EMPTY]";
 	}
 
-	string sign="";
 
-	string endOffsetStr="";
-
-
-	if(endOffset==1){endOffsetStr="N";}
-	else if(endOffset>1){endOffsetStr="N+"+convertIntToStr(endOffset-1);}
-	else{
-		endOffsetStr="N"+convertIntToStr(endOffset-1);
-	}
-
+	string endPosStr="";
+	int exceed=this->getEnd()-InitEndIndex;
+	string sign= exceed>0?"+":"";
+	endPosStr="N"+sign+(exceed==0?"":convertIntToStr(exceed));
 	return "["+convertIntToStr(this->getStart())+
-		".."+((this->getEnd()==InitEndIndex)?endOffsetStr:convertIntToStr(this->getEnd()))+"]";
+		".."+((this->getEnd()>=InitEndIndex-1 && this->getEnd()!=this->getStart())?endPosStr:convertIntToStr(this->getEnd()))+"]";
 
 }
 
@@ -392,33 +395,33 @@ string Range::printRangeInfo(){
 /********************************************************************/
 
 Condition::Condition(){this->shouldBeIgnored=false; this->complete=false;
-			this->groupName=WORLD;
+this->groupName=WORLD;
 
-			this->nonRankVarName="";
+this->nonRankVarName="";
 }
 
 Condition::Condition(bool val){
-		this->groupName=WORLD;
-		this->nonRankVarName="";
-		rangeList.clear();
+	this->groupName=WORLD;
+	this->nonRankVarName="";
+	rangeList.clear();
 
-		if(val){
-			
-			this->complete=true;
-			this->shouldBeIgnored=false;
-			this->rangeList.push_back(Range(0,InitEndIndex));
-		}
+	if(val){
 
-		else{
-			this->shouldBeIgnored=true;
-			this->complete=false;
-		}
+		this->complete=true;
+		this->shouldBeIgnored=false;
+		this->rangeList.push_back(Range(0,InitEndIndex));
+	}
+
+	else{
+		this->shouldBeIgnored=true;
+		this->complete=false;
+	}
 }
 
 Condition::Condition(Range ran){
-		this->nonRankVarName="";
-		this->shouldBeIgnored=false; this->complete=false;this->groupName=WORLD;
-		this->rangeList.clear(); this->rangeList.push_back(ran);
+	this->nonRankVarName="";
+	this->shouldBeIgnored=false; this->complete=false;this->groupName=WORLD;
+	this->rangeList.clear(); this->rangeList.push_back(ran);
 }
 
 Condition::Condition(Range ran1, Range ran2){
@@ -429,10 +432,10 @@ Condition::Condition(Range ran1, Range ran2){
 
 
 bool Condition::isIgnored(){
-		if(this->isComplete())
-			return false;
+	if(this->isComplete())
+		return false;
 
-		return shouldBeIgnored || this->rangeList.size()==0;
+	return shouldBeIgnored || this->rangeList.size()==0;
 }
 
 bool Condition::isRangeInside(Range ran){
@@ -639,10 +642,33 @@ bool Condition::hasSameGroupComparedTo(Condition other){
 
 
 Condition Condition::addANumber(int num){
+	vector<Range> tmp;
+
 	for (int i = 0; i < this->rangeList.size(); i++)
 	{
-		this->rangeList[i].addNumber(num);
+		if(!this->rangeList[i].isSpecialRange())
+			this->rangeList[i].addNumber(num);
+
+		else{
+			Range ran1(0,this->rangeList[i].getEnd());
+			Range ran2(this->rangeList[i].getStart(),InitEndIndex-1);
+
+			ran1.addNumber(num);
+			ran2.addNumber(num);
+			tmp.push_back(ran1);
+			tmp.push_back(ran2);
+
+			this->rangeList.erase(rangeList.begin()+i);
+			i--;
+		}
 	}
+
+	for (int i = 0; i < tmp.size(); i++)
+	{
+		this->rangeList.push_back(tmp[i]);
+	}
+
+	this->normalize();
 
 	return *this;
 }

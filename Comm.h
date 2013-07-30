@@ -92,22 +92,16 @@ class Range{
 private:
 	int startPos;
 	int endPos;
-	bool marked;
 	bool shouldBeIgnored;
-
-	int startOffset;
-	int endOffset;
 
 public:
 	
-	int getStart(){return startPos+startOffset;}
-	int getEnd(){return endPos+endOffset;}
+	int getStart(){return startPos;}
+	int getEnd(){return endPos;}
 
 	Range();
 	
 	Range(int s,int e);
-
-	void init();
 
 	bool isIgnored(){return shouldBeIgnored;}
 
