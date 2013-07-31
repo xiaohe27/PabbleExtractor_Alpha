@@ -88,21 +88,41 @@ void MPISimulator::gotoParent(){
 	this->curNode= this->curNode->getParent();
 }
 
+void MPISimulator::makeItTidy(){
+	for (auto &x:this->commManager->getParamRoleMapping())
+	{
+		int size=x.second ->getTheRoles()->size();
+
+		for (int i = 0; i < size; i++)
+		{
+			if (x.second->getTheRoles()->at(i)->IsBlocked())
+			{
+				CommNode* theNode=x.second->getTheRoles()->at(i)->getCurVisitNode();
+				if (theNode->isNegligible())
+				{
+					x.second->getTheRoles()->at(i)->unblock();
+				}
+			}
+		}
+	}
+}
 
 bool MPISimulator::isDeadLockDetected(){
+	this->makeItTidy();
+
 	bool blocking=false;
 
 	for (auto &x:this->commManager->getParamRoleMapping())
 	{
-		int size=x.second ->getTheRoles().size();
+		int size=x.second ->getTheRoles()->size();
 		for (int i = 0; i < size; i++)
 		{
-			if (x.second->getTheRoles()[i]->hasFinished())
+			if (x.second->getTheRoles()->at(i)->hasFinished())
 			{
 				continue;
 			}
 
-			blocking=x.second->getTheRoles()[i]->IsBlocked();
+			blocking=x.second->getTheRoles()->at(i)->IsBlocked();
 
 			if (!blocking)
 			{
@@ -122,11 +142,11 @@ void MPISimulator::initTheRoles(){
 
 		ParamRole *paramRole=x.second;
 
-		vector<Role*> roles= paramRole->getTheRoles();
+		vector<Role*> *roles= paramRole->getTheRoles();
 
-		for (int i = 0; i < roles.size(); i++)
+		for (int i = 0; i < roles->size(); i++)
 		{
-			roles[i]->setCurVisitNode(this->root);
+			roles->at(i)->setCurVisitNode(this->root);
 		}
 	}
 
@@ -143,11 +163,11 @@ void MPISimulator::printTheRoles(){
 
 		ParamRole *paramRole=x.second;
 
-		vector<Role*> roles= paramRole->getTheRoles();
+		vector<Role*> *roles= paramRole->getTheRoles();
 
-		for (int i = 0; i < roles.size(); i++)
+		for (int i = 0; i < roles->size(); i++)
 		{
-			cout<<"The role "<<i<<" is "<< roles.at(i)->getRoleName()<<endl;
+			cout<<"The role "<<i<<" is "<< roles->at(i)->getRoleName()<<endl;
 		}
 	}
 
@@ -160,11 +180,11 @@ bool MPISimulator::areAllRolesDone(){
 	{
 		ParamRole *paramRole=x.second;
 
-		vector<Role*> roles= paramRole->getTheRoles();
+		vector<Role*> *roles= paramRole->getTheRoles();
 
-		for (int i = 0; i < roles.size(); i++)
+		for (int i = 0; i < roles->size(); i++)
 		{
-			if (!roles[i]->hasFinished())
+			if (!roles->at(i)->hasFinished())
 				return false;
 		}
 	}
@@ -200,18 +220,19 @@ void MPISimulator::simulate(){
 			ParamRole *paramRole=x.second;
 
 
-			for (int i = 0; i < paramRole->getTheRoles().size(); i++)
+			for (int i = 0; i < paramRole->getTheRoles()->size(); i++)
 			{
-				if (paramRole->getTheRoles()[i]->hasFinished())
+				if (paramRole->getTheRoles()->at(i)->hasFinished())
 				{
-					paramRole->getTheRoles().erase(paramRole->getTheRoles().begin()+i);
+					delete paramRole->getTheRoles()->at(i);
+					paramRole->getTheRoles()->erase(paramRole->getTheRoles()->begin()+i);
 
 					i--;
 					continue;
 				}
 				
-				cout<<"It is "<< paramRole->getTheRoles().at(i)->getRoleName()<<" visiting the tree now."<<endl;
-				VisitResult *vr=paramRole->getTheRoles()[i]->visit();
+				cout<<"It is "<< paramRole->getTheRoles()->at(i)->getRoleName()<<" visiting the tree now."<<endl;
+				VisitResult *vr=paramRole->getTheRoles()->at(i)->visit();
 
 				if (vr){
 					vr->printVisitInfo();
@@ -235,7 +256,7 @@ void MPISimulator::simulate(){
 		cout<<"\n\n\nThe comm tree has been traversed successfully!!!"<<endl;
 	}
 
-	else
+	else if(isDeadLockDetected())
 	cout<<"\n\n\nDeadlock occurs!!!";
 }
 

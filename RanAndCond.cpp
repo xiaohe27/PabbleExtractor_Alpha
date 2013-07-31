@@ -431,7 +431,7 @@ Condition::Condition(Range ran1, Range ran2){
 }
 
 
-bool Condition::isIgnored(){
+bool Condition::isIgnored() const{
 	if(this->isComplete())
 		return false;
 

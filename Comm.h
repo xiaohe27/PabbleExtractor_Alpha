@@ -147,9 +147,9 @@ public:
 
 	vector<Range> getRangeList(){return this->rangeList;}
 
-	bool isIgnored();
+	bool isIgnored() const;
 
-	bool isComplete(){return this->complete;}
+	bool isComplete()const{return this->complete;}
 
 	Condition(Range ran);
 
@@ -236,9 +236,11 @@ public:
 
 	VisitResult* visit();
 
-	const CommNode* getCurVisitNode(){return this->curVisitNode;}
+	CommNode* getCurVisitNode(){return this->curVisitNode;}
 
 	bool IsBlocked(){return this->blocked;}
+
+	void unblock(){this->blocked=false;}
 
 	bool hasFinished(){return finished;}
 
@@ -253,7 +255,7 @@ private:
 	
 	st_tree localSessionTree;
 	
-	vector<Role*> actualRoles;
+	vector<Role*> *actualRoles;
 
 
 public:
@@ -262,12 +264,13 @@ public:
 
 	ParamRole(Condition cond);
 	
+	~ParamRole(){delete actualRoles;}
 
 	bool hasARoleSatisfiesRange(Range ran);
 
 	void addAllTheRangesInTheCondition(Condition cond);
 
-	vector<Role*> getTheRoles(){return this->actualRoles;}
+	vector<Role*>* getTheRoles(){return this->actualRoles;}
 
 	void insertActualRole(Role *r);
 	
@@ -381,7 +384,9 @@ public:
 	delete sibling;
 	}
 
-	bool isLeaf();
+	bool isLeaf() const;
+
+	bool isNegligible();
 	
 	int getNodeType(){return this->nodeType;}
 
@@ -397,9 +402,9 @@ public:
 
 	void setMarked(){this->marked=true;}
 
-	bool isMarked(){return this->marked;}
+	bool isMarked();
 
-	CommNode* getParent(){return this->parent;}
+	CommNode* getParent()const{return this->parent;}
 
 	void setNodeType(int nodeType);
 
@@ -549,6 +554,8 @@ public:
 	void printTheRoles();
 
 	void initTheRoles();
+
+	void makeItTidy(); //check whether there exists any blocking role can be unblocked
 
 	string printTheTree(){return this->root->printTheNode();}
 

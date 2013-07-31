@@ -32,7 +32,7 @@ void Role::setCurVisitNode(CommNode *node){
 //perform one visit to the comm tree. It stops when encounter a doable op.
 VisitResult* Role::visit(){
 	//TODO
-	if(this->curVisitNode && this->curVisitNode->getCond().isIgnored()){
+	if(this->curVisitNode && this->curVisitNode->isNegligible()){
 		this->blocked=false;
 		this->curVisitNode=this->curVisitNode->skipToNextNode();
 	}
@@ -204,6 +204,8 @@ VisitResult* Role::visit(){
 /********************************************************************/
 ParamRole::ParamRole(){
 	this->paramRoleName=WORLD;
+
+	this->actualRoles=new vector<Role*>();
 }
 
 
@@ -212,12 +214,14 @@ ParamRole::ParamRole(Condition cond){
 	this->paramRoleName=cond.getGroupName();
 
 	this->addAllTheRangesInTheCondition(cond);
+
+	this->actualRoles=new vector<Role*>();
 }
 
 bool ParamRole::hasARoleSatisfiesRange(Range ran){
-	for (int i = 0; i < actualRoles.size(); i++)
+	for (int i = 0; i < actualRoles->size(); i++)
 	{
-		Role* r=actualRoles[i];
+		Role* r=actualRoles->at(i);
 		if(r->hasRangeEqualTo(ran))
 			return true;
 	}
@@ -247,19 +251,19 @@ void ParamRole::insertActualRole(Role *r){
 		return;
 	}
 
-	int size=this->actualRoles.size();
+	int size=this->actualRoles->size();
 	for (int i = 0; i <size ; i++)
 	{
-		if (actualRoles[i]->hasRangeEqualTo(r->getRange()))
+		if (actualRoles->at(i)->hasRangeEqualTo(r->getRange()))
 		{
-			if (actualRoles[i]->hasFinished())
+			if (actualRoles->at(i)->hasFinished())
 			{
 				delete r;
 				return;
 			}
 
 					
-			const CommNode *curVisitNodeOfRoleI=actualRoles[i]->getCurVisitNode();
+			CommNode *curVisitNodeOfRoleI=actualRoles->at(i)->getCurVisitNode();
 			if (curVisitNodeOfRoleI==nullptr)
 			{
 				delete r;
@@ -277,8 +281,8 @@ void ParamRole::insertActualRole(Role *r){
 			int curPosForRoleR=r->getCurVisitNode()->getPosIndex();
 
 			if(curPosForRoleR >= curPosForI){
-				delete  actualRoles[i];
-				actualRoles[i]=r;
+				delete  actualRoles->at(i);
+				actualRoles->at(i)=r;
 			}
 			
 			else{
@@ -292,7 +296,7 @@ void ParamRole::insertActualRole(Role *r){
 		}
 	}
 
-	this->actualRoles.push_back(r);
+	this->actualRoles->push_back(r);
 }
 /********************************************************************/
 //Class ParamRole impl end										****

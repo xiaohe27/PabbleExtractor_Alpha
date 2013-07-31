@@ -61,6 +61,40 @@ void CommNode::setNodeType(int type){
 	this->nodeType=type;
 }
 
+bool CommNode::isMarked() {
+	if(this->marked)
+		return true;
+
+	if(!this->isLeaf()){
+
+		for (int i = 0; i < this->children.size(); i++)
+		{
+			bool markI=this->children.at(i)->isMarked();
+			if (!markI)
+			{
+				return false;
+			}
+		}
+
+		this->marked=true;
+		return true;
+	}
+
+	else{
+		return false;
+	}
+}
+
+bool CommNode::isNegligible() {
+	if(this->isMarked() || this->condition.isIgnored()){
+		this->marked=true;
+		return true;
+	}
+
+	else
+		return false;
+}
+
 //print the tree rooted at this node
 string CommNode::printTheNode(){
 	string output="";
@@ -87,7 +121,7 @@ string CommNode::printTheNode(){
 	return output;
 }
 
-bool CommNode::isLeaf(){
+bool CommNode::isLeaf() const{
 	if (children.size()==0)
 	{
 		return true;
