@@ -296,7 +296,8 @@ private:
 
 
 public:
-	
+	CommNode *theNode;
+
 	MPIOperation(string opName0,int opType0, string dataType0,Condition executor0, Condition target0, string tag0, string group0);
 	MPIOperation(string opName0,int opType0, string dataType0,Condition executor0, Expr *targetExpr0, string tag0, string group0);
 
@@ -324,7 +325,7 @@ public:
 	bool isCollectiveOp();
 
 	bool isComplementaryOpOf(MPIOperation *otherOP);
-
+	bool isSameKindOfOp(MPIOperation *other);
 	void printMPIOP();
 
 };
@@ -554,6 +555,7 @@ public:
 	bool areAllRolesDone();
 	bool isDeadLockDetected();
 
+	Condition getTarCondFromExprAndExecCond(Expr *expr, Condition execCond);
 	void analyzeVisitResult(VisitResult *vr);
 
 	void insertOpToPendingList(MPIOperation *op);

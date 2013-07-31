@@ -199,14 +199,19 @@ void MPISimulator::simulate(){
 
 			ParamRole *paramRole=x.second;
 
-			vector<Role*> roles= paramRole->getTheRoles();
 
-			int size=roles.size();
-
-			for (int i = 0; i < size; i++)
+			for (int i = 0; i < paramRole->getTheRoles().size(); i++)
 			{
-				cout<<"It is "<< roles.at(i)->getRoleName()<<" visiting the tree now."<<endl;
-				VisitResult *vr=roles[i]->visit();
+				if (paramRole->getTheRoles()[i]->hasFinished())
+				{
+					paramRole->getTheRoles().erase(paramRole->getTheRoles().begin()+i);
+
+					i--;
+					continue;
+				}
+				
+				cout<<"It is "<< paramRole->getTheRoles().at(i)->getRoleName()<<" visiting the tree now."<<endl;
+				VisitResult *vr=paramRole->getTheRoles()[i]->visit();
 
 				if (vr){
 					vr->printVisitInfo();
@@ -235,7 +240,15 @@ void MPISimulator::simulate(){
 }
 
 
+Condition MPISimulator::getTarCondFromExprAndExecCond(Expr *expr, Condition execCond){
+	this->commManager->simplyInsertCond(execCond);
 
+	Condition newTarget=this->commManager->extractCondFromTargetExpr(expr);
+
+	this->commManager->popCondition();
+
+	return newTarget;
+}
 
 /**
 Analyse the visit result. push the prospective MPI op into the proper stack,
@@ -260,15 +273,9 @@ void MPISimulator::analyzeVisitResult(VisitResult *vr){
 	{
 		//if the target condition has not been built, then build it
 		if(op->isDependentOnExecutor()){
-			Condition exec=op->getExecutor();
 
-			this->commManager->simplyInsertCond(exec);
+			op->setTargetCond(this->getTarCondFromExprAndExecCond(op->getTargetExpr(),op->getExecutor()));
 
-			Condition newTarget=this->commManager->extractCondFromTargetExpr(op->getTargetExpr());
-
-			op->setTargetCond(newTarget);
-
-			this->commManager->popCondition();
 		}
 
 		this->insertOpToPendingList(op);
@@ -284,9 +291,25 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 	
 	for (int i = 0; i < this->pendingOPs.size(); i++)
 	{
+		if(op->getExecutor().isIgnored())
+			return;
+		
 		MPIOperation *curVisitOP=pendingOPs[i];
 
 		cout<<"The cur visited mpi op is "<<curVisitOP->getOpName()<<endl;
+		//Avoid the same action to be performed by multiple roles
+		if (op->isSameKindOfOp(curVisitOP))
+		{
+			Condition workNeedsDoing=op->getExecutor().Diff(curVisitOP->getExecutor());
+			op->setExecutorCond(workNeedsDoing);
+			if (op->isDependentOnExecutor())
+			{
+				op->setTargetCond(this->getTarCondFromExprAndExecCond(op->getTargetExpr(),workNeedsDoing));
+			}
+
+			continue;
+		}
+
 
 		//if the operations are complementary
 		if (op->isComplementaryOpOf(curVisitOP))
@@ -322,6 +345,37 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 			cout<<"\n\n\nThe actually happened MPI OP is :\n";
 			actuallyHappenedOP->printMPIOP();
 			cout<<"\n\n\n"<<endl;
+
+
+			//After the comm happens, some roles may be unblocked
+			Condition unblockedRoleCond= actuallyHappenedOP->isBlockingOP()?
+					actuallyHappenedOP->getExecutor():actuallyHappenedOP->getTargetCond();
+
+			//the non-blocked role cond is the cond for the nonblocking role.
+			Condition nonBlockingRoleCond= actuallyHappenedOP->isBlockingOP()?
+					actuallyHappenedOP->getTargetCond():actuallyHappenedOP->getExecutor();
+
+			CommNode *unblockingNode= op->isBlockingOP()?
+					op->theNode:curVisitOP->theNode;
+
+			CommNode *nonBlockedNode= op->isBlockingOP()?
+					curVisitOP->theNode:op->theNode;
+
+			cout<<"The cond "<<unblockedRoleCond.printConditionInfo()<<" is unblocked!";
+			
+			unblockingNode->setCond(unblockingNode->getCond().Diff(unblockedRoleCond));
+
+			nonBlockedNode->setCond(nonBlockedNode->getCond().Diff(nonBlockingRoleCond));
+
+			for (int i = 0; i < unblockedRoleCond.getRangeList().size(); i++)
+			{
+				Role *unblockedRole=new Role(unblockedRoleCond.getRangeList()[i]);
+				unblockedRole->setCurVisitNode(unblockingNode);
+
+				ParamRole *paramRoleI=this->commManager->getParamRoleWithName(unblockedRole->getParamRoleName());
+				paramRoleI->insertActualRole(unblockedRole);
+			}
+
 
 			//////////////////////////////////////////////////////////////
 			//update the inserted op
@@ -359,6 +413,8 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 		}
 	}
 
+	if(op->getExecutor().isIgnored())
+		return;
 	//non of the existing ops have anything to do with the inserted op.
 	this->pendingOPs.push_back(op);
 

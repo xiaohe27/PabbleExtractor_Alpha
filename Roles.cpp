@@ -32,6 +32,10 @@ void Role::setCurVisitNode(CommNode *node){
 //perform one visit to the comm tree. It stops when encounter a doable op.
 VisitResult* Role::visit(){
 	//TODO
+	if(this->curVisitNode && this->curVisitNode->getCond().isIgnored()){
+		this->blocked=false;
+		this->curVisitNode=this->curVisitNode->skipToNextNode();
+	}
 
 	if (blocked)
 		return nullptr;
@@ -126,7 +130,9 @@ VisitResult* Role::visit(){
 				//if it is non-blocking op, then the whole role can goto next node
 				this->curVisitNode= this->curVisitNode->skipToNextNode();
 				escapedRoles.clear();
+
 			}
+
 			return new VisitResult(isBlocking,doableOP,escapedRoles);
 		}
 
@@ -247,27 +253,41 @@ void ParamRole::insertActualRole(Role *r){
 		if (actualRoles[i]->hasRangeEqualTo(r->getRange()))
 		{
 			if (actualRoles[i]->hasFinished())
+			{
+				delete r;
 				return;
+			}
 
 					
 			const CommNode *curVisitNodeOfRoleI=actualRoles[i]->getCurVisitNode();
 			if (curVisitNodeOfRoleI==nullptr)
+			{
+				delete r;
 				return;
+			}
 
 			int curPosForI=curVisitNodeOfRoleI->getPosIndex();
 
 			if (r->getCurVisitNode()==nullptr)
+			{
+				delete r;
 				return;
+			}
 
 			int curPosForRoleR=r->getCurVisitNode()->getPosIndex();
 
-			if(curPosForRoleR > curPosForI)
-			actualRoles[i]=r;
+			if(curPosForRoleR >= curPosForI){
+				delete  actualRoles[i];
+				actualRoles[i]=r;
+			}
 			
 			else{
 				cout<<"The cur role i has pos "<<curPosForI<<", which is newer than role r's "<<
 					curPosForRoleR<<"; so do nothing"<<endl;
+
+				delete r;
 			}
+
 			return;
 		}
 	}

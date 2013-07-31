@@ -213,6 +213,20 @@ bool MPIOperation::isComplementaryOpOf(MPIOperation *otherOP){
 	return false;
 }
 
+bool MPIOperation::isSameKindOfOp(MPIOperation *other){
+	if (this->isRecvingOp())
+	{
+		return other->isRecvingOp();
+	}
+
+	if (this->isSendingOp())
+	{
+		return other->isSendingOp();
+	}
+
+	return false;
+}
+
 /********************************************************************/
 //Class MPIOperation impl end										****
 /********************************************************************/

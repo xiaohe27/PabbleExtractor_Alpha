@@ -49,6 +49,10 @@ CommNode::CommNode(int type){
 }
 
 CommNode::CommNode(MPIOperation *op0){
+	if (op0)
+	{
+		op0->theNode=this;
+	}
 
 	init(op0->getOPType(),op0);
 }
