@@ -9,12 +9,12 @@ using namespace clang;
 /********************************************************************/
 
 
-void CommNode::init(int type, MPIOperation *mpiOP){
+void CommNode::init(int type, vector<MPIOperation*> *theOPs){
 
 	this->nodeType=type;
 	this->depth=0;
 	this->posIndex=0;
-	this->op=mpiOP;
+	this->ops=theOPs;
 	this->marked=false;
 	
 
@@ -54,7 +54,10 @@ CommNode::CommNode(MPIOperation *op0){
 		op0->theNode=this;
 	}
 
-	init(op0->getOPType(),op0);
+	vector<MPIOperation*> *theOPs=new vector<MPIOperation*>();
+	theOPs->push_back(op0);
+
+	init(op0->getOPType(),theOPs);
 }
 
 void CommNode::setNodeType(int type){
@@ -87,6 +90,24 @@ bool CommNode::isMarked() {
 
 bool CommNode::isNegligible() {
 	if(this->isMarked() || this->condition.isIgnored()){
+		this->marked=true;
+		return true;
+	}
+
+	else if(this->ops){
+		for (int i = 0; i < this->ops->size(); i++)
+		{
+			if (this->ops->at(i)->isFinished())
+			{
+				this->ops->erase(this->ops->begin()+i);
+				i--;
+				continue;
+			}
+
+			else
+				return false;
+		}
+
 		this->marked=true;
 		return true;
 	}

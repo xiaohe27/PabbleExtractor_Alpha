@@ -20,6 +20,7 @@ MPIOperation::MPIOperation(string opName0,int opType0, string dataType0,Conditio
 	this->group=group0;
 
 	this->isTargetDependOnExecutor=false;
+	this->isInPendingList=false;
 }
 
 MPIOperation::MPIOperation(string opName0,int opType0, string dataType0,Condition executor0, Expr *targetExpr0, string tag0, string group0){
@@ -32,7 +33,7 @@ MPIOperation::MPIOperation(string opName0,int opType0, string dataType0,Conditio
 	this->group=group0;
 
 	this->isTargetDependOnExecutor=true;
-
+	this->isInPendingList=false;
 }
 
 void MPIOperation::printMPIOP(){
@@ -68,6 +69,9 @@ void MPIOperation::printMPIOP(){
 	cout<<"The communication happens in group "<<group<<endl;
 }
 
+bool MPIOperation::isFinished(){
+	return this->executor.isIgnored();
+}
 
 Condition MPIOperation::getSrcCond(){
 	if (this->getOPType()==ST_NODE_SEND)

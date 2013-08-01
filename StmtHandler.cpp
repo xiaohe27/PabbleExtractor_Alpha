@@ -256,6 +256,8 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 	//visit each stmt inside the for loop
 	this->TraverseStmt(bodyOfFor);
 
+	this->mpiSimulator->gotoParent();
+
 	this->removeNonRankVarCondInStack(nonRankVarList);
 
 	return true;
@@ -296,6 +298,8 @@ bool MPITypeCheckingConsumer::TraverseWhileStmt(WhileStmt *S){
 
 	//visit each stmt inside the for loop
 	this->TraverseStmt(bodyOfWhile);
+
+	this->mpiSimulator->gotoParent();
 
 	this->removeNonRankVarCondInStack(nonRankVarList);
 
@@ -572,10 +576,10 @@ int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr
 		size_t found2 = incStr.find("+=");
 		if (found1!=string::npos || found2!=string::npos)
 		{
-			//if the end pos is related to N, then no exact iteration numbers can be estimated
-			if(theTargetRange.getEnd()==InitEndIndex){return -1;}
+			this->commManager->removeTopCond4NonRankVar(theVar);
+			this->commManager->insertNonRankVarAndCondtion(theVar,Condition(Range(initValOfTheVar,theTargetRange.getEnd())));
 
-			else{return theTargetRange.getEnd()-initValOfTheVar+1;}
+			return theTargetRange.getEnd()-initValOfTheVar+1;
 		}
 
 		//dec
@@ -583,6 +587,9 @@ int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr
 		found2 = incStr.find("-=");
 		if (found1!=string::npos || found2!=string::npos)
 		{
+			this->commManager->removeTopCond4NonRankVar(theVar);
+			this->commManager->insertNonRankVarAndCondtion(theVar,Condition(Range(theTargetRange.getStart(),initValOfTheVar)));
+			
 			return initValOfTheVar-theTargetRange.getStart()+1;
 		}
 		

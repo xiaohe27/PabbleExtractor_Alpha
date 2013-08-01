@@ -110,14 +110,38 @@ VisitResult* Role::visit(){
 
 		////////some can escape and some may need to stay////////
 		/********************************************************/
-		MPIOperation *theOP=this->curVisitNode->getOP();
+		vector<MPIOperation*> *theOPs=this->curVisitNode->getOPs();
 		//The cur node is an MPI op node
-		if (theOP)
+		if (theOPs)
 		{
 			cout<<this->getRoleName()<<" visits the MPI "<<curVisitNode->getNodeName()<<" node"<<endl;
 
-			MPIOperation *doableOP=new MPIOperation(*theOP);
-			doableOP->setExecutorCond(stayHereCond);
+			MPIOperation *doableOP=nullptr;
+
+			for (int i = 0; i < theOPs->size(); i++)
+			{
+				if (theOPs->at(i)->isInPendingList)
+					continue;
+
+				//the doable op is the unfinished task
+				doableOP=theOPs->at(i);
+				
+				//the task is picked (maybe partially) by the role with cond "doableCond"
+				Condition doableCond=stayHereCond.AND(doableOP->getExecutor());
+				Condition remainingTaskCond=doableOP->getExecutor().Diff(doableCond);
+
+				if(!remainingTaskCond.isIgnored()){
+					MPIOperation* remainingOP=new MPIOperation(*doableOP);
+					remainingOP->setExecutorCond(remainingTaskCond);
+					remainingOP->isInPendingList=false;
+					theOPs->push_back(remainingOP);
+				}
+
+				doableOP->setExecutorCond(doableCond);
+				doableOP->isInPendingList=true;
+
+				break;
+			}
 
 			bool isBlocking=doableOP->isBlockingOP();
 

@@ -300,6 +300,7 @@ private:
 
 public:
 	CommNode *theNode;
+	bool isInPendingList;
 
 	MPIOperation(string opName0,int opType0, string dataType0,Condition executor0, Condition target0, string tag0, string group0);
 	MPIOperation(string opName0,int opType0, string dataType0,Condition executor0, Expr *targetExpr0, string tag0, string group0);
@@ -329,6 +330,9 @@ public:
 
 	bool isComplementaryOpOf(MPIOperation *otherOP);
 	bool isSameKindOfOp(MPIOperation *other);
+
+	bool isFinished();
+
 	void printMPIOP();
 
 };
@@ -347,7 +351,7 @@ private:
 
 	CommNode *parent;
 
-	MPIOperation *op;
+	vector<MPIOperation*> *ops;
 
 	int depth;
 
@@ -356,7 +360,7 @@ private:
 
 	bool marked;
 
-	void init(int type,MPIOperation *op0);
+	void init(int type,vector<MPIOperation*> *ops);
 
 	//the role visitor will check whether it can 
 	//satisfy the condition in the node.
@@ -380,7 +384,7 @@ public:
 
 	~CommNode(){
 	delete parent;
-	delete op;
+	delete ops;
 	delete sibling;
 	}
 
@@ -392,7 +396,7 @@ public:
 
 	string getNodeName(){return this->nodeName;}
 
-	MPIOperation* getOP(){return this->op;}
+	vector<MPIOperation*>* getOPs(){return this->ops;}
 
 	Condition getCond(){return this->condition;}
 

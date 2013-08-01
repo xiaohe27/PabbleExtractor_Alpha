@@ -318,8 +318,8 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 		MPIOperation *curVisitOP=pendingOPs[i];
 
 		cout<<"The cur visited mpi op is "<<curVisitOP->getOpName()<<endl;
-		//Avoid the same action to be performed by multiple roles
-		if (op->isSameKindOfOp(curVisitOP))
+		//Avoid the same action in the same node to be performed by multiple roles
+		if (op->isSameKindOfOp(curVisitOP) && op->theNode==curVisitOP->theNode)
 		{
 			Condition workNeedsDoing=op->getExecutor().Diff(curVisitOP->getExecutor());
 			op->setExecutorCond(workNeedsDoing);
@@ -335,19 +335,18 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 		//if the operations are complementary
 		if (op->isComplementaryOpOf(curVisitOP))
 		{
-			Condition targetOfOp=op->getTargetCond();
+			Condition targetOfThisOp=op->getTargetCond();
 			Condition execCondOfCurVisitOp=curVisitOP->getExecutor();
-			Condition thisTarCurExec=targetOfOp.AND(execCondOfCurVisitOp);
+			Condition actualTarget=targetOfThisOp.AND(execCondOfCurVisitOp);
 
-			Condition execOfOp=op->getExecutor();
+			Condition execOfThisOp=op->getExecutor();
 			Condition targetOfCurOp=curVisitOP->getTargetCond();
-			Condition thisExecCurTarget=execOfOp.AND(targetOfCurOp);
+			Condition actualExecutor=execOfThisOp.AND(targetOfCurOp);
 
-			Condition remainingExecCond4CurVisitOp=execCondOfCurVisitOp.Diff(thisTarCurExec);
-			Condition remainingTarCond4CurVisitOp=targetOfCurOp.Diff(thisExecCurTarget);
-
-			Condition remainingExecCond4ThisOp=execOfOp.Diff(thisExecCurTarget);
-			Condition remainingTarCond4ThisOp=targetOfOp.Diff(thisTarCurExec);
+			Condition remainingExecCond4CurVisitOp=execCondOfCurVisitOp.Diff(actualTarget);
+			Condition remainingExecCond4ThisOp=execOfThisOp.Diff(actualExecutor);
+			Condition remainingTarCond4ThisOp=targetOfThisOp.Diff(actualTarget);
+			Condition remainingTarCond4CurVisitOp=targetOfCurOp.Diff(actualExecutor);
 
 //			cout<<"The condition for the target of inserted op and executor of the cur visit op is : "<<
 //				thisTarCurExec.printConditionInfo()<<endl;
@@ -355,18 +354,19 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 //			cout<<"The condition for the executor of inserted op and target of the cur visit op is : "<<
 //				thisExecCurTarget.printConditionInfo()<<endl;
 
-			if(thisTarCurExec.isIgnored())
+			if(actualTarget.isIgnored())
 				continue;
 
 
 			MPIOperation *actuallyHappenedOP=new MPIOperation(*op);
-			actuallyHappenedOP->setExecutorCond(thisExecCurTarget);
-			actuallyHappenedOP->setTargetCond(thisTarCurExec);
+			actuallyHappenedOP->setExecutorCond(actualExecutor);
+			actuallyHappenedOP->setTargetCond(actualTarget);
 
 			cout<<"\n\n\nThe actually happened MPI OP is :\n";
 			actuallyHappenedOP->printMPIOP();
 			cout<<"\n\n\n"<<endl;
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 			//After the comm happens, some roles may be unblocked
 			Condition unblockedRoleCond= actuallyHappenedOP->isBlockingOP()?
@@ -382,7 +382,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 			CommNode *nonBlockedNode= op->isBlockingOP()?
 					curVisitOP->theNode:op->theNode;
 
-			cout<<"The cond "<<unblockedRoleCond.printConditionInfo()<<" is unblocked!";
+			cout<<"The cond "<<unblockedRoleCond.printConditionInfo()<<" is unblocked!"<<endl;
 			
 			unblockingNode->setCond(unblockingNode->getCond().Diff(unblockedRoleCond));
 
@@ -403,6 +403,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 			if (remainingExecCond4ThisOp.isIgnored())
 			{
 				if(remainingExecCond4CurVisitOp.isIgnored()){
+				bool tmpBool=curVisitOP->theNode->isNegligible();
 				//remove the elem at index i
 				this->pendingOPs.erase(this->pendingOPs.begin()+i);	
 				}
@@ -412,6 +413,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					curVisitOP->setTargetCond(remainingTarCond4CurVisitOp);
 				}
 
+				bool tmpBool2=op->theNode->isNegligible();
 				//no proc is going to exec the op
 				return;
 			}
@@ -421,6 +423,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 
 			//update the cur op in the vector
 			if(remainingExecCond4CurVisitOp.isIgnored()){
+				bool tmpBool=curVisitOP->theNode->isNegligible();
 				//remove the elem at index i
 				this->pendingOPs.erase(this->pendingOPs.begin()+i);	
 				i--;
@@ -434,8 +437,10 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 		}
 	}
 
-	if(op->getExecutor().isIgnored())
+	if(op->getExecutor().isIgnored()){
+		bool tmpB=op->theNode->isNegligible();
 		return;
+	}
 	//non of the existing ops have anything to do with the inserted op.
 	this->pendingOPs.push_back(op);
 
