@@ -43,6 +43,17 @@ VisitResult* Role::visit(){
 	if (finished)
 		return nullptr;
 
+	if (this->curVisitNode && this->curVisitNode->isACollectiveOPNode())
+	{
+		//TODO
+		this->curVisitNode->setMarked();
+
+		cout<<"\n\n\n\n\nThe collective OP is found!!!"<<endl;
+		this->curVisitNode->getOPs()->at(0)->printMPIOP();
+		cout<<"\n\n\n\n\n"<<endl;
+
+	}
+
 	if (this->range.isAllRange() &&
 		this->curVisitNode && !this->curVisitNode->getCond().isComplete() &&
 		!this->curVisitNode->isNegligible())
@@ -51,6 +62,17 @@ VisitResult* Role::visit(){
 
 	while (true)
 	{
+		if (this->curVisitNode && this->curVisitNode->isACollectiveOPNode())
+		{
+			//TODO
+			this->curVisitNode->setMarked();
+
+			cout<<"\n\n\n\n\nThe collective OP is found!!!"<<endl;
+			this->curVisitNode->getOPs()->at(0)->printMPIOP();
+			cout<<"\n\n\n\n\n"<<endl;
+
+		}
+
 		vector<Role*> escapedRoles;
 
 		if (this->curVisitNode==nullptr)
@@ -125,7 +147,7 @@ VisitResult* Role::visit(){
 					i--;
 					continue;
 				}
-				
+
 				if (theOPs->at(i)->isBlockingOP())
 					isBlocking=true;
 
@@ -291,7 +313,7 @@ void ParamRole::insertActualRole(Role *r, bool forceUpdate){
 			{
 				return;
 			}
-			
+
 			if (actualRoles->at(i)->hasFinished())
 			{
 				delete r;

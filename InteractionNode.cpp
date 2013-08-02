@@ -16,7 +16,7 @@ void CommNode::init(int type, vector<MPIOperation*> *theOPs){
 	this->posIndex=0;
 	this->ops=theOPs;
 	this->marked=false;
-
+	this->isCollectiveOPNode=false;
 
 	this->parent=nullptr;
 	this->sibling=nullptr;
@@ -58,6 +58,11 @@ CommNode::CommNode(MPIOperation *op0){
 	theOPs->push_back(op0);
 
 	init(op0->getOPType(),theOPs);
+
+	if (op0 && op0->isCollectiveOp())
+	{
+		this->isCollectiveOPNode=true;
+	}
 }
 
 void CommNode::setNodeType(int type){

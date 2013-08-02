@@ -367,6 +367,8 @@ private:
 
 	bool marked;
 
+	bool isCollectiveOPNode;
+
 	void init(int type,vector<MPIOperation*> *ops);
 
 	//the role visitor will check whether it can 
@@ -414,6 +416,8 @@ public:
 	void setMarked(){this->marked=true;}
 
 	bool isMarked();
+
+	bool isACollectiveOPNode(){return this->isCollectiveOPNode;}
 
 	CommNode* getParent()const{return this->parent;}
 

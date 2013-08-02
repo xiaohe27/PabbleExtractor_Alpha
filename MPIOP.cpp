@@ -437,6 +437,79 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 		}
 
 
+		if(funcName=="MPI_Bcast"){
+
+			Condition topRankCond=this->commManager->getTopCondition();
+			if (!topRankCond.isComplete())
+			{
+				throw new MPI_TypeChecking_Error("The collective op should be visible to every process!");
+			}
+
+			string dataType=args[2];
+			string root=args[3];
+			string group=args[4];
+
+			MPIOperation *mpiOP;
+
+			if (this->commManager->containsRankStr(root))
+			{
+				throw new MPI_TypeChecking_Error("The root of bcast should NOT contain rank var!");
+			}
+
+			else{
+				Condition bcaster=this->commManager->extractCondFromTargetExpr(E->getArg(3));
+				Condition recvers=Condition(true).Diff(bcaster);
+				recvers.normalize();
+
+				mpiOP=new MPIOperation(	funcName,
+					ST_NODE_SEND, 
+					dataType,
+					bcaster, //the performer
+					recvers, //the dest
+					"", 
+					group);
+
+			}
+
+			mpiOP->setSrcCode(funcSrcCode);
+
+			CommNode *bcastNode=new CommNode(mpiOP);
+
+			this->mpiSimulator->insertNode(bcastNode);
+
+
+			cout <<"\n\n\n\n\nThe dest of mpi bcast is"
+				<< mpiOP->getDestCond().printConditionInfo()<<"\n\n\n\n\n" <<endl;
+
+		}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 		/*******************Enum the possible MPI OPs end***********************************/
 		/////////////////////////////////////////////////////////////////////
 		if(funcCall->hasBody())
