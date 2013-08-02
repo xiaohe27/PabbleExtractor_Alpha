@@ -16,7 +16,7 @@ void CommNode::init(int type, vector<MPIOperation*> *theOPs){
 	this->posIndex=0;
 	this->ops=theOPs;
 	this->marked=false;
-	
+
 
 	this->parent=nullptr;
 	this->sibling=nullptr;
@@ -64,6 +64,18 @@ void CommNode::setNodeType(int type){
 	this->nodeType=type;
 }
 
+int CommNode::indexOfTheMPIOP(MPIOperation* op){
+	for (int i = 0; i < this->ops->size(); i++)
+	{
+		if (this->ops->at(i)==op)
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
 bool CommNode::isMarked() {
 	if(this->marked)
 		return true;
@@ -94,10 +106,24 @@ bool CommNode::isNegligible() {
 		return true;
 	}
 
+	else if(!this->isLeaf()){
+		for (int i = 0; i < this->children.size(); i++)
+		{
+			bool negI=this->children.at(i)->isNegligible();
+			if (!negI)
+			{
+				return false;
+			}
+		}
+
+		this->marked=true;
+		return true;
+	}
+
 	else if(this->ops){
 		for (int i = 0; i < this->ops->size(); i++)
 		{
-			if (this->ops->at(i)->isFinished())
+			if (this->ops->at(i)==nullptr|| this->ops->at(i)->isFinished())
 			{
 				this->ops->erase(this->ops->begin()+i);
 				i--;
@@ -217,11 +243,11 @@ int CommNode::sizeOfTheNode(){
 /********************************************************************/
 void RecurNode::visitOnce()
 {
-if(remainingNumOfIterations>0)remainingNumOfIterations--;
+	if(remainingNumOfIterations>0)remainingNumOfIterations--;
 
-if(remainingNumOfIterations==0){
-	this->setMarked();
-}
+	if(remainingNumOfIterations==0){
+		this->setMarked();
+	}
 }
 
 /********************************************************************/

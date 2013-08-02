@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
 		funcErr->printErrInfo();
 	}
 
-	catch(...){cout<<"There exists compile time error, please fix the error(s) first.";}
+	catch(...){cout<<"There exists compile time error or unknown runtime error, please fix the error(s) first.";}
 
 
 	//checkIdTable(&ci);

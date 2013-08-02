@@ -26,6 +26,16 @@ Range::Range(){
 
 }
 
+int Range::size(){
+	if (this->startPos <= this->endPos)
+	{
+		return this->endPos-this->startPos+1;
+	}
+
+	else{
+		return this->endPos+1 + InitEndIndex-this->startPos;
+	}
+}
 
 Range Range::createByStartIndex(int start){
 	if(start>=InitEndIndex)
@@ -448,6 +458,17 @@ bool Condition::isRangeInside(Range ran){
 	}
 
 	return false;
+}
+
+int Condition::size(){
+	int sum=0;
+
+	for (int i = 0; i < this->getRangeList().size(); i++)
+	{
+		sum+=this->getRangeList()[i].size();
+	}
+
+	return sum;
 }
 
 bool Condition::isSameAsCond(Condition other){

@@ -73,6 +73,10 @@ bool MPIOperation::isFinished(){
 	return this->executor.isIgnored();
 }
 
+bool MPIOperation::isEmptyOP(){
+	return this->executor.isIgnored() || this->target.isIgnored();
+}
+
 Condition MPIOperation::getSrcCond(){
 	if (this->getOPType()==ST_NODE_SEND)
 	{
@@ -84,11 +88,6 @@ Condition MPIOperation::getSrcCond(){
 	{
 		return this->getTargetCond();
 	}
-
-	if(this->getOpName()=="MPI_Bcast")
-		return this->executor;
-
-	//TODO
 
 	return Condition(false);
 }
@@ -105,12 +104,6 @@ Condition MPIOperation::getDestCond(){
 	{
 		return this->executor;
 	}
-
-	if(this->getOpName()=="MPI_Bcast")
-		return this->target;
-
-
-	//TODO
 
 	return Condition(false);
 }
@@ -204,6 +197,18 @@ bool MPIOperation::isCollectiveOp(){
 
 //test whether this op is a complementary op of the other op.
 bool MPIOperation::isComplementaryOpOf(MPIOperation *otherOP){
+	if (this->isUnicast() && !otherOP->isUnicast() ||
+		!this->isUnicast() && otherOP->isUnicast())
+	{
+		return false;
+	}
+
+	if (this->isMulticast() && otherOP->isGatherOp() ||
+		this->isGatherOp() && otherOP->isMulticast())
+	{
+		return true;
+	}
+
 	if (this->isRecvingOp())
 	{
 		return otherOP->isSendingOp();
@@ -218,6 +223,27 @@ bool MPIOperation::isComplementaryOpOf(MPIOperation *otherOP){
 }
 
 bool MPIOperation::isSameKindOfOp(MPIOperation *other){
+	bool ThisIsUniCast=this->isUnicast();
+	bool OtherIsUniCast=other->isUnicast();
+
+	bool isDiff= (ThisIsUniCast || OtherIsUniCast) && !(ThisIsUniCast && OtherIsUniCast);
+	if (isDiff)
+		return false;
+
+	bool ThisIsMultiCast=this->isMulticast();
+	bool OtherIsMultiCast=other->isMulticast();
+	isDiff= (ThisIsMultiCast || OtherIsMultiCast) && !(ThisIsMultiCast && OtherIsMultiCast);
+	if (isDiff)
+		return false;
+
+
+	bool ThisIsGather=this->isGatherOp();
+	bool OtherIsGather=other->isGatherOp();
+	isDiff= (ThisIsGather || OtherIsGather) && !(ThisIsGather && OtherIsGather);
+	if (isDiff)
+		return false;
+
+
 	if (this->isRecvingOp())
 	{
 		return other->isRecvingOp();
@@ -226,6 +252,32 @@ bool MPIOperation::isSameKindOfOp(MPIOperation *other){
 	if (this->isSendingOp())
 	{
 		return other->isSendingOp();
+	}
+
+	return false;
+}
+
+
+bool MPIOperation::isUnicast(){
+	if(this->isDependentOnExecutor())
+		return true;
+
+	return this->executor.size()==this->target.size();
+}
+
+bool MPIOperation::isMulticast(){
+	if (this->getSrcCond().size()==1 && this->getDestCond().size()>1)
+	{
+		return true;
+	}
+
+	return false;
+} 
+
+bool MPIOperation::isGatherOp(){
+	if (this->getSrcCond().size()>1 && this->getDestCond().size()==1)
+	{
+		return true;
 	}
 
 	return false;

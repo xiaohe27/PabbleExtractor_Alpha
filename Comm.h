@@ -127,6 +127,8 @@ public:
 
 	void addNumber(int num);
 
+	int size();
+
 	string printRangeInfo();
 };
 
@@ -146,6 +148,8 @@ public:
 	Condition(bool val);
 
 	vector<Range> getRangeList(){return this->rangeList;}
+
+	int size();
 
 	bool isIgnored() const;
 
@@ -195,11 +199,10 @@ public:
 
 class VisitResult{
 public:
-	bool isBlocking;
 	MPIOperation *doableOP;
 	vector<Role*> escapableRoles; //the role is escapable if it is not captured by the current node
 
-	VisitResult(bool blocking, MPIOperation *mpiOP, vector<Role*> escapedRoles);
+	VisitResult(MPIOperation *mpiOP, vector<Role*> escapedRoles);
 
 	void printVisitInfo();
 };
@@ -272,7 +275,7 @@ public:
 
 	vector<Role*>* getTheRoles(){return this->actualRoles;}
 
-	void insertActualRole(Role *r);
+	void insertActualRole(Role *r, bool forceUpdate);
 	
 };
 
@@ -331,8 +334,12 @@ public:
 	bool isComplementaryOpOf(MPIOperation *otherOP);
 	bool isSameKindOfOp(MPIOperation *other);
 
-	bool isFinished();
+	bool isUnicast(); // n to n
+	bool isMulticast(); // 1 to n
+	bool isGatherOp(); // n to 1
 
+	bool isFinished();
+	bool isEmptyOP();
 	void printMPIOP();
 
 };
@@ -423,6 +430,10 @@ public:
 	string printTheNode();
 
 	int sizeOfTheNode();
+
+	int indexOfTheMPIOP(MPIOperation* op);
+
+	void insertMPIOP(MPIOperation* theOP){this->ops->push_back(theOP);}
 
 	int getPosIndex() const{return this->posIndex;}
 

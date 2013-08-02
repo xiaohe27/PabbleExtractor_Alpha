@@ -6,8 +6,7 @@ using namespace std;
 
 
 //////////////////////VisitResult//////////////////////////////////////////
-VisitResult::VisitResult(bool b, MPIOperation *op, vector<Role*> roles){
-	this->isBlocking=b;
+VisitResult::VisitResult(MPIOperation *op, vector<Role*> roles){
 	this->doableOP=op;
 	this->escapableRoles=roles;
 }
@@ -18,7 +17,7 @@ void VisitResult::printVisitInfo(){
 		cout<<"\n\n\nThe doable MPI operation in this node is "<<endl;
 		this->doableOP->printMPIOP();
 
-		cout<<"It is "<<(this->isBlocking?"":"non-")<<"blocking operation!\n\n\n"<<endl;
+		cout<<"It is "<<(doableOP->isBlockingOP()?"":"non-")<<"blocking operation!\n\n\n"<<endl;
 	}
 
 
@@ -230,7 +229,7 @@ void MPISimulator::simulate(){
 					i--;
 					continue;
 				}
-				
+
 				cout<<"It is "<< paramRole->getTheRoles()->at(i)->getRoleName()<<" visiting the tree now."<<endl;
 				VisitResult *vr=paramRole->getTheRoles()->at(i)->visit();
 
@@ -251,13 +250,13 @@ void MPISimulator::simulate(){
 		}
 	}
 
-	if (root->isMarked())
+	if (root->isNegligible())
 	{
 		cout<<"\n\n\nThe comm tree has been traversed successfully!!!"<<endl;
 	}
 
 	else if(isDeadLockDetected())
-	cout<<"\n\n\nDeadlock occurs!!!";
+		cout<<"\n\n\nDeadlock occurs!!!";
 }
 
 
@@ -285,7 +284,7 @@ void MPISimulator::analyzeVisitResult(VisitResult *vr){
 
 		for (int i = 0; i <size ; i++)
 		{
-			paramRole->insertActualRole(vr->escapableRoles.at(i));
+			paramRole->insertActualRole(vr->escapableRoles.at(i),false);
 		}
 	}
 
@@ -307,14 +306,14 @@ void MPISimulator::analyzeVisitResult(VisitResult *vr){
 
 void MPISimulator::insertOpToPendingList(MPIOperation *op){
 	//TODO
-//	cout<<"The mpi op "<<op->getOpName()<<" is going to be inserted into the pending list."<<endl;
+	//	cout<<"The mpi op "<<op->getOpName()<<" is going to be inserted into the pending list."<<endl;
 
-	
+
 	for (int i = 0; i < this->pendingOPs.size(); i++)
 	{
 		if(op->getExecutor().isIgnored())
 			return;
-		
+
 		MPIOperation *curVisitOP=pendingOPs[i];
 
 		cout<<"The cur visited mpi op is "<<curVisitOP->getOpName()<<endl;
@@ -348,11 +347,11 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 			Condition remainingTarCond4ThisOp=targetOfThisOp.Diff(actualTarget);
 			Condition remainingTarCond4CurVisitOp=targetOfCurOp.Diff(actualExecutor);
 
-//			cout<<"The condition for the target of inserted op and executor of the cur visit op is : "<<
-//				thisTarCurExec.printConditionInfo()<<endl;
+			//			cout<<"The condition for the target of inserted op and executor of the cur visit op is : "<<
+			//				thisTarCurExec.printConditionInfo()<<endl;
 
-//			cout<<"The condition for the executor of inserted op and target of the cur visit op is : "<<
-//				thisExecCurTarget.printConditionInfo()<<endl;
+			//			cout<<"The condition for the executor of inserted op and target of the cur visit op is : "<<
+			//				thisExecCurTarget.printConditionInfo()<<endl;
 
 			if(actualTarget.isIgnored())
 				continue;
@@ -366,74 +365,227 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 			actuallyHappenedOP->printMPIOP();
 			cout<<"\n\n\n"<<endl;
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
+			/////////////////////////////////////////////////////////////////////////////////////////////////
+			Condition unblockedRoleCond(false);
 
-			//After the comm happens, some roles may be unblocked
-			Condition unblockedRoleCond= actuallyHappenedOP->isBlockingOP()?
+			if(op->isUnicast()){
+				//After the comm happens, some roles may be unblocked
+				unblockedRoleCond= actuallyHappenedOP->isBlockingOP()?
 					actuallyHappenedOP->getExecutor():actuallyHappenedOP->getTargetCond();
+			}
 
-			//the non-blocked role cond is the cond for the nonblocking role.
-			Condition nonBlockingRoleCond= actuallyHappenedOP->isBlockingOP()?
-					actuallyHappenedOP->getTargetCond():actuallyHappenedOP->getExecutor();
+			else{
+				if (actuallyHappenedOP->isBlockingOP())
+				{
+					if(actualTarget.isSameAsCond(targetOfThisOp))
+						unblockedRoleCond=actualExecutor;
+				}
 
-			CommNode *unblockingNode= op->isBlockingOP()?
-					op->theNode:curVisitOP->theNode;
+				else{
+					if(actualExecutor.isSameAsCond(targetOfCurOp))
+						unblockedRoleCond=actualTarget;
+				}
 
-			CommNode *nonBlockedNode= op->isBlockingOP()?
-					curVisitOP->theNode:op->theNode;
+			}
+
 
 			cout<<"The cond "<<unblockedRoleCond.printConditionInfo()<<" is unblocked!"<<endl;
-			
-			unblockingNode->setCond(unblockingNode->getCond().Diff(unblockedRoleCond));
 
+			Condition nonBlockingRoleCond= actuallyHappenedOP->isBlockingOP()?
+				actuallyHappenedOP->getTargetCond():actuallyHappenedOP->getExecutor();
+
+			CommNode *unblockingNode= op->isBlockingOP()?
+				op->theNode:curVisitOP->theNode;
+
+			CommNode *nonBlockedNode= op->isBlockingOP()?
+				curVisitOP->theNode:op->theNode;
+
+			unblockingNode->setCond(unblockingNode->getCond().Diff(unblockedRoleCond));
 			nonBlockedNode->setCond(nonBlockedNode->getCond().Diff(nonBlockingRoleCond));
 
 			for (int i = 0; i < unblockedRoleCond.getRangeList().size(); i++)
 			{
 				Role *unblockedRole=new Role(unblockedRoleCond.getRangeList()[i]);
 				unblockedRole->setCurVisitNode(unblockingNode);
-
 				ParamRole *paramRoleI=this->commManager->getParamRoleWithName(unblockedRole->getParamRoleName());
-				paramRoleI->insertActualRole(unblockedRole);
+				paramRoleI->insertActualRole(unblockedRole,true);
 			}
 
 
-			//////////////////////////////////////////////////////////////
-			//update the inserted op
-			if (remainingExecCond4ThisOp.isIgnored())
+			///////////////////////////////////////////////////////////////////////////////////////////////////////
+			//update the inserted op and cur visit op
+
+			MPIOperation* thisOP1=new MPIOperation(*op);
+			thisOP1->setExecutorCond(actualExecutor);
+			thisOP1->setTargetCond(remainingTarCond4ThisOp);
+			if(thisOP1->isEmptyOP())
 			{
-				if(remainingExecCond4CurVisitOp.isIgnored()){
-				bool tmpBool=curVisitOP->theNode->isNegligible();
-				//remove the elem at index i
-				this->pendingOPs.erase(this->pendingOPs.begin()+i);	
+				delete thisOP1;
+				thisOP1=nullptr;
+			}
+
+			MPIOperation* thisOP2=new MPIOperation(*op);
+			thisOP2->setExecutorCond(remainingExecCond4ThisOp);
+			thisOP2->setTargetCond(targetOfThisOp);
+			if(thisOP2->isEmptyOP())
+			{
+				delete thisOP2;
+				thisOP2=nullptr;
+			}
+
+
+			if (op->isUnicast())
+			{
+				//if both ops are unicast.
+				MPIOperation *updatedCurOP=new MPIOperation(*curVisitOP);
+				updatedCurOP->setExecutorCond(remainingExecCond4CurVisitOp);
+				updatedCurOP->setTargetCond(remainingTarCond4CurVisitOp);
+
+				if (updatedCurOP->isEmptyOP())
+				{
+					delete updatedCurOP;
+					updatedCurOP=nullptr;
+				}
+
+				if (updatedCurOP)
+				{
+					int index=curVisitOP->theNode->indexOfTheMPIOP(curVisitOP);
+					CommNode *tmpNode=curVisitOP->theNode;
+					delete curVisitOP;
+
+					tmpNode->getOPs()->at(index)=updatedCurOP;
+
+					this->pendingOPs.at(i)=updatedCurOP;
 				}
 
 				else{
-					curVisitOP->setExecutorCond(remainingExecCond4CurVisitOp);
-					curVisitOP->setTargetCond(remainingTarCond4CurVisitOp);
+					curVisitOP=nullptr;
+
+					this->pendingOPs.erase(this->pendingOPs.begin()+i);
+					i--;
+				}
+			}
+
+			else{//neither of the two ops are unicast
+
+				MPIOperation* curOP1=new MPIOperation(*curVisitOP);
+				curOP1->setExecutorCond(actualTarget);
+				curOP1->setTargetCond(remainingTarCond4CurVisitOp);
+				if(curOP1->isEmptyOP())
+				{
+					delete curOP1;
+					curOP1=nullptr;
 				}
 
-				bool tmpBool2=op->theNode->isNegligible();
-				//no proc is going to exec the op
+
+				MPIOperation* curOP2=new MPIOperation(*curVisitOP);
+				curOP2->setExecutorCond(remainingExecCond4CurVisitOp);
+				curOP2->setTargetCond(targetOfCurOp);
+				if(curOP2->isEmptyOP())
+				{
+					delete curOP2;
+					curOP2=nullptr;
+				}
+
+				////////////////////////////////////////////////////////
+				if (curOP1 && curOP2)
+				{
+					int index=curVisitOP->theNode->indexOfTheMPIOP(curVisitOP);
+					CommNode *tmpNode=curVisitOP->theNode;
+					delete curVisitOP;
+
+					tmpNode->getOPs()->at(index)=curOP1;
+					curVisitOP=curOP1;
+
+					this->pendingOPs.at(i)=curVisitOP;
+					curOP2->theNode->insertMPIOP(curOP2);
+					this->pendingOPs.push_back(curOP2);
+				}
+
+				else if(curOP1){
+					int index=curVisitOP->theNode->indexOfTheMPIOP(curVisitOP);
+					CommNode *tmpNode=curVisitOP->theNode;
+					delete curVisitOP;
+
+					tmpNode->getOPs()->at(index)=curOP1;
+					curVisitOP=curOP1;
+
+					this->pendingOPs.at(i)=curVisitOP;
+				}
+
+				else if(curOP2){
+					int index=curVisitOP->theNode->indexOfTheMPIOP(curVisitOP);
+					CommNode *tmpNode=curVisitOP->theNode;
+					delete curVisitOP;
+
+					tmpNode->getOPs()->at(index)=curOP2;
+					curVisitOP=curOP2;
+					this->pendingOPs.at(i)=curVisitOP;
+				}
+
+				else{
+					int index=curVisitOP->theNode->indexOfTheMPIOP(curVisitOP);
+					CommNode *tmpNode=curVisitOP->theNode;
+					delete curVisitOP;
+
+					tmpNode->getOPs()->at(index)=nullptr;
+
+					this->pendingOPs.erase(this->pendingOPs.begin()+i);
+					i--;
+				}
+			}
+
+
+
+
+			if (thisOP1 && thisOP2)
+			{
+				int index=op->theNode->indexOfTheMPIOP(op);
+				CommNode *tmpNode=op->theNode;
+				delete op;
+
+				tmpNode->getOPs()->at(index)=thisOP1;
+				tmpNode->insertMPIOP(thisOP2);
+
+				this->insertOpToPendingList(thisOP1);
+				this->insertOpToPendingList(thisOP2);
+
 				return;
 			}
-			
-			op->setExecutorCond(remainingExecCond4ThisOp);
-			op->setTargetCond(remainingTarCond4ThisOp);
 
-			//update the cur op in the vector
-			if(remainingExecCond4CurVisitOp.isIgnored()){
-				bool tmpBool=curVisitOP->theNode->isNegligible();
-				//remove the elem at index i
-				this->pendingOPs.erase(this->pendingOPs.begin()+i);	
-				i--;
+			else if(thisOP1){
+				int index=op->theNode->indexOfTheMPIOP(op);
+				CommNode *tmpNode=op->theNode;
+				delete op;
+
+				tmpNode->getOPs()->at(index)=thisOP1;
+
+				op=thisOP1;
+				continue;
+			}
+
+			else if(thisOP2){
+				int index=op->theNode->indexOfTheMPIOP(op);
+				CommNode *tmpNode=op->theNode;
+				delete op;
+
+				tmpNode->getOPs()->at(index)=thisOP2;
+
+				op=thisOP2;
 				continue;
 			}
 
 			else{
-			curVisitOP->setExecutorCond(remainingExecCond4CurVisitOp);
-			curVisitOP->setTargetCond(remainingTarCond4CurVisitOp);
+				int index=op->theNode->indexOfTheMPIOP(op);
+				CommNode *tmpNode=op->theNode;
+				delete op;
+
+				tmpNode->getOPs()->at(index)=nullptr;
+			
+				return;
 			}
+			//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 		}
 	}
 

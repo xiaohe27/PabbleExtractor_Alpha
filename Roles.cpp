@@ -45,7 +45,7 @@ VisitResult* Role::visit(){
 
 	if (this->range.isAllRange() &&
 		this->curVisitNode && !this->curVisitNode->getCond().isComplete() &&
-		!this->curVisitNode->isMarked())
+		!this->curVisitNode->isNegligible())
 		return nullptr;
 
 
@@ -64,7 +64,7 @@ VisitResult* Role::visit(){
 
 		string nodeName=this->curVisitNode->getNodeName();
 
-		if (this->curVisitNode->isMarked())
+		if (this->curVisitNode->isNegligible())
 		{
 			//if the cur node has been marked, then skip
 			this->curVisitNode=curVisitNode->skipToNextNode();
@@ -115,17 +115,27 @@ VisitResult* Role::visit(){
 		if (theOPs)
 		{
 			cout<<this->getRoleName()<<" visits the MPI "<<curVisitNode->getNodeName()<<" node"<<endl;
-
+			bool isBlocking=false;
 			MPIOperation *doableOP=nullptr;
 
 			for (int i = 0; i < theOPs->size(); i++)
 			{
+				if(theOPs->at(i)==nullptr){
+					theOPs->erase(theOPs->begin()+i);
+					i--;
+					continue;
+				}
+				
+				if (theOPs->at(i)->isBlockingOP())
+					isBlocking=true;
+
+
 				if (theOPs->at(i)->isInPendingList)
 					continue;
 
 				//the doable op is the unfinished task
 				doableOP=theOPs->at(i);
-				
+
 				//the task is picked (maybe partially) by the role with cond "doableCond"
 				Condition doableCond=stayHereCond.AND(doableOP->getExecutor());
 				Condition remainingTaskCond=doableOP->getExecutor().Diff(doableCond);
@@ -143,7 +153,6 @@ VisitResult* Role::visit(){
 				break;
 			}
 
-			bool isBlocking=doableOP->isBlockingOP();
 
 			if (isBlocking)
 			{
@@ -151,15 +160,14 @@ VisitResult* Role::visit(){
 			}
 
 			else{
+				this->blocked=false;
 				//if it is non-blocking op, then the whole role can goto next node
 				this->curVisitNode= this->curVisitNode->skipToNextNode();
 				escapedRoles.clear();
-
 			}
 
-			return new VisitResult(isBlocking,doableOP,escapedRoles);
+			return new VisitResult(doableOP,escapedRoles);
 		}
-
 
 		else{
 			//enumerate the node types
@@ -210,10 +218,9 @@ VisitResult* Role::visit(){
 
 				//the role is split into two parts, it will be blocked unless all the parts combine
 				this->blocked=true;
-				return new VisitResult(false,nullptr,escapedRoles);
+				return new VisitResult(nullptr,escapedRoles);
 			}
 		}
-
 	}
 
 	return nullptr;
@@ -253,7 +260,7 @@ bool ParamRole::hasARoleSatisfiesRange(Range ran){
 	return false;
 }
 
-
+//used in constructing the comm tree
 void ParamRole::addAllTheRangesInTheCondition(Condition cond){
 	vector<Range> ranList=cond.getRangeList();
 	for (int i = 0; i < ranList.size(); i++)
@@ -263,13 +270,13 @@ void ParamRole::addAllTheRangesInTheCondition(Condition cond){
 			continue;
 
 		else
-			this->insertActualRole(new Role(paramRoleName,r));
+			this->insertActualRole(new Role(paramRoleName,r),false);
 
 	}
 }
 
 
-void ParamRole::insertActualRole(Role *r){
+void ParamRole::insertActualRole(Role *r, bool forceUpdate){
 	if (!r)
 	{
 		return;
@@ -280,13 +287,18 @@ void ParamRole::insertActualRole(Role *r){
 	{
 		if (actualRoles->at(i)->hasRangeEqualTo(r->getRange()))
 		{
+			if (!forceUpdate)
+			{
+				return;
+			}
+			
 			if (actualRoles->at(i)->hasFinished())
 			{
 				delete r;
 				return;
 			}
 
-					
+
 			CommNode *curVisitNodeOfRoleI=actualRoles->at(i)->getCurVisitNode();
 			if (curVisitNodeOfRoleI==nullptr)
 			{
@@ -308,7 +320,7 @@ void ParamRole::insertActualRole(Role *r){
 				delete  actualRoles->at(i);
 				actualRoles->at(i)=r;
 			}
-			
+
 			else{
 				cout<<"The cur role i has pos "<<curPosForI<<", which is newer than role r's "<<
 					curPosForRoleR<<"; so do nothing"<<endl;
