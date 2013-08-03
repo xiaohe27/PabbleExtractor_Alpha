@@ -332,7 +332,10 @@ bool Range::isEqualTo(Range ran){
 
 //ok. already considered the case of end < start
 bool Range::isAllRange(){
-	if(getStart()==0 && getEnd()==InitEndIndex)
+	if (this->shouldBeIgnored)
+		return false;
+	
+	if(getStart()==0 && getEnd()==InitEndIndex-1)
 		return true;
 
 	if(getEnd()==getStart()-1)
@@ -419,7 +422,7 @@ Condition::Condition(bool val){
 
 		this->complete=true;
 		this->shouldBeIgnored=false;
-		this->rangeList.push_back(Range(0,InitEndIndex));
+		this->rangeList.push_back(Range(0,InitEndIndex-1));
 	}
 
 	else{
@@ -524,7 +527,7 @@ void Condition::normalize(){
 			continue;
 
 		if(rangeList[i].isAllRange())
-			rangeList[i]=Range(0,InitEndIndex);
+			rangeList[i]=Range(0,InitEndIndex-1);
 
 		for (int j = i+1; j < rangeList.size(); j++)
 		{

@@ -197,16 +197,13 @@ bool MPIOperation::isCollectiveOp(){
 
 //test whether this op is a complementary op of the other op.
 bool MPIOperation::isComplementaryOpOf(MPIOperation *otherOP){
-	if (this->isUnicast() && !otherOP->isUnicast() ||
-		!this->isUnicast() && otherOP->isUnicast())
-	{
-		return false;
-	}
 
-	if (this->isMulticast() && otherOP->isGatherOp() ||
-		this->isGatherOp() && otherOP->isMulticast())
+	if (this->isCollectiveOp() && otherOP->isCollectiveOp())
 	{
-		return true;
+		//for the collective ops, the op name and executor must be exactly the same 
+		//in order to fire the operation...........................................
+		return this->getOpName()==otherOP->getOpName() && 
+			this->executor.isSameAsCond(otherOP->executor);
 	}
 
 	if (this->isRecvingOp())
@@ -219,14 +216,23 @@ bool MPIOperation::isComplementaryOpOf(MPIOperation *otherOP){
 		return otherOP->isRecvingOp();
 	}
 
+
 	return false;
 }
 
 bool MPIOperation::isSameKindOfOp(MPIOperation *other){
+	bool ThisIsCollective=this->isCollectiveOp();
+	bool OtherIsCollective=other->isCollectiveOp();
+
+	bool isDiff= (ThisIsCollective || OtherIsCollective) && !(ThisIsCollective && OtherIsCollective);
+	if (isDiff)
+		return false;
+
+
 	bool ThisIsUniCast=this->isUnicast();
 	bool OtherIsUniCast=other->isUnicast();
 
-	bool isDiff= (ThisIsUniCast || OtherIsUniCast) && !(ThisIsUniCast && OtherIsUniCast);
+	isDiff= (ThisIsUniCast || OtherIsUniCast) && !(ThisIsUniCast && OtherIsUniCast);
 	if (isDiff)
 		return false;
 
@@ -244,17 +250,8 @@ bool MPIOperation::isSameKindOfOp(MPIOperation *other){
 		return false;
 
 
-	if (this->isRecvingOp())
-	{
-		return other->isRecvingOp();
-	}
 
-	if (this->isSendingOp())
-	{
-		return other->isSendingOp();
-	}
-
-	return false;
+	return true;
 }
 
 
@@ -439,12 +436,6 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 
 		if(funcName=="MPI_Bcast"){
 
-			Condition topRankCond=this->commManager->getTopCondition();
-			if (!topRankCond.isComplete())
-			{
-				throw new MPI_TypeChecking_Error("The collective op should be visible to every process!");
-			}
-
 			string dataType=args[2];
 			string root=args[3];
 			string group=args[4];
@@ -458,14 +449,13 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 
 			else{
 				Condition bcaster=this->commManager->extractCondFromTargetExpr(E->getArg(3));
-				Condition recvers=Condition(true).Diff(bcaster);
-				recvers.normalize();
+
 
 				mpiOP=new MPIOperation(	funcName,
 					ST_NODE_SEND, 
 					dataType,
-					bcaster, //the performer
-					recvers, //the dest
+					bcaster, //the unique performer
+					Condition(true), //the participants of the collective op.
 					"", 
 					group);
 

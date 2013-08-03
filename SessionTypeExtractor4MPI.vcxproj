@@ -84,6 +84,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CollectiveOP.cpp" />
     <ClCompile Include="Comm.cpp" />
     <ClCompile Include="InteractionNode.cpp" />
     <ClCompile Include="MPIOP.cpp" />

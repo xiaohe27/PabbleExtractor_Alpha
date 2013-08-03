@@ -71,6 +71,16 @@ void MPISimulator::insertNode(CommNode *node){
 
 	}
 
+	if (node->getOPs())
+	{
+		MPIOperation* mpiOP=node->getOPs()->back();
+		if (mpiOP->isCollectiveOp())
+		{
+			mpiOP->setTargetCond(mpiOP->getTargetCond().AND(node->getCond()));
+		}
+	}
+
+
 	//insert the node
 	this->curNode->insert(node);
 
@@ -305,8 +315,17 @@ void MPISimulator::analyzeVisitResult(VisitResult *vr){
 
 
 void MPISimulator::insertOpToPendingList(MPIOperation *op){
-	//TODO
 	//	cout<<"The mpi op "<<op->getOpName()<<" is going to be inserted into the pending list."<<endl;
+
+	//if the op is collective op, then the only thing needs to do is
+	//accumulate the executors. Once every process checked in, 
+	//the collective op can actually happen.
+	if (op->isCollectiveOp())
+	{
+		this->collectiveOpMgr.insertCollectiveOP(op);
+
+		return;
+	}
 
 
 	for (int i = 0; i < this->pendingOPs.size(); i++)
@@ -318,7 +337,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 
 		cout<<"The cur visited mpi op is "<<curVisitOP->getOpName()<<endl;
 		//Avoid the same action in the same node to be performed by multiple roles
-		if (op->isSameKindOfOp(curVisitOP) && op->theNode==curVisitOP->theNode)
+		if (op->theNode==curVisitOP->theNode)
 		{
 			Condition workNeedsDoing=op->getExecutor().Diff(curVisitOP->getExecutor());
 			op->setExecutorCond(workNeedsDoing);
@@ -334,6 +353,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 		//if the operations are complementary
 		if (op->isComplementaryOpOf(curVisitOP))
 		{
+
 			Condition targetOfThisOp=op->getTargetCond();
 			Condition execCondOfCurVisitOp=curVisitOP->getExecutor();
 			Condition actualTarget=targetOfThisOp.AND(execCondOfCurVisitOp);
@@ -347,11 +367,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 			Condition remainingTarCond4ThisOp=targetOfThisOp.Diff(actualTarget);
 			Condition remainingTarCond4CurVisitOp=targetOfCurOp.Diff(actualExecutor);
 
-			//			cout<<"The condition for the target of inserted op and executor of the cur visit op is : "<<
-			//				thisTarCurExec.printConditionInfo()<<endl;
 
-			//			cout<<"The condition for the executor of inserted op and target of the cur visit op is : "<<
-			//				thisExecCurTarget.printConditionInfo()<<endl;
 
 			if(actualTarget.isIgnored())
 				continue;
@@ -415,27 +431,11 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 			///////////////////////////////////////////////////////////////////////////////////////////////////////
 			//update the inserted op and cur visit op
 
-			MPIOperation* thisOP1=new MPIOperation(*op);
-			thisOP1->setExecutorCond(actualExecutor);
-			thisOP1->setTargetCond(remainingTarCond4ThisOp);
-			if(thisOP1->isEmptyOP())
+			if (op->isUnicast() && curVisitOP->isUnicast())
 			{
-				delete thisOP1;
-				thisOP1=nullptr;
-			}
+				op->setExecutorCond(remainingExecCond4ThisOp);
+				op->setTargetCond(remainingTarCond4ThisOp);
 
-			MPIOperation* thisOP2=new MPIOperation(*op);
-			thisOP2->setExecutorCond(remainingExecCond4ThisOp);
-			thisOP2->setTargetCond(targetOfThisOp);
-			if(thisOP2->isEmptyOP())
-			{
-				delete thisOP2;
-				thisOP2=nullptr;
-			}
-
-
-			if (op->isUnicast())
-			{
 				//if both ops are unicast.
 				MPIOperation *updatedCurOP=new MPIOperation(*curVisitOP);
 				updatedCurOP->setExecutorCond(remainingExecCond4CurVisitOp);
@@ -455,7 +455,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 
 					tmpNode->getOPs()->at(index)=updatedCurOP;
 
-					this->pendingOPs.at(i)=updatedCurOP;
+					this->pendingOPs[i]=updatedCurOP;
 				}
 
 				else{
@@ -466,7 +466,25 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 				}
 			}
 
-			else{//neither of the two ops are unicast
+			else{//one of the two ops is not unicast
+
+				MPIOperation* thisOP1=new MPIOperation(*op);
+				thisOP1->setExecutorCond(actualExecutor);
+				thisOP1->setTargetCond(remainingTarCond4ThisOp);
+				if(thisOP1->isEmptyOP())
+				{
+					delete thisOP1;
+					thisOP1=nullptr;
+				}
+
+				MPIOperation* thisOP2=new MPIOperation(*op);
+				thisOP2->setExecutorCond(remainingExecCond4ThisOp);
+				thisOP2->setTargetCond(targetOfThisOp);
+				if(thisOP2->isEmptyOP())
+				{
+					delete thisOP2;
+					thisOP2=nullptr;
+				}
 
 				MPIOperation* curOP1=new MPIOperation(*curVisitOP);
 				curOP1->setExecutorCond(actualTarget);
@@ -487,6 +505,55 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					curOP2=nullptr;
 				}
 
+
+				if (thisOP1 && thisOP2)
+				{
+					int index=op->theNode->indexOfTheMPIOP(op);
+					CommNode *tmpNode=op->theNode;
+					delete op;
+
+					tmpNode->getOPs()->at(index)=thisOP1;
+					tmpNode->insertMPIOP(thisOP2);
+
+					this->insertOpToPendingList(thisOP1);
+					this->insertOpToPendingList(thisOP2);
+
+					return;
+				}
+
+				else if(thisOP1){
+					int index=op->theNode->indexOfTheMPIOP(op);
+					CommNode *tmpNode=op->theNode;
+					delete op;
+
+					tmpNode->getOPs()->at(index)=thisOP1;
+
+					op=thisOP1;
+					continue;
+				}
+
+				else if(thisOP2){
+					int index=op->theNode->indexOfTheMPIOP(op);
+					CommNode *tmpNode=op->theNode;
+					delete op;
+
+					tmpNode->getOPs()->at(index)=thisOP2;
+
+					op=thisOP2;
+					continue;
+				}
+
+				else{
+					int index=op->theNode->indexOfTheMPIOP(op);
+					CommNode *tmpNode=op->theNode;
+					delete op;
+
+					tmpNode->getOPs()->at(index)=nullptr;
+
+					return;
+				}
+				//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 				////////////////////////////////////////////////////////
 				if (curOP1 && curOP2)
 				{
@@ -497,7 +564,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					tmpNode->getOPs()->at(index)=curOP1;
 					curVisitOP=curOP1;
 
-					this->pendingOPs.at(i)=curVisitOP;
+					this->pendingOPs[i]=curVisitOP;
 					curOP2->theNode->insertMPIOP(curOP2);
 					this->pendingOPs.push_back(curOP2);
 				}
@@ -510,7 +577,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					tmpNode->getOPs()->at(index)=curOP1;
 					curVisitOP=curOP1;
 
-					this->pendingOPs.at(i)=curVisitOP;
+					this->pendingOPs[i]=curVisitOP;
 				}
 
 				else if(curOP2){
@@ -520,7 +587,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 
 					tmpNode->getOPs()->at(index)=curOP2;
 					curVisitOP=curOP2;
-					this->pendingOPs.at(i)=curVisitOP;
+					this->pendingOPs[i]=curVisitOP;
 				}
 
 				else{
@@ -534,57 +601,6 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					i--;
 				}
 			}
-
-
-
-
-			if (thisOP1 && thisOP2)
-			{
-				int index=op->theNode->indexOfTheMPIOP(op);
-				CommNode *tmpNode=op->theNode;
-				delete op;
-
-				tmpNode->getOPs()->at(index)=thisOP1;
-				tmpNode->insertMPIOP(thisOP2);
-
-				this->insertOpToPendingList(thisOP1);
-				this->insertOpToPendingList(thisOP2);
-
-				return;
-			}
-
-			else if(thisOP1){
-				int index=op->theNode->indexOfTheMPIOP(op);
-				CommNode *tmpNode=op->theNode;
-				delete op;
-
-				tmpNode->getOPs()->at(index)=thisOP1;
-
-				op=thisOP1;
-				continue;
-			}
-
-			else if(thisOP2){
-				int index=op->theNode->indexOfTheMPIOP(op);
-				CommNode *tmpNode=op->theNode;
-				delete op;
-
-				tmpNode->getOPs()->at(index)=thisOP2;
-
-				op=thisOP2;
-				continue;
-			}
-
-			else{
-				int index=op->theNode->indexOfTheMPIOP(op);
-				CommNode *tmpNode=op->theNode;
-				delete op;
-
-				tmpNode->getOPs()->at(index)=nullptr;
-			
-				return;
-			}
-			//////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		}
 	}

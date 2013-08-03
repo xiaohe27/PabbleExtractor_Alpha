@@ -43,16 +43,6 @@ VisitResult* Role::visit(){
 	if (finished)
 		return nullptr;
 
-	if (this->curVisitNode && this->curVisitNode->isACollectiveOPNode())
-	{
-		//TODO
-		this->curVisitNode->setMarked();
-
-		cout<<"\n\n\n\n\nThe collective OP is found!!!"<<endl;
-		this->curVisitNode->getOPs()->at(0)->printMPIOP();
-		cout<<"\n\n\n\n\n"<<endl;
-
-	}
 
 	if (this->range.isAllRange() &&
 		this->curVisitNode && !this->curVisitNode->getCond().isComplete() &&
@@ -62,16 +52,6 @@ VisitResult* Role::visit(){
 
 	while (true)
 	{
-		if (this->curVisitNode && this->curVisitNode->isACollectiveOPNode())
-		{
-			//TODO
-			this->curVisitNode->setMarked();
-
-			cout<<"\n\n\n\n\nThe collective OP is found!!!"<<endl;
-			this->curVisitNode->getOPs()->at(0)->printMPIOP();
-			cout<<"\n\n\n\n\n"<<endl;
-
-		}
 
 		vector<Role*> escapedRoles;
 
@@ -159,18 +139,36 @@ VisitResult* Role::visit(){
 				doableOP=theOPs->at(i);
 
 				//the task is picked (maybe partially) by the role with cond "doableCond"
-				Condition doableCond=stayHereCond.AND(doableOP->getExecutor());
-				Condition remainingTaskCond=doableOP->getExecutor().Diff(doableCond);
+				if(doableOP->isCollectiveOp()){
+					Condition doableCond=stayHereCond.AND(doableOP->getTargetCond());
+					Condition remainingTaskCond=doableOP->getTargetCond().Diff(doableCond);
+					doableOP->isInPendingList=true;
 
-				if(!remainingTaskCond.isIgnored()){
-					MPIOperation* remainingOP=new MPIOperation(*doableOP);
-					remainingOP->setExecutorCond(remainingTaskCond);
-					remainingOP->isInPendingList=false;
-					theOPs->push_back(remainingOP);
+					if(!remainingTaskCond.isIgnored()){
+						MPIOperation* remainingOP=new MPIOperation(*doableOP);
+						remainingOP->setTargetCond(remainingTaskCond);
+						remainingOP->isInPendingList=false;
+						theOPs->push_back(remainingOP);
+					}
+
+					doableOP->setTargetCond(doableCond);
 				}
 
-				doableOP->setExecutorCond(doableCond);
-				doableOP->isInPendingList=true;
+				else{
+					Condition doableCond=stayHereCond.AND(doableOP->getExecutor());
+					Condition remainingTaskCond=doableOP->getExecutor().Diff(doableCond);
+					doableOP->isInPendingList=true;
+
+					if(!remainingTaskCond.isIgnored()){
+						MPIOperation* remainingOP=new MPIOperation(*doableOP);
+						remainingOP->setExecutorCond(remainingTaskCond);
+						remainingOP->isInPendingList=false;
+						theOPs->push_back(remainingOP);
+					}
+
+					
+					doableOP->setExecutorCond(doableCond);
+				}
 
 				break;
 			}

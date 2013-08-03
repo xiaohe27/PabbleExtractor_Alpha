@@ -367,8 +367,6 @@ private:
 
 	bool marked;
 
-	bool isCollectiveOPNode;
-
 	void init(int type,vector<MPIOperation*> *ops);
 
 	//the role visitor will check whether it can 
@@ -413,11 +411,9 @@ public:
 
 	void setInfo(string info0){this->info=info0;}
 
-	void setMarked(){this->marked=true;}
+	void setMarked();
 
 	bool isMarked();
-
-	bool isACollectiveOPNode(){return this->isCollectiveOPNode;}
 
 	CommNode* getParent()const{return this->parent;}
 
@@ -550,6 +546,20 @@ public:
 	ParamRole* getParamRoleWithName(string name) const;
 };
 
+//////////////////////////////////////////////////////////////////////////////
+class CollectiveOPManager{
+private:
+	map<string,Condition> collectiveOPFinishInfoMap;
+
+	map<string,vector<CommNode*>> participatingCommNodesMap;
+
+	void insertCollectiveOPAndCondPair(string opName,int rank, Condition cond, CommNode* node);
+
+public:
+	//if the collective op fires, then relevant nodes will be unblocked
+	void insertCollectiveOP(MPIOperation* op);
+
+};
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -561,6 +571,7 @@ private:
 
 	CommManager *commManager;
 
+	CollectiveOPManager collectiveOpMgr;
 	vector<MPIOperation*> pendingOPs;
 
 public:
