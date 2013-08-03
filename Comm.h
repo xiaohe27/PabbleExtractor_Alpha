@@ -551,7 +551,7 @@ class CollectiveOPManager{
 private:
 	map<string,Condition> collectiveOPFinishInfoMap;
 
-	map<string,vector<CommNode*>> participatingCommNodesMap;
+	map<string,vector<CommNode*>*> participatingCommNodesMap;
 
 	void insertCollectiveOPAndCondPair(string opName,int rank, Condition cond, CommNode* node);
 
