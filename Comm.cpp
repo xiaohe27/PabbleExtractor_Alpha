@@ -5,6 +5,7 @@ using namespace clang;
 
 int InitEndIndex=100;
 
+
 //some functions
 int min(int a, int b){if(a<b) return a; else return b;}
 int max(int a, int b){if(a<b) return b; else return a;}
@@ -32,10 +33,10 @@ int maxEnd(int a, int b){
 }
 
 bool isCmpOp(string op){
-	
+
 	array<string,6> cmpOPArr={"==","<",">","<=",">=","!="};
 	int size=cmpOPArr.size();
-	
+
 	for (int i = 0; i < size; i++)
 	{
 		if(op==cmpOPArr[i])
@@ -73,7 +74,12 @@ string convertIntToStr(int number)
 }
 
 
-
+void writeToFile(string content){
+	ofstream outputFile("Protocol.txt", ios_base::out | ios_base::app);
+	
+	outputFile <<"\n"<< content <<"\n";
+	
+}
 
 
 /********************************************************************/
@@ -82,10 +88,10 @@ string convertIntToStr(int number)
 
 
 CommManager::CommManager(CompilerInstance *ci0, int numOfProc0){
-			
-		this->ci=ci0;
-		this->numOfProc=numOfProc0;
-		this->paramRoleNameMapping[WORLD]=new ParamRole();
+
+	this->ci=ci0;
+	this->numOfProc=numOfProc0;
+	this->paramRoleNameMapping[WORLD]=new ParamRole();
 
 }
 
@@ -105,7 +111,7 @@ bool CommManager::isAVar(string name){
 
 //test whether a string contains a rank-related var name
 bool CommManager::containsRankStr(string str){
-	
+
 	for (auto &x:this->rankVarOffsetMapping)
 	{
 		string rankRelatedVarName=x.first;
@@ -122,7 +128,7 @@ bool CommManager::containsRankStr(string str){
 Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 	string exprStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),expr);
 	cout<<"The expr "<<exprStr<<" is obtained by Comm.cpp"<<endl;
-	
+
 	cout<<"The stmt class type is "<<expr->getStmtClassName()<<endl;
 
 
@@ -130,20 +136,20 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 	//if it is a single number
 	bool boolResult;
 	bool canBeEval=expr->EvaluateAsBooleanCondition(boolResult,this->ci->getASTContext());
-	
+
 	if(canBeEval){
 		cout <<"The expr can be evaluated!"<<endl;
 
 		cout<<"The boolResult is "<<boolResult<<endl;
 
-			if(boolResult){
-				
-				return Condition(true);
+		if(boolResult){
 
-			}
-			
-			else{return Condition(false);}			
-		
+			return Condition(true);
+
+		}
+
+		else{return Condition(false);}			
+
 	}
 
 	else{cout <<"The expr can NOT be evaluated!"<<endl;}
@@ -205,10 +211,10 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 		cout<<"The rhs is "<<rhs<<"\n";
 		cout<<"The operator is : "<<op<<endl;
 
-		
-		
-///////////////////////////////////////////////////////////////////////////////////////////////////
-		
+
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 		if(op=="&&"){
 			Condition lCond=extractCondFromBoolExpr(lhs);
@@ -282,34 +288,34 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 		////it is a basic op
 		else {
 
-		//if the cur op is not a comparison op, then return true;
-		if(!binOP->isComparisonOp())
-			return Condition(true);
+			//if the cur op is not a comparison op, then return true;
+			if(!binOP->isComparisonOp())
+				return Condition(true);
 
-		//if either lhs or rhs are bin op, then return true;
-		if(isa<BinaryOperator>(lhs) || isa<BinaryOperator>(rhs))
-			return Condition(true);
+			//if either lhs or rhs are bin op, then return true;
+			if(isa<BinaryOperator>(lhs) || isa<BinaryOperator>(rhs))
+				return Condition(true);
 
-			
+
 			bool leftIsVar=false;
 			bool rightIsVar=false;
 			string lVarName=lhsStr;
 			string rVarName=rhsStr;
 
-			
-//check if the lhs or rhs are var decl.
-////////////////////////////////////////////////////////////////////////////////
+
+			//check if the lhs or rhs are var decl.
+			////////////////////////////////////////////////////////////////////////////////
 			if (DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(lhs)) {
 				// It's a reference to a declaration...
 				cout<<"//It's a reference to a declaration..."<<endl;
 
 				if (VarDecl *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-				// It's a reference to a variable (a local, function parameter, global, or static data member).
-				cout<<"// It's a reference to a variable (a local, function parameter, global, or static data member)."<<endl;
+					// It's a reference to a variable (a local, function parameter, global, or static data member).
+					cout<<"// It's a reference to a variable (a local, function parameter, global, or static data member)."<<endl;
 
-				lVarName=VD->getQualifiedNameAsString();
-				std::cout << "LHS is var: " << lVarName << std::endl;
-				leftIsVar=true;
+					lVarName=VD->getQualifiedNameAsString();
+					std::cout << "LHS is var: " << lVarName << std::endl;
+					leftIsVar=true;
 				}
 			}
 
@@ -320,16 +326,16 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 
 
 			if (DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(rhs)) {
-				
+
 				// It's a reference to a declaration...
 				cout<<"//It's a reference to a declaration..."<<endl;
 				if (VarDecl *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
-				// It's a reference to a variable (a local, function parameter, global, or static data member).
-				cout<<"// It's a reference to a variable (a local, function parameter, global, or static data member)."<<endl;
-				
-				rVarName=VD->getQualifiedNameAsString();
-				std::cout << "RHS is var: " << rVarName << std::endl;
-				rightIsVar=true;
+					// It's a reference to a variable (a local, function parameter, global, or static data member).
+					cout<<"// It's a reference to a variable (a local, function parameter, global, or static data member)."<<endl;
+
+					rVarName=VD->getQualifiedNameAsString();
+					std::cout << "RHS is var: " << rVarName << std::endl;
+					rightIsVar=true;
 				}
 			}
 
@@ -337,7 +343,7 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 				if(this->isAVar(rVarName)){rightIsVar=true;}
 			}
 
-////////////////////////////////////////////////////////////////////////////////
+			////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -356,12 +362,12 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 						nonRankVarName=lVarName;
 
 						if (rhs->EvaluateAsInt(Result, this->ci->getASTContext())) {
-						int num=atoi(Result.toString(10).c_str());
-						std::cout << "The non-rank cond is created by (" <<op<<","<< num <<")"<< std::endl;
+							int num=atoi(Result.toString(10).c_str());
+							std::cout << "The non-rank cond is created by (" <<op<<","<< num <<")"<< std::endl;
 
-						Condition cond=Condition::createCondByOp(op,num);
-						cond.setNonRankVarName(lVarName);
-						this->insertTmpNonRankVarCond(lVarName,cond);
+							Condition cond=Condition::createCondByOp(op,num);
+							cond.setNonRankVarName(lVarName);
+							this->insertTmpNonRankVarCond(lVarName,cond);
 						}
 					}
 
@@ -369,22 +375,22 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 						nonRankVarName=rVarName;
 
 						if (lhs->EvaluateAsInt(Result, this->ci->getASTContext())) {
-						int num=atoi(Result.toString(10).c_str());
-						std::cout << "The non-rank cond is created by (" <<op<<","<< num <<")"<< std::endl;
+							int num=atoi(Result.toString(10).c_str());
+							std::cout << "The non-rank cond is created by (" <<op<<","<< num <<")"<< std::endl;
 
-						Condition cond=Condition::createCondByOp(op,num);
-						cond.setNonRankVarName(rVarName);
-						this->insertTmpNonRankVarCond(rVarName,cond);
+							Condition cond=Condition::createCondByOp(op,num);
+							cond.setNonRankVarName(rVarName);
+							this->insertTmpNonRankVarCond(rVarName,cond);
 						}
 					}
 
-				//if one of the vars is non-rank var, then it might be true
-				//so return the "all" range.
-				cout<<"Either the lvar or rvar is a non-rank var. So All Range Condition!"<<endl;
-				//also set the name of the non-rank var
-				Condition nonRankCond=Condition(true);
-				nonRankCond.setNonRankVarName(nonRankVarName);
-				return nonRankCond;
+					//if one of the vars is non-rank var, then it might be true
+					//so return the "all" range.
+					cout<<"Either the lvar or rvar is a non-rank var. So All Range Condition!"<<endl;
+					//also set the name of the non-rank var
+					Condition nonRankCond=Condition(true);
+					nonRankCond.setNonRankVarName(nonRankVarName);
+					return nonRankCond;
 			}
 
 			else{
@@ -422,7 +428,7 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 					}
 				}
 			}			
-			
+
 		}
 	}
 
@@ -433,33 +439,33 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 
 
 void CommManager::insertCondition(Expr *expr){
-			this->clearTmpNonRankVarCondStackMap();	
+	this->clearTmpNonRankVarCondStackMap();	
 
-			Condition cond=this->extractCondFromBoolExpr(expr);
+	Condition cond=this->extractCondFromBoolExpr(expr);
 
-			if(!stackOfRankConditions.empty()){
-				Condition top=stackOfRankConditions.back();
-				cond=top.AND(cond);
-			}
+	if(!stackOfRankConditions.empty()){
+		Condition top=stackOfRankConditions.back();
+		cond=top.AND(cond);
+	}
 
-			stackOfRankConditions.push_back(cond);
+	stackOfRankConditions.push_back(cond);
 
-			cout<<"\n\n\n\n\nThe inner condition is \n"
-				<<stackOfRankConditions.back().printConditionInfo()
-				<<"\n\n\n\n\n"<<endl;
+	cout<<"\n\n\n\n\nThe inner condition is \n"
+		<<stackOfRankConditions.back().printConditionInfo()
+		<<"\n\n\n\n\n"<<endl;
 
 
-			string commGroupName=cond.getGroupName();
-			if(this->paramRoleNameMapping.count(commGroupName)>0)
-				paramRoleNameMapping[commGroupName]->addAllTheRangesInTheCondition(cond);
+	string commGroupName=cond.getGroupName();
+	if(this->paramRoleNameMapping.count(commGroupName)>0)
+		paramRoleNameMapping[commGroupName]->addAllTheRangesInTheCondition(cond);
 
-			else
-			{
-				paramRoleNameMapping[commGroupName]=new ParamRole(cond);
-			}
+	else
+	{
+		paramRoleNameMapping[commGroupName]=new ParamRole(cond);
+	}
 
 }
-	
+
 
 
 
@@ -471,7 +477,7 @@ void CommManager::insertRankVarAndOffset(string varName, int offset){
 	else{
 		this->rankVarOffsetMapping[varName]=offset;
 	}
-	
+
 }
 
 void CommManager::cancelRelation(string varName){
@@ -489,13 +495,13 @@ bool CommManager::isVarRelatedToRank(string varName){
 }
 
 Condition CommManager::getTopCondition(){
-		if(this->stackOfRankConditions.size()==0){
-			return Condition(true);
-		}
+	if(this->stackOfRankConditions.size()==0){
+		return Condition(true);
+	}
 
-		else{
-			return this->stackOfRankConditions.back();
-		}
+	else{
+		return this->stackOfRankConditions.back();
+	}
 }
 
 void CommManager::simplyInsertCond(Condition cond){
@@ -505,25 +511,25 @@ void CommManager::simplyInsertCond(Condition cond){
 }
 
 void CommManager::insertExistingCondition(Condition cond){
-		cond.normalize();
+	cond.normalize();
 
-		this->stackOfRankConditions.push_back(cond);
+	this->stackOfRankConditions.push_back(cond);
 
-		string commGroupName=cond.getGroupName();
-			if(this->paramRoleNameMapping.count(commGroupName)>0)
-				paramRoleNameMapping[commGroupName]->addAllTheRangesInTheCondition(cond);
+	string commGroupName=cond.getGroupName();
+	if(this->paramRoleNameMapping.count(commGroupName)>0)
+		paramRoleNameMapping[commGroupName]->addAllTheRangesInTheCondition(cond);
 
-			else
-			{
-				paramRoleNameMapping[commGroupName]=new ParamRole(cond);
-			}
+	else
+	{
+		paramRoleNameMapping[commGroupName]=new ParamRole(cond);
+	}
 
 }
 
 Condition CommManager::popCondition(){
-		Condition tmp=stackOfRankConditions.back();	
-		this->stackOfRankConditions.pop_back();
-		return tmp;
+	Condition tmp=stackOfRankConditions.back();	
+	this->stackOfRankConditions.pop_back();
+	return tmp;
 }
 
 
@@ -543,7 +549,7 @@ void CommManager::insertNonRankVarAndCondtion(string nonRankVar, Condition cond)
 			Condition top=this->getTopCond4NonRankVar(nonRankVar);
 			cond=cond.AND(top);
 		}
-		
+
 		cond.setNonRankVarName(nonRankVar);
 		this->nonRankVarAndStackOfCondMapping[nonRankVar].push(cond);
 	}
@@ -585,7 +591,7 @@ map<string,stack<Condition>> CommManager::getTmpNonRankVarCondStackMap()
 Condition CommManager::getTopCond4NonRankVar(string nonRankVar){
 	if(this->nonRankVarAndStackOfCondMapping.count(nonRankVar)>0){
 		if(this->nonRankVarAndStackOfCondMapping[nonRankVar].size()>0)
-		return this->nonRankVarAndStackOfCondMapping[nonRankVar].top();
+			return this->nonRankVarAndStackOfCondMapping[nonRankVar].top();
 
 		else
 			return Condition(false);
@@ -597,15 +603,15 @@ Condition CommManager::getTopCond4NonRankVar(string nonRankVar){
 void CommManager::removeTopCond4NonRankVar(string nonRankVar){
 	if(this->nonRankVarAndStackOfCondMapping.count(nonRankVar)>0){
 		if(this->nonRankVarAndStackOfCondMapping[nonRankVar].size()>0){
-		this->nonRankVarAndStackOfCondMapping[nonRankVar].pop();
-		
-		if(this->nonRankVarAndStackOfCondMapping[nonRankVar].size()==0)
-			this->nonRankVarAndStackOfCondMapping.erase(nonRankVar);
+			this->nonRankVarAndStackOfCondMapping[nonRankVar].pop();
+
+			if(this->nonRankVarAndStackOfCondMapping[nonRankVar].size()==0)
+				this->nonRankVarAndStackOfCondMapping.erase(nonRankVar);
 		}
 
 		else
 			throw new MPI_TypeChecking_Error("try to pop from an empty stack of non-rank var condtion");
-//			this->nonRankVarAndStackOfCondMapping.erase(nonRankVar);
+		//			this->nonRankVarAndStackOfCondMapping.erase(nonRankVar);
 	}
 
 	else{
@@ -620,11 +626,11 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 	string errInfo2="the current system does not allow to use unknown non-rank vars to denote target processes";
 	string errInfo3="To represent the rank of a process using plus op, current system only support number plus number or rank-related var plus number";
 	string errInfo4="To represent the rank of a process using minus op, current system only support rank-related var minus number";
-	
-	
+
+
 	string exprStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),expr);
 	cout<<"The target expr "<<exprStr<<" is obtained by the extract method"<<endl;
-	
+
 	cout<<"The stmt class type is "<<expr->getStmtClassName()<<endl;
 
 
@@ -632,14 +638,14 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 	//if it is a single number
 	APSInt IntResult;
 	bool canBeEval=expr->EvaluateAsInt(IntResult,ci->getASTContext());
-	
+
 	if(canBeEval){
 		cout <<"The expr can be evaluated as int!"<<endl;
 
 		int rankNum=atoi(IntResult.toString(10).c_str());
 
 		cout<<"The rank here is "<<rankNum<<endl;
-		
+
 		return Condition(Range(rankNum,rankNum));
 	}
 
@@ -712,13 +718,13 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 				return Condition(Range(rankNum,rankNum));
 			}
 
-			
+
 			if(op=="+"){
 				if(this->hasAssociatedWithCondition(lhsStr) && rhsIsNum){
 					return this->extractCondFromTargetExpr(lhs).addANumber(rhsNum);
 				}
 
-	
+
 
 				if(this->hasAssociatedWithCondition(rhsStr) && lhsIsNum){
 					return this->extractCondFromTargetExpr(rhs).addANumber(lhsNum);
@@ -736,11 +742,11 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 
 				throw new MPI_TypeChecking_Error(errInfo4);
 			}
-		
+
 		}
 
-		
-		
+
+
 		throw new MPI_TypeChecking_Error(errInfo);
 
 	}
@@ -786,7 +792,7 @@ ParamRole* CommManager::getParamRoleWithName(string name) const{
 	else{
 		return nullptr;
 	}
-		
+
 }
 
 /********************************************************************/

@@ -1,13 +1,7 @@
 #ifndef MPITypeCheckingConsumer_H
 #define MPITypeCheckingConsumer_H
 
-#include <iostream>
-#include <map>
-#include <algorithm>
-#include <vector>
 #include "Comm.h"
-
-
 
 
 using namespace clang;

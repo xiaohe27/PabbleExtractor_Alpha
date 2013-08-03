@@ -377,9 +377,10 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 			actuallyHappenedOP->setExecutorCond(actualExecutor);
 			actuallyHappenedOP->setTargetCond(actualTarget);
 
-			cout<<"\n\n\nThe actually happened MPI OP is :\n";
-			actuallyHappenedOP->printMPIOP();
-			cout<<"\n\n\n"<<endl;
+
+			string outToFile="\n\n\nThe actually happened MPI OP is :\n";
+			outToFile.append(actuallyHappenedOP->printMPIOP());
+			writeToFile(outToFile);
 
 			/////////////////////////////////////////////////////////////////////////////////////////////////
 			Condition unblockedRoleCond(false);

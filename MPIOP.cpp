@@ -36,37 +36,40 @@ MPIOperation::MPIOperation(string opName0,int opType0, string dataType0,Conditio
 	this->isInPendingList=false;
 }
 
-void MPIOperation::printMPIOP(){
-	cout<<this->srcCode<<endl;
+string MPIOperation::printMPIOP(){
+	string out="\n";
+	out+=this->srcCode;
 
-	cout<<"Its op type is "<<opType<<endl;
+	out+=":\nIts op type is "+opType;
 
 	if (this->isTargetDependOnExecutor)
 	{
 		if (this->getSrcCond().isIgnored())
-			cout<<"Its src proc are "<<targetExprStr<<endl;
+			out+="\nIts src proc are "+targetExprStr;
 
 		else
-			cout<<"Its src proc are "<<this->getSrcCond().printConditionInfo()<<endl;
+			out+="\nIts src proc are "+this->getSrcCond().printConditionInfo();
 
 		if (this->getDestCond().isIgnored())
-			cout<<"Its dest proc are "<<targetExprStr<<endl;
+			out+="\nIts dest proc are "+targetExprStr;
 
 		else
-			cout<<"Its dest proc are "<<this->getDestCond().printConditionInfo()<<endl;
+			out+="\nIts dest proc are "+this->getDestCond().printConditionInfo();
 	}
 
 	else{
-		cout<<"Its src proc are "<<this->getSrcCond().printConditionInfo()<<endl;
+		out+="\nIts src proc are "+this->getSrcCond().printConditionInfo();
 
-		cout<<"Its dest proc are "<<this->getDestCond().printConditionInfo()<<endl;
+		out+="\nIts dest proc are "+this->getDestCond().printConditionInfo();
 	}
 
-	cout<<"The type of transmitted data is "<<dataType<<endl;
+	out+="\nThe type of transmitted data is "+dataType;
 
-	cout<<"The tag of transmitted data is "<<tag<<endl;
+	out+="\nThe tag of transmitted data is "+tag;
 
-	cout<<"The communication happens in group "<<group<<endl;
+	out+="\nThe communication happens in group "+group;
+
+	return out;
 }
 
 bool MPIOperation::isFinished(){

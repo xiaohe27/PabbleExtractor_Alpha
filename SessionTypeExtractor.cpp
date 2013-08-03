@@ -44,6 +44,10 @@ int main(int argc, char *argv[])
 		throw exception();
 	}
 
+	
+	ofstream outputFile("Protocol.txt");
+	outputFile.clear();
+	outputFile.close();
 
 	CompilerInstance ci;
 	DiagnosticOptions diagnosticOptions;
@@ -128,30 +132,8 @@ int main(int argc, char *argv[])
 	ci.createASTContext();
 
 
-
 	ci.createSema(clang::TU_Complete, NULL);
 
-
-	/**********************************************************************/
-	/*Compile the mpi file programmatically*/
-
-	int i;
-	printf ("Checking if processor is available...");
-	if (system(NULL)) 
-	{
-	puts ("Ok");
-	
-	printf ("Compile the MPI file %s\n",argv[1]);
-
-	string s="mpicc \"";
-	s.append(argv[1]);
-	s.append("\" -o result.o");
-
-
-	i=system(s.c_str());
-	printf ("The value returned was: %d.\n",i);
-	}
-	/**********************************************************************/
 
 	//read from the mpi src file
 	const FileEntry *pFile = ci.getFileManager().getFile(argv[1]);
@@ -176,11 +158,15 @@ int main(int argc, char *argv[])
 		//print the tree
 		astConsumer->printTheTree();
 
+
+		outputFile.close();
 	}
 
 
 	catch(MPI_TypeChecking_Error* funcErr){
 		funcErr->printErrInfo();
+
+		writeToFile(funcErr->errInfo);
 	}
 
 	catch(...){cout<<"There exists compile time error or unknown runtime error, please fix the error(s) first.";}

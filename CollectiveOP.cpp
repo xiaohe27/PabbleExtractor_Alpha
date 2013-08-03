@@ -11,7 +11,7 @@ void CollectiveOPManager::insertCollectiveOP(MPIOperation* op){
 	if (!op->isCollectiveOp())
 		return;
 
-	
+
 	string opName=op->getOpName();
 	Condition execCond=op->getExecutor();
 	Condition participants=op->getTargetCond();
@@ -47,11 +47,11 @@ void CollectiveOPManager::insertCollectiveOP(MPIOperation* op){
 
 
 void CollectiveOPManager::insertCollectiveOPAndCondPair(string opName, int rank, Condition cond, CommNode* node){
-	opName=opName+"_"+convertIntToStr(rank);
-	
+	string opNameKey=opName+"_"+convertIntToStr(rank);
+
 	//record the involved comm node.
-	if(this->participatingCommNodesMap.count(opName)){
-		vector<CommNode*> *vec=this->participatingCommNodesMap.at(opName);
+	if(this->participatingCommNodesMap.count(opNameKey)){
+		vector<CommNode*> *vec=this->participatingCommNodesMap.at(opNameKey);
 		bool found=false;
 
 		for (int i = 0; i < vec->size(); i++)
@@ -72,13 +72,13 @@ void CollectiveOPManager::insertCollectiveOPAndCondPair(string opName, int rank,
 	else{
 		vector<CommNode*> *vec=new vector<CommNode*>();
 		vec->push_back(node);
-		this->participatingCommNodesMap[opName]=vec;
+		this->participatingCommNodesMap[opNameKey]=vec;
 	}
 
 	//update participants condition
-	if (this->collectiveOPFinishInfoMap.count(opName)>0)
+	if (this->collectiveOPFinishInfoMap.count(opNameKey)>0)
 	{
-		Condition curCond=this->collectiveOPFinishInfoMap.at(opName);
+		Condition curCond=this->collectiveOPFinishInfoMap.at(opNameKey);
 		Condition repeatedCond=curCond.AND(cond);
 		if (!repeatedCond.isIgnored())
 		{
@@ -88,26 +88,30 @@ void CollectiveOPManager::insertCollectiveOPAndCondPair(string opName, int rank,
 				" perform collective operations multiple times!");
 		}
 
-		this->collectiveOPFinishInfoMap[opName]=curCond.OR(cond);
+		this->collectiveOPFinishInfoMap[opNameKey]=curCond.OR(cond);
 	}
 
 	else
 	{
-		this->collectiveOPFinishInfoMap[opName]=cond;
+		this->collectiveOPFinishInfoMap[opNameKey]=cond;
 	}
 
 	//check whether the condition has reached the fire condition of the collective op
-	if (this->collectiveOPFinishInfoMap.at(opName).isComplete())
-	{
-		this->collectiveOPFinishInfoMap.erase(opName);
+	if (this->collectiveOPFinishInfoMap.at(opNameKey).isComplete())
+	{	
+		string outToFile="\n\n\nThe actually happened MPI OP is :\n";
+		outToFile.append("Process "+convertIntToStr(rank)+" is doing an "+opName+" operation");
+		writeToFile(outToFile);
 
-		vector<CommNode*> *vec=this->participatingCommNodesMap.at(opName);
+		this->collectiveOPFinishInfoMap.erase(opNameKey);
+
+		vector<CommNode*> *vec=this->participatingCommNodesMap.at(opNameKey);
 		for (unsigned int i = 0; i < vec->size(); i++)
 		{
 			vec->at(i)->setMarked();
 		}
 
-		this->participatingCommNodesMap.erase(opName);
+		this->participatingCommNodesMap.erase(opNameKey);
 	}
 
 }

@@ -10,6 +10,9 @@
 #include <map>
 #include <string>
 #include <sstream>
+#include <fstream>
+#include <algorithm>
+
 
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/AST/Stmt.h"
@@ -46,6 +49,7 @@
 #define InitStartIndex -2
 //the init end index is N, the default num of proc is 100
 extern int InitEndIndex;
+
 #define InvalidIndex -3
 
 #define WORLD "MPI_COMM_WORLD"
@@ -55,16 +59,17 @@ using namespace clang;
 
 
 class MPI_TypeChecking_Error{
-private: string errInfo;
 
 public:
-		 MPI_TypeChecking_Error(string err){
-			this->errInfo=err;
-		 }
+	string errInfo;
 
-		 void printErrInfo(){
-			cout<<errInfo<<endl;
-		 }
+	MPI_TypeChecking_Error(string err){
+		this->errInfo=err;
+	}
+
+	void printErrInfo(){
+		cout<<errInfo<<endl;
+	}
 };
 
 string convertIntToStr(int number);
@@ -72,6 +77,8 @@ string convertIntToStr(int number);
 string stmt2str(SourceManager *sm, LangOptions lopt,clang::Stmt *stmt);
 
 bool evalIntCmpTruth(int arg1, int arg2, string op);
+
+void writeToFile(string content);
 
 bool isCmpOp(string op);
 
@@ -95,12 +102,12 @@ private:
 	bool shouldBeIgnored;
 
 public:
-	
+
 	int getStart(){return startPos;}
 	int getEnd(){return endPos;}
 
 	Range();
-	
+
 	Range(int s,int e);
 
 	bool isIgnored(){return shouldBeIgnored;}
@@ -112,13 +119,13 @@ public:
 	bool isSpecialRange(){return getEnd() < getStart();}
 
 	bool isSuperSetOf(Range ran);
-	
+
 	static Range createByOp(string op, int num);
 	static Range createByStartIndex(int start);
 	static Range createByEndIndex(int end);
 	Condition AND(Range other);
 	bool hasIntersectionWith(Range other);
-	
+
 	Condition OR(Range other);
 
 	bool isEqualTo(Range ran);
@@ -168,7 +175,7 @@ public:
 	bool isRangeConsecutive(){return this->rangeList.size()==1;}
 
 	Condition AND(Condition other);
-	
+
 	Condition OR(Condition other);
 
 	Condition Diff(Condition other);
@@ -251,13 +258,13 @@ public:
 
 class ParamRole{
 private:
-	
+
 	int size;
 	//the paramRole name is the communicator group name
 	string paramRoleName;
-	
+
 	st_tree localSessionTree;
-	
+
 	vector<Role*> *actualRoles;
 
 
@@ -266,7 +273,7 @@ public:
 	ParamRole();
 
 	ParamRole(Condition cond);
-	
+
 	~ParamRole(){delete actualRoles;}
 
 	bool hasARoleSatisfiesRange(Range ran);
@@ -276,7 +283,7 @@ public:
 	vector<Role*>* getTheRoles(){return this->actualRoles;}
 
 	void insertActualRole(Role *r, bool forceUpdate);
-	
+
 };
 
 
@@ -340,7 +347,7 @@ public:
 
 	bool isFinished();
 	bool isEmptyOP();
-	void printMPIOP();
+	string printMPIOP();
 
 };
 
@@ -390,15 +397,15 @@ public:
 	CommNode(MPIOperation *op0);
 
 	~CommNode(){
-	delete parent;
-	delete ops;
-	delete sibling;
+		delete parent;
+		delete ops;
+		delete sibling;
 	}
 
 	bool isLeaf() const;
 
 	bool isNegligible();
-	
+
 	int getNodeType(){return this->nodeType;}
 
 	string getNodeName(){return this->nodeName;}
@@ -448,7 +455,7 @@ public:
 	RecurNode(int size):CommNode(ST_NODE_RECUR){this->remainingNumOfIterations=size;}
 	bool hasKnownNumberOfIterations(){return this->remainingNumOfIterations!=-1;}
 	void visitOnce();
-	
+
 };
 
 class ContNode: public CommNode{
@@ -520,7 +527,7 @@ public:
 
 	Condition popCondition();
 
-	
+
 	void insertExistingCondition(Condition cond);
 
 	void insertRankVarAndOffset(string varName, int offset);
@@ -565,7 +572,7 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 class MPISimulator{
 private:
-	
+
 	CommNode *root;
 	CommNode *curNode;
 
