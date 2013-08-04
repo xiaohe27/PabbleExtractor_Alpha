@@ -525,6 +525,8 @@ public:
 
 	Condition extractCondFromTargetExpr(Expr *expr);
 
+	Condition getNegatedCondFromExpr(Expr *expr);
+
 	void insertCondition(Expr *expr);	
 
 	void simplyInsertCond(Condition cond);

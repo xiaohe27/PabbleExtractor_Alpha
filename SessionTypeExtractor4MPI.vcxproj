@@ -86,6 +86,9 @@
   <ItemGroup>
     <ClCompile Include="CollectiveOP.cpp" />
     <ClCompile Include="Comm.cpp" />
+    <ClCompile Include="ExtractBoolCond.cpp" />
+    <ClCompile Include="ExtractNegation.cpp" />
+    <ClCompile Include="ExtractTarCond.cpp" />
     <ClCompile Include="InteractionNode.cpp" />
     <ClCompile Include="MPIOP.cpp" />
     <ClCompile Include="MPITypeCheckingConsumer.cpp" />

@@ -17,37 +17,58 @@ using namespace llvm;
 int numOfProcesses;
 string filePath;
 
+bool strict=false;
+
+void parseArgs(int argc, char *argv[]){
+		if (argc < 3) {
+		cout<<"Not enough args."<<endl;
+	} else { 
+
+		std::cout << argv[0];
+		for (int i = 1; i < argc; i+=2) { 
+			if (i + 1 != argc) {// Check that we haven't finished parsing already
+				if (string(argv[i]) == "-f") {
+					// We know the next argument *should* be the filename:
+					filePath = argv[i + 1];
+					cout<<"The path of src file is "<<filePath<<endl;
+				} else if (string(argv[i]) == "-n") {
+					numOfProcesses = atoi(argv[i + 1]);
+					InitEndIndex=numOfProcesses;
+					cout<<"There are "<<numOfProcesses<<" processes!"<<endl;
+				} else if (string(argv[i]) == "-strict") {
+					string ans = argv[i + 1];
+					transform(ans.begin(), ans.end(), ans.begin(), ::tolower);
+					if (ans=="true" || ans=="y" || ans=="yes")
+						strict=true;
+
+					else 
+						strict=false;
+				} else {
+					std::cout << "\nNot enough or invalid arguments, please try again.\n";
+
+					throw exception();
+				}
+				std::cout << argv[i] << " ";
+			}
+		}
+
+	}
+}
+
 
 int main(int argc, char *argv[])
 {
 	clock_t initT, finalT;
 	initT=clock();
 
-	if(argc==2){
-		filePath=argv[1];
-		InitEndIndex=100;
-		cout<<"The path of src file is "<<argv[1]<<endl;
-	}
-	else if(argc==3){	
-		cout<<"There are two args"<<endl;
+	filePath="";
 
-		filePath=argv[1];
-		cout<<"The path of src file is "<<argv[1]<<endl;
+	parseArgs(argc,argv);
 
-		numOfProcesses=atoi(argv[2]);
+	if (filePath=="")
+	throw MPI_TypeChecking_Error("No MPI src code provided!");
 
-		InitEndIndex=numOfProcesses;
 
-		cout<<"There are "<<numOfProcesses<<" processes!"<<endl;
-	}
-
-	else{
-		cerr <<"The argument number should be one (only the mpi src code is provided)";
-		cerr <<"\tor two (if both the mpi src code and number of processes are provided.)"<<endl;
-		throw exception();
-	}
-
-	
 	ofstream outputFile("A:/MPI_SessionType_Extractor/SessionTypeExtractor4MPI/Debug/Protocol.txt");
 	outputFile.clear();
 	outputFile.close();
@@ -122,11 +143,11 @@ int main(int argc, char *argv[])
 	MPITypeCheckingConsumer *astConsumer;
 
 	if(numOfProcesses!=0){
-	astConsumer= new MPITypeCheckingConsumer(&ci,numOfProcesses);
+		astConsumer= new MPITypeCheckingConsumer(&ci,numOfProcesses);
 	}
-	
+
 	else{
-	astConsumer= new MPITypeCheckingConsumer(&ci);
+		astConsumer= new MPITypeCheckingConsumer(&ci);
 	}
 
 	ci.setASTConsumer(astConsumer);
@@ -139,7 +160,7 @@ int main(int argc, char *argv[])
 
 
 	//read from the mpi src file
-	const FileEntry *pFile = ci.getFileManager().getFile(argv[1]);
+	const FileEntry *pFile = ci.getFileManager().getFile(filePath);
 	ci.getSourceManager().createMainFileID(pFile);
 	/////////////////////////////////////////
 
@@ -179,9 +200,9 @@ int main(int argc, char *argv[])
 	finalT=clock()-initT;
 	double timePassed=(double)finalT / ((double)CLOCKS_PER_SEC);
 	string timeStr="\nThe program used "+convertDoubleToStr(timePassed)
-					+" seconds to generate the protocol.\n";
+		+" seconds to generate the protocol.\n";
 	writeToFile(timeStr);
-	
+
 	cout<<timeStr<<endl;
 
 	//checkIdTable(&ci);
