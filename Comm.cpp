@@ -32,19 +32,6 @@ int maxEnd(int a, int b){
 
 }
 
-bool isCmpOp(string op){
-
-	array<string,6> cmpOPArr={"==","<",">","<=",">=","!="};
-	int size=cmpOPArr.size();
-
-	for (int i = 0; i < size; i++)
-	{
-		if(op==cmpOPArr[i])
-			return true;
-	}
-
-	return false;
-}
 
 int compute(string op, int operand1, int operand2){
 	if(op=="+")

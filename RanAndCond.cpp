@@ -627,6 +627,11 @@ Condition Condition::OR(Condition other){
 
 
 Condition Condition::negateCondition(Condition cond){
+	if (!cond.isRelatedToRank())
+	{
+		return Condition(true);
+	}
+
 	if(cond.isIgnored()){
 		//negate of nothing becomes a complete condition
 		return Condition(true);
@@ -716,6 +721,18 @@ Range Condition::getTheRangeContainingTheNum(int num){
 	}
 
 	return Range();
+}
+
+
+bool Condition::hasSameRankNature(Condition other){
+	if (this->isRelatedToRank())
+	{
+		return other.isRelatedToRank();
+	}
+
+	else{
+		return !other.isRelatedToRank();
+	}
 }
 
 

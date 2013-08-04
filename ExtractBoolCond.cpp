@@ -62,14 +62,15 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 			string nonRankVarName=theCond.getNonRankVarName();
 			if (nonRankVarName!="")
 			{
+				if(this->tmpNonRankVarCondMap.count(nonRankVarName)){
 				Condition tmp=this->tmpNonRankVarCondMap[nonRankVarName].top();
 				this->tmpNonRankVarCondMap[nonRankVarName].pop();
 				Condition newC=Condition::negateCondition(tmp);
 				newC.setNonRankVarName(nonRankVarName);
-
 				this->insertTmpNonRankVarCond(nonRankVarName,newC);
+				}
 
-				return theCond;
+				return Condition(true);
 			}
 			return Condition::negateCondition(theCond);
 		}
@@ -102,9 +103,23 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 			Condition lCond=extractCondFromBoolExpr(lhs);
 			Condition rCond=extractCondFromBoolExpr(rhs);
 
+			//if warning level is high, then forbid the mixture of rank
+			//and non-rank condition...
+			if (strict && !lCond.hasSameRankNature(rCond))
+			{
+				string lCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
+				string rCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs);
+				string errInfo="\nCondition "+lCondStr+" and Condition "+rCondStr;
+				errInfo+=" are not compatible. They need to be both rank related or non-rank related.\n";
+				throw new MPI_TypeChecking_Error(errInfo);
+			}
+
 			string nonRankVarName="";
 			string lhsNonRankVarName=lCond.getNonRankVarName();
 			string rhsNonRankVarName=rCond.getNonRankVarName();
+
+			if (lhsNonRankVarName!="" && rhsNonRankVarName!="")
+				nonRankVarName=lhsNonRankVarName+"_"+rhsNonRankVarName;
 
 			if(lhsNonRankVarName==rhsNonRankVarName && lhsNonRankVarName!=""){
 				nonRankVarName=lhsNonRankVarName;
@@ -137,9 +152,23 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 			Condition lCond=extractCondFromBoolExpr(lhs);
 			Condition rCond=extractCondFromBoolExpr(rhs);
 
+			//if warning level is high, then forbid the mixture of rank
+			//and non-rank condition...
+			if (strict && !lCond.hasSameRankNature(rCond))
+			{
+				string lCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
+				string rCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs);
+				string errInfo="\nCondition "+lCondStr+" and Condition "+rCondStr;
+				errInfo+=" are not compatible. They need to be both rank related or non-rank related.\n";
+				throw new MPI_TypeChecking_Error(errInfo);
+			}
+
 			string nonRankVarName="";
 			string lhsNonRankVarName=lCond.getNonRankVarName();
 			string rhsNonRankVarName=rCond.getNonRankVarName();
+
+			if (lhsNonRankVarName!="" && rhsNonRankVarName!="")
+				nonRankVarName=lhsNonRankVarName+"_"+rhsNonRankVarName;
 
 			if(lhsNonRankVarName==rhsNonRankVarName && lhsNonRankVarName!=""){
 				nonRankVarName=lhsNonRankVarName;

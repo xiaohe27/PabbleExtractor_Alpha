@@ -47,8 +47,9 @@
 
 
 #define InitStartIndex -2
-//the init end index is N, the default num of proc is 100
+
 extern int InitEndIndex;
+extern bool strict;
 
 #define InvalidIndex -3
 
@@ -82,7 +83,6 @@ bool evalIntCmpTruth(int arg1, int arg2, string op);
 
 void writeToFile(string content);
 
-bool isCmpOp(string op);
 
 int min(int a, int b);
 int max(int a, int b);
@@ -191,6 +191,10 @@ public:
 	bool hasSameGroupComparedTo(Condition other);
 
 	string getNonRankVarName(){return this->nonRankVarName;}
+
+	bool isRelatedToRank(){return this->nonRankVarName=="";}
+
+	bool hasSameRankNature(Condition other);//if both are (NOT) related to rank, then ret true 
 
 	void setNonRankVarName(string name){this->nonRankVarName=name;}
 

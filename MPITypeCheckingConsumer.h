@@ -11,8 +11,6 @@ using namespace llvm;
 class MPITypeCheckingConsumer;
 
 
-extern bool strict;
-
 void parseArgs(int argc, char *argv[]);
 void checkIdTable(clang::CompilerInstance *ci);
 string decl2str(SourceManager *sm, LangOptions lopt,Decl *d);
