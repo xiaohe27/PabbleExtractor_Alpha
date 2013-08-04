@@ -43,8 +43,9 @@ void CommNode::init(int type, vector<MPIOperation*> *theOPs){
 
 }
 
-CommNode::CommNode(int type){
+CommNode::CommNode(int type, Condition cond){
 	init(type, nullptr);
+	this->setCond(cond);
 }
 
 CommNode::CommNode(MPIOperation *op0){
@@ -56,6 +57,7 @@ CommNode::CommNode(MPIOperation *op0){
 		theOPs->push_back(op0);
 
 		init(op0->getOPType(),theOPs);
+		this->setCond(Condition(true));
 	}
 
 	else{

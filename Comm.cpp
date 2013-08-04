@@ -124,35 +124,6 @@ bool CommManager::containsRankStr(string str){
 
 
 
-void CommManager::insertCondition(Expr *expr){
-	this->clearTmpNonRankVarCondStackMap();	
-
-	Condition cond=this->extractCondFromBoolExpr(expr);
-
-	if(!stackOfRankConditions.empty()){
-		Condition top=stackOfRankConditions.back();
-		cond=top.AND(cond);
-	}
-
-	stackOfRankConditions.push_back(cond);
-
-	cout<<"\n\n\n\n\nThe inner condition is \n"
-		<<stackOfRankConditions.back().printConditionInfo()
-		<<"\n\n\n\n\n"<<endl;
-
-
-	string commGroupName=cond.getGroupName();
-	if(this->paramRoleNameMapping.count(commGroupName)>0)
-		paramRoleNameMapping[commGroupName]->addAllTheRangesInTheCondition(cond);
-
-	else
-	{
-		paramRoleNameMapping[commGroupName]=new ParamRole(cond);
-	}
-
-}
-
-
 
 
 void CommManager::insertRankVarAndOffset(string varName, int offset){
@@ -180,43 +151,6 @@ bool CommManager::isVarRelatedToRank(string varName){
 
 }
 
-Condition CommManager::getTopCondition(){
-	if(this->stackOfRankConditions.size()==0){
-		return Condition(true);
-	}
-
-	else{
-		return this->stackOfRankConditions.back();
-	}
-}
-
-void CommManager::simplyInsertCond(Condition cond){
-	cond.normalize();
-
-	this->stackOfRankConditions.push_back(cond);
-}
-
-void CommManager::insertExistingCondition(Condition cond){
-	cond.normalize();
-
-	this->stackOfRankConditions.push_back(cond);
-
-	string commGroupName=cond.getGroupName();
-	if(this->paramRoleNameMapping.count(commGroupName)>0)
-		paramRoleNameMapping[commGroupName]->addAllTheRangesInTheCondition(cond);
-
-	else
-	{
-		paramRoleNameMapping[commGroupName]=new ParamRole(cond);
-	}
-
-}
-
-Condition CommManager::popCondition(){
-	Condition tmp=stackOfRankConditions.back();	
-	this->stackOfRankConditions.pop_back();
-	return tmp;
-}
 
 
 void CommManager::insertRankVarAndCommGroupMapping(string rankVar, string commGroup){
@@ -333,7 +267,7 @@ int CommManager::getOffSet4RankRelatedVar(string varName){
 }
 
 
-const map<string,ParamRole*> CommManager::getParamRoleMapping() const{
+map<string,ParamRole*> CommManager::getParamRoleMapping() const{
 	return this->paramRoleNameMapping;
 }
 

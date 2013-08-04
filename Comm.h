@@ -397,7 +397,7 @@ private:
 
 public:
 	//construct an intermediate node
-	CommNode(int type);
+	CommNode(int type, Condition cond);
 
 	//construct a leaf; 
 	CommNode(MPIOperation *op0);
@@ -459,8 +459,8 @@ private:
 	int remainingNumOfIterations;
 
 public:
-	RecurNode():CommNode(ST_NODE_RECUR){this->remainingNumOfIterations=-1;}
-	RecurNode(int size):CommNode(ST_NODE_RECUR){this->remainingNumOfIterations=size;}
+	RecurNode():CommNode(ST_NODE_RECUR,Condition(true)){this->remainingNumOfIterations=-1;}
+	RecurNode(int size):CommNode(ST_NODE_RECUR,Condition(true)){this->remainingNumOfIterations=size;}
 	bool hasKnownNumberOfIterations(){return this->remainingNumOfIterations!=-1;}
 	void visitOnce();
 
@@ -471,7 +471,7 @@ private:
 	RecurNode* refNode;
 
 public:
-	ContNode(RecurNode *node):CommNode(ST_NODE_CONTINUE){this->refNode=node;}
+	ContNode(RecurNode *node):CommNode(ST_NODE_CONTINUE,Condition(true)){this->refNode=node;}
 
 	void visit(){this->refNode->visitOnce();}
 
@@ -485,8 +485,6 @@ public:
 class CommManager{
 
 private:
-
-	vector<Condition> stackOfRankConditions;
 
 	map<string,ParamRole*>  paramRoleNameMapping;
 
@@ -527,18 +525,11 @@ public:
 
 	Condition extractCondFromBoolExpr(Expr *expr);
 
-	Condition extractCondFromTargetExpr(Expr *expr);
+	Condition extractCondFromTargetExpr(Expr *expr, Condition execCond);
 
-	Condition getNegatedCondFromExpr(Expr *expr);
-
-	void insertCondition(Expr *expr);	
-
-	void simplyInsertCond(Condition cond);
-
-	Condition popCondition();
+	Condition getNegatedCondFromExpr(Expr *expr); 
 
 
-	void insertExistingCondition(Condition cond);
 
 	void insertRankVarAndOffset(string varName, int offset);
 
@@ -557,9 +548,8 @@ public:
 
 	bool hasAssociatedWithCondition(string varName);
 
-	Condition getTopCondition();
 
-	const map<string,ParamRole*> getParamRoleMapping() const;
+	map<string,ParamRole*> getParamRoleMapping() const;
 	ParamRole* getParamRoleWithName(string name) const;
 };
 
@@ -595,6 +585,7 @@ public:
 	MPISimulator(CommManager *commManager);
 	void insertNode(CommNode *node);
 	void gotoParent();
+	Condition getCurExecCond(){return this->curNode->getCond();}
 
 	void simulate();
 

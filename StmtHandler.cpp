@@ -102,20 +102,26 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 		return true;
 
 	//cout <<"The if stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(), ifStmt) <<endl;
-	CommNode *choiceNode=new CommNode(ST_NODE_CHOICE);
+	CommNode *choiceNode=new CommNode(ST_NODE_CHOICE,Condition(true));
 
 	//the choice node will become the cur node automatically
 	this->mpiSimulator->insertNode(choiceNode);
 
 
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	Expr *condExpr=ifStmt->getCond();
 	string typeOfCond=condExpr->getType().getAsString();
 
-	cout<<"Type of condition is "<<typeOfCond<<"\nCond Expr is: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
+	cout<<"Type of condition is "<<typeOfCond<<"\nCond Expr is: "
+		<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
 
-	//after exec this stmt, the condition for the then part will be put on the top of the stack
-	this->commManager->insertCondition(condExpr);
+	this->commManager->clearTmpNonRankVarCondStackMap();	
+
+	Condition thenCond=this->commManager->extractCondFromBoolExpr(condExpr);
+
+	cout<<"\n\n\n\n\nThe if condition is \n"
+		<<thenCond.printConditionInfo()
+		<<"\n\n\n\n\n"<<endl;
 
 	//insert the non-rank var conditions to formal stack, if any
 	vector<string> stackOfNonRankVarNames=this->analyzeNonRankVarCond(this->commManager->getTmpNonRankVarCondStackMap());
@@ -126,7 +132,7 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 	//before traverse the then part, create a root node for it 
 	//only the processes that satisfy the then part conditon can enter the block!
-	CommNode *thenNode=new CommNode(ST_NODE_ROOT);
+	CommNode *thenNode=new CommNode(ST_NODE_ROOT,thenCond);
 	this->mpiSimulator->insertNode(thenNode);
 
 	this->TraverseStmt(ifStmt->getThen());
@@ -136,21 +142,25 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 	//should remove the condition for the then part now.
 	cout<<"//should remove the condition for the then part now."<<endl;
-	Condition condInIfPart=this->commManager->popCondition();
+	
 	this->removeAndAddNewNonRankVarCondInStack(stackOfNonRankVarNames);
 
+	
+	Condition condInElsePart;
+	if(strict){ //if only the same type of expr appears in the conditional expr
+		condInElsePart=Condition::negateCondition(thenCond);
+	}
 
+	else{//used in non-strict mode
+		condInElsePart=this->commManager->getNegatedCondFromExpr(condExpr);
+	}
 
-	//	Condition curCond=Condition::negateCondition(condInIfPart);
-	Condition topCond=this->commManager->getTopCondition();
-	Condition condInElsePart=topCond.Diff(condInIfPart);
-	this->commManager->insertExistingCondition(condInElsePart);
 
 	cout << "\n\n\n\n\nThe condition in else part is \n"<<condInElsePart.printConditionInfo()
 		<<"\n\n\n\n\n"<<endl;
 
 	//before visit else part, create a node for it
-	CommNode *elseNode=new CommNode(ST_NODE_ROOT);
+	CommNode *elseNode=new CommNode(ST_NODE_ROOT,condInElsePart);
 	this->mpiSimulator->insertNode(elseNode);
 
 
@@ -159,9 +169,6 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	this->TraverseStmt(ifStmt->getElse());
 
 	this->mpiSimulator->gotoParent();
-
-	cout<<"//should remove the condition for the else part now."<<endl;
-	this->commManager->popCondition();
 
 	this->removeNonRankVarCondInStack(stackOfNonRankVarNames);
 
@@ -350,7 +357,7 @@ bool MPITypeCheckingConsumer::VisitContinueStmt(ContinueStmt *S){
 
 	cout <<"Call Continue stmt" <<endl;
 	
-	CommNode *cont=new CommNode(ST_NODE_CONTINUE);
+	CommNode *cont=new CommNode(ST_NODE_CONTINUE,Condition(true));
 	this->mpiSimulator->insertNode(cont);
 	return true;
 }

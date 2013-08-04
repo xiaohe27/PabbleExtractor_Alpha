@@ -6,7 +6,7 @@ using namespace clang;
 
 
 
-Condition CommManager::extractCondFromTargetExpr(Expr *expr){
+Condition CommManager::extractCondFromTargetExpr(Expr *expr, Condition execCond){
 	string errInfo="The current system does not support the operators other than + or - when constructing the target of MPI operation";
 	string errInfo2="the current system does not allow to use unknown non-rank vars to denote target processes";
 	string errInfo3="To represent the rank of a process using plus op, current system only support number plus number or rank-related var plus number";
@@ -39,7 +39,7 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 	//if it is a single var
 	if(this->isAVar(exprStr)){
 		if(this->isVarRelatedToRank(exprStr))
-			return this->getTopCondition().addANumber(this->getOffSet4RankRelatedVar(exprStr));
+			return execCond.addANumber(this->getOffSet4RankRelatedVar(exprStr));
 
 		else if(this->nonRankVarAndStackOfCondMapping.count(exprStr)>0){
 			if(this->nonRankVarAndStackOfCondMapping[exprStr].size()>0){
@@ -59,7 +59,7 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 		Expr *withoutParen=bracketExpr->getSubExpr();
 		cout<<"The expr without brackets is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),withoutParen)<<endl;
 
-		return extractCondFromTargetExpr(withoutParen);
+		return extractCondFromTargetExpr(withoutParen,execCond);
 	}
 
 
@@ -106,13 +106,13 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 
 			if(op=="+"){
 				if(this->hasAssociatedWithCondition(lhsStr) && rhsIsNum){
-					return this->extractCondFromTargetExpr(lhs).addANumber(rhsNum);
+					return this->extractCondFromTargetExpr(lhs,execCond).addANumber(rhsNum);
 				}
 
 
 
 				if(this->hasAssociatedWithCondition(rhsStr) && lhsIsNum){
-					return this->extractCondFromTargetExpr(rhs).addANumber(lhsNum);
+					return this->extractCondFromTargetExpr(rhs,execCond).addANumber(lhsNum);
 				}
 
 
@@ -122,7 +122,7 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 			// minus
 			else{
 				if(this->hasAssociatedWithCondition(lhsStr) && rhsIsNum){
-					return this->extractCondFromTargetExpr(lhs).addANumber(-rhsNum);
+					return this->extractCondFromTargetExpr(lhs,execCond).addANumber(-rhsNum);
 				}
 
 				throw new MPI_TypeChecking_Error(errInfo4);

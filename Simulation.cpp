@@ -40,17 +40,35 @@ void VisitResult::printVisitInfo(){
 MPISimulator::MPISimulator(CommManager *commMgr){
 	this->commManager=commMgr;
 
-	root=new CommNode(ST_NODE_ROOT);
-	root->setCond(true);
+	root=new CommNode(ST_NODE_ROOT,Condition(true));
 
 	curNode=root;
 
 }
 
 void MPISimulator::insertNode(CommNode *node){
+	Condition curCond=this->curNode->getCond();
+	Condition nodeCond=node->getCond();
+	if (!curCond.isComplete() && !nodeCond.isRelatedToRank())
+	{
+		string errInfo="The non-rank related node cannot be inserted into the node ";
+		errInfo+="with condition "+curCond.printConditionInfo();
+		throw new MPI_TypeChecking_Error(errInfo);
+	}
 
 	//set the condition for the node.
-	node->setCond(this->commManager->getTopCondition());
+	Condition newCond=curCond.AND(nodeCond);
+	newCond.normalize();
+	node->setCond(newCond);
+
+	string commGroupName=node->getCond().getGroupName();
+	if(this->commManager->getParamRoleMapping().count(commGroupName)>0)
+		this->commManager->getParamRoleMapping().at(commGroupName)->addAllTheRangesInTheCondition(node->getCond());
+
+	else
+		this->commManager->getParamRoleMapping()[commGroupName]=new ParamRole(node->getCond());
+	
+
 
 	int nodeT=node->getNodeType();
 
@@ -271,11 +289,8 @@ void MPISimulator::simulate(){
 
 
 Condition MPISimulator::getTarCondFromExprAndExecCond(Expr *expr, Condition execCond){
-	this->commManager->simplyInsertCond(execCond);
 
-	Condition newTarget=this->commManager->extractCondFromTargetExpr(expr);
-
-	this->commManager->popCondition();
+	Condition newTarget=this->commManager->extractCondFromTargetExpr(expr, execCond);
 
 	return newTarget;
 }

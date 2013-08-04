@@ -167,7 +167,7 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 			string lhsNonRankVarName=lCond.getNonRankVarName();
 			string rhsNonRankVarName=rCond.getNonRankVarName();
 
-			if (lhsNonRankVarName!="" && rhsNonRankVarName!="")
+			if (lhsNonRankVarName!="" || rhsNonRankVarName!="")
 				nonRankVarName=lhsNonRankVarName+"_"+rhsNonRankVarName;
 
 			if(lhsNonRankVarName==rhsNonRankVarName && lhsNonRankVarName!=""){

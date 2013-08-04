@@ -6,8 +6,8 @@ using namespace clang;
 
 
 
-
-//TODO
+//TODO!!!
+////used in non-strict mode where 
 Condition CommManager::getNegatedCondFromExpr(Expr *expr){
 	string exprStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),expr);
 	cout<<"The expr "<<exprStr<<" is obtained by Comm.cpp"<<endl;

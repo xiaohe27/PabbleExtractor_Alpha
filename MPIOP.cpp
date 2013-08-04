@@ -366,7 +366,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 				mpiOP=new MPIOperation(			funcName,
 					ST_NODE_SEND, 
 					dataType,
-					this->commManager->getTopCondition(), //the performer
+					this->mpiSimulator->getCurExecCond(), //the performer
 					E->getArg(3), //the dest
 					tag, 
 					group);
@@ -375,12 +375,13 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			}
 
 			else{
+				Condition execCond=this->mpiSimulator->getCurExecCond();
 
 				mpiOP=new MPIOperation(		funcName,
 					ST_NODE_SEND, 
 					dataType,
-					this->commManager->getTopCondition(), //the performer
-					this->commManager->extractCondFromTargetExpr(E->getArg(3)), //the dest
+					execCond, //the performer
+					this->commManager->extractCondFromTargetExpr(E->getArg(3),execCond), //the dest
 					tag, 
 					group);
 
@@ -409,7 +410,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 
 			if (this->commManager->containsRankStr(src)){
 				mpiOP=new MPIOperation(funcName,ST_NODE_RECV, dataType,							
-					this->commManager->getTopCondition(), 
+					this->mpiSimulator->getCurExecCond(), 
 					E->getArg(3),
 					tag, group);
 
@@ -417,9 +418,10 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			}
 
 			else{
+				Condition execCond=this->mpiSimulator->getCurExecCond();
 				mpiOP=new MPIOperation(funcName,ST_NODE_RECV, dataType,								
-					this->commManager->getTopCondition(), 
-					this->commManager->extractCondFromTargetExpr(E->getArg(3)),
+					execCond, 
+					this->commManager->extractCondFromTargetExpr(E->getArg(3),execCond),
 					tag, group);
 			}
 
@@ -451,7 +453,8 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			}
 
 			else{
-				Condition bcaster=this->commManager->extractCondFromTargetExpr(E->getArg(3));
+				Condition bcaster=this->commManager->extractCondFromTargetExpr(E->getArg(3),
+														this->mpiSimulator->getCurExecCond());
 
 
 				mpiOP=new MPIOperation(	funcName,
