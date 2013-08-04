@@ -2,7 +2,7 @@
 #define MPITypeCheckingConsumer_H
 
 #include "Comm.h"
-
+#include <time.h>
 
 using namespace clang;
 using namespace std;

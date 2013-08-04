@@ -74,6 +74,8 @@ public:
 
 string convertIntToStr(int number);
 
+string convertDoubleToStr(double number);
+
 string stmt2str(SourceManager *sm, LangOptions lopt,clang::Stmt *stmt);
 
 bool evalIntCmpTruth(int arg1, int arg2, string op);
@@ -421,6 +423,8 @@ public:
 	void setMarked();
 
 	bool isMarked();
+
+	CommNode* getClosestNonRankAncestor();
 
 	CommNode* getParent()const{return this->parent;}
 

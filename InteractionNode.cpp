@@ -63,6 +63,17 @@ CommNode::CommNode(MPIOperation *op0){
 	}
 }
 
+CommNode* CommNode::getClosestNonRankAncestor(){
+	if (this->getCond().isComplete())
+	{
+		return this;
+	}
+
+	else{
+		return this->getParent()->getClosestNonRankAncestor();
+	}
+}
+
 void CommNode::setNodeType(int type){
 	this->nodeType=type;
 }

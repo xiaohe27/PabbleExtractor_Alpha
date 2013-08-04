@@ -73,12 +73,19 @@ string convertIntToStr(int number)
 	return ss.str();//return a string with the contents of the stream
 }
 
+string convertDoubleToStr(double number)
+{
+	stringstream ss;//create a stringstream
+	ss << number;//add number to the stream
+	return ss.str();//return a string with the contents of the stream
+}
 
 void writeToFile(string content){
-	ofstream outputFile("Protocol.txt", ios_base::out | ios_base::app);
-	
+	ofstream outputFile("A:/MPI_SessionType_Extractor/SessionTypeExtractor4MPI/Debug/Protocol.txt",
+		ios_base::out | ios_base::app);
+
 	outputFile <<"\n"<< content <<"\n";
-	
+
 }
 
 

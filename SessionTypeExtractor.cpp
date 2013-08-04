@@ -20,6 +20,9 @@ string filePath;
 
 int main(int argc, char *argv[])
 {
+	clock_t initT, finalT;
+	initT=clock();
+
 	if(argc==2){
 		filePath=argv[1];
 		InitEndIndex=100;
@@ -45,7 +48,7 @@ int main(int argc, char *argv[])
 	}
 
 	
-	ofstream outputFile("Protocol.txt");
+	ofstream outputFile("A:/MPI_SessionType_Extractor/SessionTypeExtractor4MPI/Debug/Protocol.txt");
 	outputFile.clear();
 	outputFile.close();
 
@@ -171,6 +174,15 @@ int main(int argc, char *argv[])
 
 	catch(...){cout<<"There exists compile time error or unknown runtime error, please fix the error(s) first.";}
 
+
+	///////////////////////////////////////////////////////////////////////////
+	finalT=clock()-initT;
+	double timePassed=(double)finalT / ((double)CLOCKS_PER_SEC);
+	string timeStr="\nThe program used "+convertDoubleToStr(timePassed)
+					+" seconds to generate the protocol.\n";
+	writeToFile(timeStr);
+	
+	cout<<timeStr<<endl;
 
 	//checkIdTable(&ci);
 
