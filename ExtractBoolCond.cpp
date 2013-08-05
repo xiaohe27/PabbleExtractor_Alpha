@@ -63,11 +63,11 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 			if (nonRankVarName!="")
 			{
 				if(this->tmpNonRankVarCondMap.count(nonRankVarName)){
-				Condition tmp=this->tmpNonRankVarCondMap[nonRankVarName].top();
-				this->tmpNonRankVarCondMap[nonRankVarName].pop();
-				Condition newC=Condition::negateCondition(tmp);
-				newC.setNonRankVarName(nonRankVarName);
-				this->insertTmpNonRankVarCond(nonRankVarName,newC);
+					Condition tmp=this->tmpNonRankVarCondMap[nonRankVarName].top();
+					this->tmpNonRankVarCondMap[nonRankVarName].pop();
+					Condition newC=Condition::negateCondition(tmp);
+					newC.setNonRankVarName(nonRankVarName);
+					this->insertTmpNonRankVarCond(nonRankVarName,newC);
 				}
 
 				return Condition(true);
@@ -103,16 +103,23 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 			Condition lCond=extractCondFromBoolExpr(lhs);
 			Condition rCond=extractCondFromBoolExpr(rhs);
 
-			//if warning level is high, then forbid the mixture of rank
-			//and non-rank condition...
-			if (strict && !lCond.hasSameRankNature(rCond))
-			{
-				string lCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
-				string rCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs);
-				string errInfo="\nCondition "+lCondStr+" and Condition "+rCondStr;
-				errInfo+=" are not compatible. They need to be both rank related or non-rank related.\n";
-				throw new MPI_TypeChecking_Error(errInfo);
+			bool mixed=false;
+			if(!lCond.hasSameRankNature(rCond)){
+				//if warning level is high, then forbid the mixture of rank
+				//and non-rank condition...
+				if (strict)
+				{
+					string lCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
+					string rCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs);
+					string errInfo="\nCondition "+lCondStr+" and Condition "+rCondStr;
+					errInfo+=" are not compatible. They need to be both rank related or non-rank related.\n";
+					throw new MPI_TypeChecking_Error(errInfo);
+				}
+
+				mixed=true;
 			}
+
+
 
 			string nonRankVarName="";
 			string lhsNonRankVarName=lCond.getNonRankVarName();
@@ -143,6 +150,9 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 
 			Condition andCond=lCond.AND(rCond);
 
+			if(mixed || lCond.isMixtureCond() || rCond.isMixtureCond())
+			andCond.setAsMixedCond();
+
 			andCond.setNonRankVarName(nonRankVarName);
 			cout <<"\n\n\n\n\n"<< andCond.printConditionInfo()<<"\n\n\n\n\n" <<endl;
 			return andCond;
@@ -152,15 +162,20 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 			Condition lCond=extractCondFromBoolExpr(lhs);
 			Condition rCond=extractCondFromBoolExpr(rhs);
 
-			//if warning level is high, then forbid the mixture of rank
-			//and non-rank condition...
-			if (strict && !lCond.hasSameRankNature(rCond))
-			{
-				string lCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
-				string rCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs);
-				string errInfo="\nCondition "+lCondStr+" and Condition "+rCondStr;
-				errInfo+=" are not compatible. They need to be both rank related or non-rank related.\n";
-				throw new MPI_TypeChecking_Error(errInfo);
+			bool mixed=false;
+			if(!lCond.hasSameRankNature(rCond)){
+				//if warning level is high, then forbid the mixture of rank
+				//and non-rank condition...
+				if (strict)
+				{
+					string lCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
+					string rCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs);
+					string errInfo="\nCondition "+lCondStr+" and Condition "+rCondStr;
+					errInfo+=" are not compatible. They need to be both rank related or non-rank related.\n";
+					throw new MPI_TypeChecking_Error(errInfo);
+				}
+
+				mixed=true;
 			}
 
 			string nonRankVarName="";
@@ -191,6 +206,9 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 			}
 
 			Condition orCond=lCond.OR(rCond);
+
+			if(mixed || lCond.isMixtureCond() || rCond.isMixtureCond())
+			orCond.setAsMixedCond();
 
 			orCond.setNonRankVarName(nonRankVarName);
 			cout <<"\n\n\n\n\n"<< orCond.printConditionInfo()<<"\n\n\n\n\n" <<endl;

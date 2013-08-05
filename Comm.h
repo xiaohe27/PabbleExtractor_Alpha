@@ -151,6 +151,8 @@ private:
 	//the non-rank var related condition might be important in determining the target of MPI op!
 	string nonRankVarName;
 
+	bool mixed;
+
 public:
 	Condition();
 
@@ -161,6 +163,10 @@ public:
 	int size();
 
 	bool isIgnored();
+
+	bool isMixtureCond(){return this->mixed;}
+
+	void setAsMixedCond(){this->mixed=true;}
 
 	bool isComplete();
 
@@ -353,6 +359,7 @@ public:
 
 	bool isFinished();
 	bool isEmptyOP();
+
 	string printMPIOP();
 
 };
@@ -411,6 +418,8 @@ public:
 	bool isLeaf() const;
 
 	bool isNegligible();
+
+	bool isNonRankChoiceNode();
 
 	int getNodeType(){return this->nodeType;}
 
@@ -526,9 +535,6 @@ public:
 	Condition extractCondFromBoolExpr(Expr *expr);
 
 	Condition extractCondFromTargetExpr(Expr *expr, Condition execCond);
-
-	Condition getNegatedCondFromExpr(Expr *expr); 
-
 
 
 	void insertRankVarAndOffset(string varName, int offset);

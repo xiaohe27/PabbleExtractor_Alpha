@@ -151,8 +151,12 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 		condInElsePart=Condition::negateCondition(thenCond);
 	}
 
-	else{//used in non-strict mode
-		condInElsePart=this->commManager->getNegatedCondFromExpr(condExpr);
+	else{
+		if (thenCond.isMixtureCond())
+			condInElsePart=Condition(false);
+
+		else
+			condInElsePart=Condition::negateCondition(thenCond);
 	}
 
 

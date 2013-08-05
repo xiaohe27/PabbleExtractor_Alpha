@@ -76,6 +76,21 @@ CommNode* CommNode::getClosestNonRankAncestor(){
 	}
 }
 
+bool CommNode::isNonRankChoiceNode(){
+	if (this->nodeType!=ST_NODE_CHOICE)
+		return false;
+
+	for (int i = 0; i < this->children.size(); i++)
+	{
+		if (!this->children.at(i)->getCond().isComplete())
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void CommNode::setNodeType(int type){
 	this->nodeType=type;
 }

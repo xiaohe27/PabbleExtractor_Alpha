@@ -48,9 +48,6 @@
     <ClCompile Include="CollectiveOP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ExtractNegation.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ExtractTarCond.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
