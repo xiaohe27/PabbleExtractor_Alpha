@@ -108,7 +108,7 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	this->mpiSimulator->insertNode(choiceNode);
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	Expr *condExpr=ifStmt->getCond();
 	string typeOfCond=condExpr->getType().getAsString();
 
@@ -142,13 +142,17 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 	//should remove the condition for the then part now.
 	cout<<"//should remove the condition for the then part now."<<endl;
-	
+
 	this->removeAndAddNewNonRankVarCondInStack(stackOfNonRankVarNames);
 
-	
+
 	Condition condInElsePart;
 	if(strict){ //if only the same type of expr appears in the conditional expr
-		condInElsePart=Condition::negateCondition(thenCond);
+		if (!thenCond.isRelatedToRank())
+			condInElsePart=Condition(thenCond);
+		else
+			condInElsePart=Condition::negateCondition(thenCond);
+
 	}
 
 	else{
@@ -156,7 +160,12 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 			condInElsePart=Condition(false);
 
 		else
-			condInElsePart=Condition::negateCondition(thenCond);
+		{
+			if (!thenCond.isRelatedToRank())
+				condInElsePart=Condition(thenCond);
+			else
+				condInElsePart=Condition::negateCondition(thenCond);
+		}
 	}
 
 
@@ -237,7 +246,7 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 	Stmt *bodyOfFor= S->getBody();
 	string bodyOfForStmtStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), bodyOfFor);
 
-	
+
 	//	cout<<"The var decl is "<<varDeclStr<<endl;
 	cout<<"The init is "<<initForStmtStr<<endl;
 	cout<<"The condition is "<<condOfForStr<<endl;
@@ -360,7 +369,7 @@ bool MPITypeCheckingConsumer::VisitContinueStmt(ContinueStmt *S){
 		return true;
 
 	cout <<"Call Continue stmt" <<endl;
-	
+
 	CommNode *cont=new CommNode(ST_NODE_CONTINUE,Condition(true));
 	this->mpiSimulator->insertNode(cont);
 	return true;
@@ -503,7 +512,7 @@ int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr
 		string op=binOP.getOpcodeStr();
 
 		if(op=="="){
-		string lhsStr=expr2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
+			string lhsStr=expr2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
 			if (this->commManager->isAVar(lhsStr))
 			{
 				APSInt Result;
@@ -511,13 +520,13 @@ int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr
 					int num=atoi(Result.toString(10).c_str());
 
 					varValMap[lhsStr]=num;
-					}
+				}
 			}
 		}
-		
+
 	}
 
-	
+
 	map<string,bool> isRelevant;
 	map<string,bool> isIn;
 
@@ -581,7 +590,7 @@ int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr
 		Range theTargetRange=cond4TheVar.getTheRangeContainingTheNum(initValOfTheVar);
 
 		string incStr=expr2str(&ci->getSourceManager(),ci->getLangOpts(),incExpr);
-		
+
 		//inc
 		size_t found1 = incStr.find("++");
 		size_t found2 = incStr.find("+=");
@@ -600,10 +609,10 @@ int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr
 		{
 			this->commManager->removeTopCond4NonRankVar(theVar);
 			this->commManager->insertNonRankVarAndCondtion(theVar,Condition(Range(theTargetRange.getStart(),initValOfTheVar)));
-			
+
 			return initValOfTheVar-theTargetRange.getStart()+1;
 		}
-		
+
 	}
 
 	return -1; 
