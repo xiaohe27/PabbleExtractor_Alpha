@@ -102,6 +102,7 @@ void CollectiveOPManager::insertCollectiveOPAndCondPair(string opName, int rank,
 		string outToFile="\n\n\nThe actually happened MPI OP is :\n";
 		outToFile.append("Process "+convertIntToStr(rank)+" is doing an "+opName+" operation");
 		writeToFile(outToFile);
+		cout<<outToFile<<endl;
 
 		this->collectiveOPFinishInfoMap.erase(opNameKey);
 

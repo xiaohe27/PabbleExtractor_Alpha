@@ -15,7 +15,7 @@ void VisitResult::printVisitInfo(){
 	if (this->doableOP)
 	{
 		cout<<"\n\n\nThe doable MPI operation in this node is "<<endl;
-		this->doableOP->printMPIOP();
+		cout<<this->doableOP->printMPIOP()<<endl;
 
 		cout<<"It is "<<(doableOP->isBlockingOP()?"":"non-")<<"blocking operation!\n\n\n"<<endl;
 	}

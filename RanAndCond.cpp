@@ -133,30 +133,40 @@ Condition Range::AND(Range other){
 	}
 
 	//one is special and the other is not 
-	if(this->isSpecialRange()){
-		if(this->isSuperSetOf(other))
-			return Condition(other);
+	if(this->isSpecialRange()){}
+	else{
+		//if this is not special but the other is
+		Range tmp=Range(*this);
+		this->startPos=other.startPos;
+		this->endPos=other.endPos;
+		this->shouldBeIgnored=other.shouldBeIgnored;
 
-		else{
-			if(other.isThisNumInside(this->getEnd())){
-				if(other.getEnd() < this->getStart()){
-					return Condition(Range(other.getStart(),this->getEnd()));
-				}
+		other=tmp; //exchange the value of this and other range
+	}
 
-				else{
-					return Condition(Range(other.getStart(),this->getEnd()),
-						Range(this->getStart(),other.getEnd()));
-				}
+	if(this->isSuperSetOf(other))
+		return Condition(other);
+
+	else{
+		if(other.isThisNumInside(this->getEnd())){
+			if(other.getEnd() < this->getStart()){
+				return Condition(Range(other.getStart(),this->getEnd()));
 			}
 
 			else{
-				return Condition(Range(this->getStart(), other.getEnd()));
+				Range ran1=Range(other.getStart(),this->getEnd());
+				Range ran2=Range(this->getStart(),other.getEnd());
+				return Condition(ran1,ran2);
 			}
-
 		}
+
+		else{
+			return Condition(Range(this->getStart(), other.getEnd()));
+		}
+
 	}
 
-	else{return other.AND(*this);}
+
 }
 
 
@@ -277,7 +287,7 @@ Condition Range::OR(Range other){
 
 	}
 
-	else{return other.OR(*this);}
+	else{return other.OR(Range(*this));}
 }
 
 //ok. already considered the case of end < start
@@ -334,7 +344,7 @@ bool Range::isEqualTo(Range ran){
 bool Range::isAllRange(){
 	if (this->shouldBeIgnored)
 		return false;
-	
+
 	if(getStart()==0 && getEnd()==InitEndIndex-1)
 		return true;
 
@@ -407,10 +417,10 @@ string Range::printRangeInfo(){
 //Class Condition impl start									****
 /********************************************************************/
 
-Condition::Condition(){this->shouldBeIgnored=false; this->complete=false;
-this->groupName=WORLD;
-
-this->nonRankVarName="";
+Condition::Condition(){
+	this->shouldBeIgnored=false; this->complete=false;
+	this->groupName=WORLD;
+	this->nonRankVarName="";
 }
 
 Condition::Condition(bool val){
@@ -435,16 +445,18 @@ Condition::Condition(Range ran){
 	this->nonRankVarName="";
 	this->shouldBeIgnored=false; this->complete=false;this->groupName=WORLD;
 	this->rangeList.clear(); this->rangeList.push_back(ran);
+
 }
 
 Condition::Condition(Range ran1, Range ran2){
 	this->nonRankVarName="";
 	this->shouldBeIgnored=false; this->complete=false;this->groupName=WORLD;
 	rangeList.clear(); rangeList.push_back(ran1);rangeList.push_back(ran2);
+
 }
 
 
-bool Condition::isIgnored() const{
+bool Condition::isIgnored(){
 	if(this->isComplete())
 		return false;
 
@@ -475,6 +487,9 @@ int Condition::size(){
 }
 
 bool Condition::isSameAsCond(Condition other){
+	this->normalize();
+	other.normalize();
+
 	int thisSize=this->getRangeList().size();
 	int otherSize=other.getRangeList().size();
 
@@ -518,6 +533,13 @@ Condition Condition::createCondByOp(string op, int num){
 
 }
 
+bool Condition::isComplete()
+{
+	if(!this->complete)
+		this->normalize();
+
+	return this->complete;
+}
 
 void Condition::normalize(){
 

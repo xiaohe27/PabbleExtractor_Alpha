@@ -160,9 +160,9 @@ public:
 
 	int size();
 
-	bool isIgnored() const;
+	bool isIgnored();
 
-	bool isComplete()const{return this->complete;}
+	bool isComplete();
 
 	Condition(Range ran);
 

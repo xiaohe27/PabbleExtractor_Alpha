@@ -55,6 +55,9 @@ void parseArgs(int argc, char *argv[]){
 	}
 }
 
+void init(){
+	
+}
 
 int main(int argc, char *argv[])
 {
@@ -68,6 +71,7 @@ int main(int argc, char *argv[])
 	if (filePath=="")
 	throw MPI_TypeChecking_Error("No MPI src code provided!");
 
+	init();
 
 	ofstream outputFile("A:/MPI_SessionType_Extractor/SessionTypeExtractor4MPI/Debug/Protocol.txt");
 	outputFile.clear();
