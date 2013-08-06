@@ -14,8 +14,10 @@ void CommNode::init(int type, vector<MPIOperation*> *theOPs){
 	this->nodeType=type;
 	this->depth=0;
 	this->posIndex=0;
+	this->branchID="";
 	this->ops=theOPs;
 	this->marked=false;
+	this->isMasterNode=false;
 
 	this->parent=nullptr;
 	this->sibling=nullptr;
@@ -66,7 +68,7 @@ CommNode::CommNode(MPIOperation *op0){
 }
 
 CommNode* CommNode::getClosestNonRankAncestor(){
-	if (this->getCond().isComplete())
+	if (this->isMaster())
 	{
 		return this;
 	}
@@ -180,6 +182,32 @@ bool CommNode::isNegligible() {
 
 	else
 		return false;
+}
+
+void CommNode::initTheBranchId(){
+	if (this->isNonRankChoiceNode())
+	{
+		string newBranStr=convertIntToStr(this->posIndex);
+		this->branchID=newBranStr+"_Choice!";
+		for (int i = 0; i < children.size(); i++)
+		{
+			children.at(i)->branchID=newBranStr+"_branch"+convertIntToStr(i);
+			children.at(i)->setMaster();
+		}
+	}
+
+	else{
+		for (int i = 0; i < children.size(); i++)
+		{
+			children.at(i)->branchID=this->branchID;
+		}
+	}
+
+	//mk it recursive 
+	for (int i = 0; i < children.size(); i++)
+	{
+		children.at(i)->initTheBranchId();
+	}
 }
 
 //print the tree rooted at this node

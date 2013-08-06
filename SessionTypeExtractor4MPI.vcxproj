@@ -94,6 +94,7 @@
     <ClCompile Include="ExtractTarCond.cpp" />
     <ClCompile Include="InteractionNode.cpp" />
     <ClCompile Include="MPIOP.cpp" />
+    <ClCompile Include="MPITree.cpp" />
     <ClCompile Include="MPITypeCheckingConsumer.cpp" />
     <ClCompile Include="RanAndCond.cpp" />
     <ClCompile Include="Roles.cpp" />

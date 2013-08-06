@@ -46,8 +46,12 @@ private:
 
 	MPISimulator *mpiSimulator;
 
+	MPITree *mpiTree;
+
 
 public:
+	void init(CompilerInstance *ci, int numOfProc);
+
 	MPITypeCheckingConsumer(CompilerInstance *ci);
 
 	MPITypeCheckingConsumer(CompilerInstance *ci, int numOfProc);
@@ -77,8 +81,8 @@ public:
 	void printTheTree(){cout<<this->mpiSimulator->printTheTree()<<endl;}
 
 	bool isChangingByOneUnit(Expr *inc);
+	
 	string getVarInIncExpr(Expr *inc);
-
 
 
 

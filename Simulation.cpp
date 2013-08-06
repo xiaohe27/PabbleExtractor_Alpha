@@ -37,14 +37,25 @@ void VisitResult::printVisitInfo(){
 /********************************************************************/
 
 
-MPISimulator::MPISimulator(CommManager *commMgr){
+MPISimulator::MPISimulator(CommManager *commMgr, MPITree *tree){
 	this->commManager=commMgr;
-
+	this->mpiTree=tree;
 	root=new CommNode(ST_NODE_ROOT,Condition(true));
 
 	curNode=root;
 
 }
+
+
+void MPISimulator::insertPosAndMPINodeTuple(int pos, MPINode *mpiNode){
+	if (this->posIndexAndMPINodeMapping.count(pos)>0)
+	{
+		throw new MPI_TypeChecking_Error("Error in constructing MPI tree, duplicate nodes!");
+	}
+
+	this->posIndexAndMPINodeMapping[pos]=mpiNode;
+}
+
 
 void MPISimulator::insertNode(CommNode *node){
 	Condition curCond=this->curNode->getCond();
@@ -67,7 +78,7 @@ void MPISimulator::insertNode(CommNode *node){
 
 	else
 		this->commManager->getParamRoleMapping()[commGroupName]=new ParamRole(node->getCond());
-	
+
 
 
 	int nodeT=node->getNodeType();
@@ -232,6 +243,8 @@ void MPISimulator::simulate(){
 
 	this->initTheRoles();
 
+	this->root->initTheBranchId();
+
 	if(paramRoleMap.size()==0){
 		cout<<"No group was constructed..."<<endl;
 		return;
@@ -337,8 +350,11 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 	//the collective op can actually happen.
 	if (op->isCollectiveOp())
 	{
-		this->collectiveOpMgr.insertCollectiveOP(op);
-
+		vector<MPIOperation*> happenedCollectiveOPs=this->collectiveOpMgr.insertCollectiveOP(op);
+		for (int i = 0; i < happenedCollectiveOPs.size(); i++)
+		{
+			this->insertMPIOpToMPITree(happenedCollectiveOPs.at(i));
+		}
 		return;
 	}
 
@@ -392,6 +408,9 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 			actuallyHappenedOP->setExecutorCond(actualExecutor);
 			actuallyHappenedOP->setTargetCond(actualTarget);
 
+			/////////////////////////////////////////////////////////////////////////////////////////////////
+			this->insertMPIOpToMPITree(actuallyHappenedOP);
+			/////////////////////////////////////////////////////////////////////////////////////////////////
 
 			string outToFile="\n\n\nThe actually happened MPI OP is :\n";
 			outToFile.append(actuallyHappenedOP->printMPIOP());
@@ -632,6 +651,16 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 
 }
 
+
+void MPISimulator::insertMPIOpToMPITree(MPIOperation *actuallyHappenedOP){
+	CommNode *masterNode=actuallyHappenedOP->theNode->getClosestNonRankAncestor();
+	MPINode *theParentMPINode=this->posIndexAndMPINodeMapping[masterNode->getPosIndex()];
+	if (theParentMPINode)
+	{
+		theParentMPINode->insert(new MPINode(actuallyHappenedOP));
+	}
+
+}
 /********************************************************************/
 //Class MPISimulator impl end									****
 /********************************************************************/

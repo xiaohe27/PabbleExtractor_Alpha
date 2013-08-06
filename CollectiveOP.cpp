@@ -4,12 +4,14 @@ using namespace clang;
 using namespace std;
 
 
-void CollectiveOPManager::insertCollectiveOP(MPIOperation* op){
+vector<MPIOperation*> CollectiveOPManager::insertCollectiveOP(MPIOperation* op){
+	vector<MPIOperation*> vecOfMPIOPs;
+
 	if (op==nullptr)
-		return;
+		return vecOfMPIOPs;
 
 	if (!op->isCollectiveOp())
-		return;
+		return vecOfMPIOPs;
 
 
 	string opName=op->getOpName();
@@ -28,26 +30,33 @@ void CollectiveOPManager::insertCollectiveOP(MPIOperation* op){
 		{
 			for (int i = 0; i <= ran.getEnd(); i++)
 			{
-				this->insertCollectiveOPAndCondPair(opName,i,participants,op->theNode);
+				MPIOperation* tmpOP=this->insertCollectiveOPAndCondPair(opName,i,participants,op->theNode);
+				if (tmpOP)
+					vecOfMPIOPs.push_back(tmpOP);
 			}
 
 			for (int i = ran.getStart(); i < InitEndIndex; i++)
 			{
-				this->insertCollectiveOPAndCondPair(opName,i,participants,op->theNode);
+				MPIOperation* tmpOP=this->insertCollectiveOPAndCondPair(opName,i,participants,op->theNode);
+				if (tmpOP)
+					vecOfMPIOPs.push_back(tmpOP);
 			}
 		} else{
 			for (int i = ran.getStart(); i <= ran.getEnd(); i++)
 			{
-				this->insertCollectiveOPAndCondPair(opName,i,participants,op->theNode);
+				MPIOperation* tmpOP=this->insertCollectiveOPAndCondPair(opName,i,participants,op->theNode);
+				if (tmpOP)
+					vecOfMPIOPs.push_back(tmpOP);
 			}
 		}
 	}
 
+	return vecOfMPIOPs;
 }
 
 
-void CollectiveOPManager::insertCollectiveOPAndCondPair(string opName, int rank, Condition cond, CommNode* node){
-	string opNameKey=opName+"_"+convertIntToStr(rank);
+MPIOperation* CollectiveOPManager::insertCollectiveOPAndCondPair(string opName, int rank, Condition cond, CommNode* node){
+	string opNameKey=opName+"_"+convertIntToStr(rank)+"("+node->getBranID()+")";
 
 	//record the involved comm node.
 	if(this->participatingCommNodesMap.count(opNameKey)){
@@ -104,6 +113,14 @@ void CollectiveOPManager::insertCollectiveOPAndCondPair(string opName, int rank,
 		writeToFile(outToFile);
 		cout<<outToFile<<endl;
 
+		/////////////////////////////////////////////////////////////////////////////////////////////
+
+		MPIOperation *tmpOP=new MPIOperation(*(node->getOPs()->back()));
+		tmpOP->setExecutorCond(Condition(Range(rank,rank)));
+		tmpOP->setTargetCond(Condition(true));
+		
+		/////////////////////////////////////////////////////////////////////////////////////////////
+
 		this->collectiveOPFinishInfoMap.erase(opNameKey);
 
 		vector<CommNode*> *vec=this->participatingCommNodesMap.at(opNameKey);
@@ -113,6 +130,12 @@ void CollectiveOPManager::insertCollectiveOPAndCondPair(string opName, int rank,
 		}
 
 		this->participatingCommNodesMap.erase(opNameKey);
+
+		return tmpOP;
+	}
+
+	else{
+		return nullptr;
 	}
 
 }

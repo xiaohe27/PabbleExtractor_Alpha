@@ -107,8 +107,9 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	//the choice node will become the cur node automatically
 	this->mpiSimulator->insertNode(choiceNode);
 
-
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+
 	Expr *condExpr=ifStmt->getCond();
 	string typeOfCond=condExpr->getType().getAsString();
 
@@ -134,6 +135,28 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	//only the processes that satisfy the then part conditon can enter the block!
 	CommNode *thenNode=new CommNode(ST_NODE_ROOT,thenCond);
 	this->mpiSimulator->insertNode(thenNode);
+	
+	////////////////////////////////////////////////////////////////////////////////////
+	Condition theIFCond=this->mpiSimulator->getCurNode()->getCond();
+	bool shouldInsertToMPITree=false;
+	string ifCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr);
+
+	if (theIFCond.isComplete() && !this->commManager->containsRankStr(ifCondStr)
+		&& !theIFCond.isRelatedToRank()){
+		shouldInsertToMPITree=true;
+
+		CommNode* theIfNode=this->mpiSimulator->getCurNode();
+		CommNode* theChoiceCommNode=theIfNode->getParent();
+
+		MPINode* theChoiceMPINode=new MPINode(theChoiceCommNode);
+		MPINode* theIfMPINode=new MPINode(theIfNode);
+		this->mpiTree->insertNode(theChoiceMPINode);
+		this->mpiTree->insertNode(theIfMPINode);
+
+		this->mpiSimulator->insertPosAndMPINodeTuple(theChoiceCommNode->getPosIndex(),theChoiceMPINode);
+		this->mpiSimulator->insertPosAndMPINodeTuple(theIfNode->getPosIndex(),theIfMPINode);
+	}
+	////////////////////////////////////////////////////////////////////////////////////
 
 	this->TraverseStmt(ifStmt->getThen());
 
@@ -176,6 +199,17 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	CommNode *elseNode=new CommNode(ST_NODE_ROOT,condInElsePart);
 	this->mpiSimulator->insertNode(elseNode);
 
+	/////////////////////////////////////////////////////////////////////
+	if (shouldInsertToMPITree)
+	{
+		CommNode* theElseNode=this->mpiSimulator->getCurNode();
+
+		MPINode *theElseMPINode=new MPINode(theElseNode);
+		this->mpiTree->insertNode(theElseMPINode);
+
+		this->mpiSimulator->insertPosAndMPINodeTuple(theElseNode->getPosIndex(),theElseMPINode);
+	}
+	/////////////////////////////////////////////////////////////////////
 
 	//visit else part
 	cout<<"Going to visit else part of condition: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;

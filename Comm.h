@@ -96,6 +96,8 @@ class CommNode;
 class Condition;
 class MPIOperation;
 class Role;
+class MPINode;
+class MPITree;
 
 class Range{
 private:
@@ -385,6 +387,9 @@ private:
 	//the pos number indicates the time of insertion, the smaller the earlier
 	int posIndex;
 
+	//the branch id specifies the executable path
+	string branchID;
+
 	bool marked;
 
 	void init(int type,vector<MPIOperation*> *ops);
@@ -402,6 +407,10 @@ private:
 
 	string info;
 
+	//////////////////////////////////
+	//A node is master if it is the root of a master.
+	bool isMasterNode;
+
 public:
 	//construct an intermediate node
 	CommNode(int type, Condition cond);
@@ -417,9 +426,15 @@ public:
 
 	bool isLeaf() const;
 
+	bool isMaster(){return this->isMasterNode;}
+
 	bool isNegligible();
 
-	bool isNonRankChoiceNode();
+	void initTheBranchId();
+
+	void setMaster(){this->isMasterNode=true;}
+
+	string getBranID(){return this->branchID;}
 
 	int getNodeType(){return this->nodeType;}
 
@@ -447,6 +462,8 @@ public:
 
 	string getCommInfoAsString();
 
+	int getDepth(){return this->depth;}
+
 	CommNode* goDeeper();//get first child
 
 	CommNode* skipToNextNode();
@@ -460,6 +477,10 @@ public:
 	void insertMPIOP(MPIOperation* theOP){this->ops->push_back(theOP);}
 
 	int getPosIndex() const{return this->posIndex;}
+
+	////////////////////////////////////////////////////////////////////////
+	//only used after the traversal of AST of the mpi pgm
+	bool isNonRankChoiceNode();
 
 };
 
@@ -566,11 +587,12 @@ private:
 
 	map<string,vector<CommNode*>*> participatingCommNodesMap;
 
-	void insertCollectiveOPAndCondPair(string opName,int rank, Condition cond, CommNode* node);
+	MPIOperation* insertCollectiveOPAndCondPair(string opName,int rank, Condition cond, CommNode* node);
 
 public:
 	//if the collective op fires, then relevant nodes will be unblocked
-	void insertCollectiveOP(MPIOperation* op);
+	//The actually happened collective ops will be returned if there are any
+	vector<MPIOperation*> insertCollectiveOP(MPIOperation* op);
 
 };
 
@@ -583,12 +605,16 @@ private:
 	CommNode *curNode;
 
 	CommManager *commManager;
-
 	CollectiveOPManager collectiveOpMgr;
+	MPITree *mpiTree;
+
 	vector<MPIOperation*> pendingOPs;
 
+	map<int, MPINode*> posIndexAndMPINodeMapping;
+
 public:
-	MPISimulator(CommManager *commManager);
+	MPISimulator(CommManager *commManager, MPITree *theMPITree);
+	CommNode* getCurNode(){return this->curNode;}
 	void insertNode(CommNode *node);
 	void gotoParent();
 	Condition getCurExecCond(){return this->curNode->getCond();}
@@ -606,10 +632,45 @@ public:
 	bool areAllRolesDone();
 	bool isDeadLockDetected();
 
+
 	Condition getTarCondFromExprAndExecCond(Expr *expr, Condition execCond);
 	void analyzeVisitResult(VisitResult *vr);
 
 	void insertOpToPendingList(MPIOperation *op);
+
+	void insertPosAndMPINodeTuple(int pos, MPINode *mpiNode);
+
+	void insertMPIOpToMPITree(MPIOperation *op);
 };
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+//The classes used to build MPI tree and protocol 
+class MPINode{
+private:
+	int index;
+	int depth;
+	MPIOperation* op;
+	vector<MPINode*> children;
+
+public:
+	MPINode(CommNode* node);
+	MPINode(MPIOperation* theOp);
+
+	bool isLeaf();
+	void insert(MPINode *child);
+	void insertToProperNode(MPINode *node);
+};
+
+class MPITree{
+private:
+	MPINode *root;
+
+public:
+	MPITree(MPINode *rtNode);
+	void insertNode(MPINode* mpiNode);
+
+};
+
 
 #endif

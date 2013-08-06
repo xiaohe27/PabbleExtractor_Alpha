@@ -200,6 +200,13 @@ bool MPIOperation::isCollectiveOp(){
 
 //test whether this op is a complementary op of the other op.
 bool MPIOperation::isComplementaryOpOf(MPIOperation *otherOP){
+	//if the two ops are not in the same branch, then they are not 
+	//possible to meet...
+	if (this->theNode->getBranID() != otherOP->theNode->getBranID())
+	{
+		return false;
+	}
+
 
 	if (this->isCollectiveOp() && otherOP->isCollectiveOp())
 	{

@@ -1,6 +1,5 @@
 #include "MPITypeCheckingConsumer.h"
 
-#define DEFAULT_NUM_OF_PROCESSES 100
 
 
 using namespace clang;
@@ -10,15 +9,21 @@ using namespace llvm;
 
 
 MPITypeCheckingConsumer::MPITypeCheckingConsumer(CompilerInstance *ci, int numOfProc){
+	init(ci,numOfProc);
+}
+
+MPITypeCheckingConsumer::MPITypeCheckingConsumer(CompilerInstance *ci) {
+	init(ci, InitEndIndex);
+}
+
+void MPITypeCheckingConsumer::init(CompilerInstance *ci, int numOfProc){
 	this->ci=ci;
 	this->visitStart=false;
 	this->numOfProcs=numOfProc;
 	this->commManager=new CommManager(ci, numOfProc);
-	this->mpiSimulator=new MPISimulator(this->commManager);
-}
+	this->mpiTree=new MPITree(new MPINode(new CommNode(ST_NODE_ROOT,Condition(true))));
 
-MPITypeCheckingConsumer::MPITypeCheckingConsumer(CompilerInstance *ci) {
-	MPITypeCheckingConsumer(ci, DEFAULT_NUM_OF_PROCESSES);
+	this->mpiSimulator=new MPISimulator(this->commManager,this->mpiTree);
 }
 
 void MPITypeCheckingConsumer::HandleTranslationUnit(ASTContext &Ctx) {
@@ -71,7 +76,6 @@ bool MPITypeCheckingConsumer::HandleTopLevelDecl(DeclGroupRef d)
 
 	return true;
 }
-
 
 
 
