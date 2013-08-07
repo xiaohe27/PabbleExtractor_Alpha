@@ -214,6 +214,8 @@ public:
 
 	bool isSameAsCond(Condition other);
 
+	static bool areTheseTwoCondAdjacent(Condition cond1, Condition cond2);
+
 	string printConditionInfo();
 };
 
@@ -354,6 +356,7 @@ public:
 
 	bool isComplementaryOpOf(MPIOperation *otherOP);
 	bool isSameKindOfOp(MPIOperation *other);
+	bool isTheSameMPIOP(MPIOperation *other);
 
 	bool isUnicast(); // n to n
 	bool isMulticast(); // 1 to n
@@ -362,6 +365,7 @@ public:
 	bool isFinished();
 	bool isEmptyOP();
 
+	void transformToSendingOP();
 	string printMPIOP();
 
 };
@@ -660,6 +664,8 @@ public:
 	bool isLeaf();
 	void insert(MPINode *child);
 	void insertToProperNode(MPINode *node);
+
+	static MPIOperation* combineMPIOPs(MPIOperation* op1, MPIOperation* op2);
 };
 
 class MPITree{
@@ -668,6 +674,7 @@ private:
 
 public:
 	MPITree(MPINode *rtNode);
+	MPINode* getRoot(){return this->root;}
 	void insertNode(MPINode* mpiNode);
 
 };

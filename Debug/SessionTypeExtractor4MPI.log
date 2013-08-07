@@ -1,4 +1,4 @@
-﻿Build started 06/08/2013 21:35:32.
+﻿Build started 07/08/2013 11:43:49.
      1>Project "A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI\SessionTypeExtractor4MPI.vcxproj" on node 2 (Rebuild target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt CollectiveOP.cpp Comm.cpp ExtractBoolCond.cpp ExtractTarCond.cpp InteractionNode.cpp MPIOP.cpp MPITree.cpp MPITypeCheckingConsumer.cpp RanAndCond.cpp Roles.cpp SessionTypeExtractor.cpp Simulation.cpp StmtHandler.cpp
@@ -399,37 +399,37 @@
      1>s:\clang\sw\llvm\tools\clang\include\clang\analysis\cfg.h(272): warning C4800: 'const clang::Stmt *' : forcing value to bool 'true' or 'false' (performance warning)
      1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decltemplate.h(1568): warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized
      1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(24): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(185): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(206): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(223): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(263): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(354): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(362): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(186): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(207): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(224): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(264): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(355): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(363): warning C4018: '<' : signed/unsigned mismatch
      1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(457): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(493): warning C4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
-                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(457) : definition of 'i' ignored
-                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(362) : definition of 'i' used
      1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(499): warning C4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
                  a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(457) : definition of 'i' ignored
-                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(362) : definition of 'i' used
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(500): warning C4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
+                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(363) : definition of 'i' used
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(505): warning C4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
                  a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(457) : definition of 'i' ignored
-                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(362) : definition of 'i' used
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(602): warning C4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
+                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(363) : definition of 'i' used
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(506): warning C4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
                  a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(457) : definition of 'i' ignored
-                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(362) : definition of 'i' used
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(615): warning C4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
+                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(363) : definition of 'i' used
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(608): warning C4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
                  a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(457) : definition of 'i' ignored
-                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(362) : definition of 'i' used
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(625): warning C4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
+                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(363) : definition of 'i' used
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(621): warning C4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
                  a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(457) : definition of 'i' ignored
-                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(362) : definition of 'i' used
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(635): warning C4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
+                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(363) : definition of 'i' used
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(631): warning C4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
                  a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(457) : definition of 'i' ignored
-                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(362) : definition of 'i' used
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(636): warning C4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
+                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(363) : definition of 'i' used
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(641): warning C4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
                  a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(457) : definition of 'i' ignored
-                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(362) : definition of 'i' used
+                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(363) : definition of 'i' used
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(642): warning C4258: 'i' : definition from the for loop is ignored; the definition from the enclosing scope is used
+                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(457) : definition of 'i' ignored
+                 a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\simulation.cpp(363) : definition of 'i' used
      1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(366): warning C4244: '=' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
                  s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(363) : while compiling class template member function 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getExtraLocalData(void) const'
                  with
@@ -1336,20 +1336,20 @@
      1>s:\clang\sw\llvm\tools\clang\include\clang\analysis\cfg.h(272): warning C4800: 'const clang::Stmt *' : forcing value to bool 'true' or 'false' (performance warning)
      1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decltemplate.h(1568): warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized
      1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(475): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(489): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(554): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(562): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(585): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(611): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(615): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(619): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(643): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(648): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(702): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(721): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(733): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(743): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(776): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(502): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(567): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(575): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(598): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(624): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(628): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(632): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(656): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(661): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(715): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(734): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(746): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(756): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\ranandcond.cpp(789): warning C4018: '<' : signed/unsigned mismatch
      1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(366): warning C4244: '=' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
                  s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(363) : while compiling class template member function 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getExtraLocalData(void) const'
                  with
@@ -1950,8 +1950,9 @@
      1>s:\clang\sw\llvm\tools\clang\include\clang\analysis\cfg.h(261): warning C4800: 'unsigned int' : forcing value to bool 'true' or 'false' (performance warning)
      1>s:\clang\sw\llvm\tools\clang\include\clang\analysis\cfg.h(272): warning C4800: 'const clang::Stmt *' : forcing value to bool 'true' or 'false' (performance warning)
      1>s:\clang\sw\llvm\tools\clang\include\clang\ast\decltemplate.h(1568): warning C4345: behavior change: an object of POD type constructed with an initializer of the form () will be default-initialized
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\mpitree.cpp(37): warning C4018: '<' : signed/unsigned mismatch
-     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\mpitree.cpp(73): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\mpitree.cpp(90): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\mpitree.cpp(112): warning C4018: '<' : signed/unsigned mismatch
+     1>a:\mpi_sessiontype_extractor\sessiontypeextractor4mpi\sessiontypeextractor4mpi\mpitree.cpp(148): warning C4018: '<' : signed/unsigned mismatch
      1>s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(366): warning C4244: '=' : conversion from 'uint64_t' to 'unsigned int', possible loss of data
                  s:\clang\sw\llvm\tools\clang\include\clang\ast\typeloc.h(363) : while compiling class template member function 'void *clang::ConcreteTypeLoc<Base,Derived,TypeClass,LocalData>::getExtraLocalData(void) const'
                  with
@@ -3992,4 +3993,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:01:21.07
+Time Elapsed 00:01:17.61

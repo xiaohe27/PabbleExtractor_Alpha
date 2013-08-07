@@ -483,6 +483,19 @@ bool Condition::isRangeInside(Range ran){
 	return false;
 }
 
+bool Condition::areTheseTwoCondAdjacent(Condition cond1, Condition cond2){
+	if (cond1.AND(cond2).isIgnored())
+	{
+		Condition orCond=cond1.OR(cond2);
+		if (orCond.rangeList.size()==1)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 int Condition::size(){
 	int sum=0;
 

@@ -26,12 +26,87 @@ bool MPINode::isLeaf(){
 		return true;
 }
 
+
+MPIOperation* MPINode::combineMPIOPs(MPIOperation* op1, MPIOperation* op2){
+	//because every op has been transformed to sending op before inserted to the node
+	//we can assume both ops are sending ops
+	if (op1->isUnicast() && op2->isUnicast())
+	{
+		if (Condition::areTheseTwoCondAdjacent(op1->getExecutor(),op2->getExecutor()) &&
+			Condition::areTheseTwoCondAdjacent(op1->getTargetCond(),op2->getTargetCond()))
+		{
+			MPIOperation* combi=new MPIOperation(*op2);
+			combi->setExecutorCond(op1->getExecutor().OR(op2->getExecutor()));
+			combi->setTargetCond(op1->getTargetCond().OR(op2->getTargetCond()));
+			return combi;
+		}
+
+		else
+			return nullptr;
+	}
+
+	if (op1->isMulticast() && op2->isMulticast())
+	{
+		if (op1->getExecutor().isSameAsCond(op2->getExecutor()) && 
+			Condition::areTheseTwoCondAdjacent(op1->getTargetCond(),op2->getTargetCond()))
+		{
+			MPIOperation* combi=new MPIOperation(*op2);
+			combi->setTargetCond(op1->getTargetCond().OR(op2->getTargetCond()));
+			return combi;
+		}
+
+		else nullptr;
+	}
+
+	if (op1->isGatherOp() && op2->isGatherOp())
+	{
+		if (op1->getTargetCond().isSameAsCond(op2->getTargetCond()) && 
+			Condition::areTheseTwoCondAdjacent(op1->getExecutor(),op2->getExecutor()))
+		{
+			MPIOperation* combi=new MPIOperation(*op2);
+			combi->setExecutorCond(op1->getExecutor().OR(op2->getExecutor()));
+			return combi;
+		}
+
+		else nullptr;
+	}
+
+	return nullptr;
+}
+
+
 //insert the child to itself
 void MPINode::insert(MPINode *child){
 	if (this->isLeaf())
 		throw new MPI_TypeChecking_Error
 		("Can't insert a child to the leaf MPI op node. Fail to build MPI tree!");
 
+	//if the inserted node is mpi op node, then some combination may happen
+	MPIOperation *childOP=child->op;
+	if (childOP)
+	{
+		childOP->transformToSendingOP();
+
+		for (int i = 0; i < children.size(); i++)
+		{
+			MPINode *curVNode=children.at(i);
+			if (!curVNode->op)
+				continue;
+
+			MPIOperation *curOp=curVNode->op;
+
+			MPIOperation *theCombinedOP=MPINode::combineMPIOPs(childOP,curOp);
+			if (theCombinedOP)
+			{
+				delete childOP;
+				delete curOp;
+				curVNode->op=theCombinedOP;
+				return;
+			}
+		}
+	}
+
+	
 	bool inserted=false;
 
 	for (int i = 0; i < children.size(); i++)
@@ -107,6 +182,7 @@ MPITree::MPITree(MPINode *rtNode){
 void MPITree::insertNode(MPINode* mpiNode){
 	this->root->insertToProperNode(mpiNode);
 }
+
 
 /**************************************************************************/
 //MPITree impl end

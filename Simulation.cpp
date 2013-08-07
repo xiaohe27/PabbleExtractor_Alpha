@@ -40,8 +40,9 @@ void VisitResult::printVisitInfo(){
 MPISimulator::MPISimulator(CommManager *commMgr, MPITree *tree){
 	this->commManager=commMgr;
 	this->mpiTree=tree;
+	this->posIndexAndMPINodeMapping[0]=this->mpiTree->getRoot();
 	root=new CommNode(ST_NODE_ROOT,Condition(true));
-
+	root->setMaster(); 
 	curNode=root;
 
 }
@@ -408,13 +409,12 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 			actuallyHappenedOP->setExecutorCond(actualExecutor);
 			actuallyHappenedOP->setTargetCond(actualTarget);
 
-			/////////////////////////////////////////////////////////////////////////////////////////////////
-			this->insertMPIOpToMPITree(actuallyHappenedOP);
-			/////////////////////////////////////////////////////////////////////////////////////////////////
 
 			string outToFile="\n\n\nThe actually happened MPI OP is :\n";
 			outToFile.append(actuallyHappenedOP->printMPIOP());
 			writeToFile(outToFile);
+
+			cout<<outToFile<<endl;
 
 			/////////////////////////////////////////////////////////////////////////////////////////////////
 			Condition unblockedRoleCond(false);
@@ -461,6 +461,12 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 				ParamRole *paramRoleI=this->commManager->getParamRoleWithName(unblockedRole->getParamRoleName());
 				paramRoleI->insertActualRole(unblockedRole,true);
 			}
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			this->insertMPIOpToMPITree(actuallyHappenedOP);
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 			///////////////////////////////////////////////////////////////////////////////////////////////////////

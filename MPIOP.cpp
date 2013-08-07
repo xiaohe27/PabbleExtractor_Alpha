@@ -161,12 +161,10 @@ string tmp3[]={"MPI_Bcast","MPI_Gather","MPI_Reduce","MPI_Scatter","MPI_Barrier"
 set<string> MPIOperation::collectiveOPSet(begin(tmp3),end(tmp3));
 
 bool MPIOperation::isSendingOp(){
-	set<string>::iterator it;
-	it=MPIOperation::sendingOPSet.find(this->getOpName());
-	if (it!=sendingOPSet.end())
-	{
+
+	if (this->getOPType()==ST_NODE_SEND)
 		return true;
-	}
+	
 
 	else
 		return false;
@@ -174,12 +172,9 @@ bool MPIOperation::isSendingOp(){
 
 
 bool MPIOperation::isRecvingOp(){
-	set<string>::iterator it;
-	it=MPIOperation::recvingOPSet.find(this->getOpName());
-	if (it!=recvingOPSet.end())
-	{
+	if (this->getOPType()==ST_NODE_RECV)	
 		return true;
-	}
+	
 
 	else
 		return false;
@@ -265,6 +260,13 @@ bool MPIOperation::isSameKindOfOp(MPIOperation *other){
 }
 
 
+bool MPIOperation::isTheSameMPIOP(MPIOperation *other){
+
+	return this->getOpName()==other->getOpName();
+
+}
+
+
 bool MPIOperation::isUnicast(){
 	if(this->isDependentOnExecutor())
 		return true;
@@ -273,7 +275,7 @@ bool MPIOperation::isUnicast(){
 }
 
 bool MPIOperation::isMulticast(){
-	if (this->getSrcCond().size()==1 && this->getDestCond().size()>1)
+	if (this->getSrcCond().size()==1 && this->getDestCond().size()>=1)
 	{
 		return true;
 	}
@@ -282,12 +284,27 @@ bool MPIOperation::isMulticast(){
 } 
 
 bool MPIOperation::isGatherOp(){
-	if (this->getSrcCond().size()>1 && this->getDestCond().size()==1)
+	if (this->getSrcCond().size()>=1 && this->getDestCond().size()==1)
 	{
 		return true;
 	}
 
 	return false;
+}
+
+
+//transform the current mpi op to equiv send op
+void MPIOperation::transformToSendingOP(){
+	if (this->isSendingOp())
+		return;
+
+	if (this->isRecvingOp())
+	{
+		Condition tmpExec=this->executor;
+		this->executor=this->target;
+		this->target=tmpExec;
+		this->opType=ST_NODE_SEND;
+	}
 }
 
 /********************************************************************/
@@ -461,7 +478,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 
 			else{
 				Condition bcaster=this->commManager->extractCondFromTargetExpr(E->getArg(3),
-														this->mpiSimulator->getCurExecCond());
+					this->mpiSimulator->getCurExecCond());
 
 
 				mpiOP=new MPIOperation(	funcName,
