@@ -1,0 +1,40 @@
+
+global protocol test_ProToCoL (role MPI_COMM_WORLD[0..N-1])
+{
+choice at MPI_PROGRAM 
+{
+Data(MPI_INT) from MPI_COMM_WORLD[0..0] to MPI_COMM_WORLD[0..N-1];
+
+
+Data(MPI_INT) from MPI_COMM_WORLD[5..9] to MPI_COMM_WORLD[2..2];
+
+
+Data(MPI_INT) from MPI_COMM_WORLD[3..7] to MPI_COMM_WORLD[5..9];
+
+
+Data(MPI_INT) from MPI_COMM_WORLD[2..2] to MPI_COMM_WORLD[0..N-1];
+
+}
+
+	or
+
+{
+rec LOOP_0 {
+Data(MPI_INT) from MPI_COMM_WORLD[2..2] to MPI_COMM_WORLD[1..1];
+
+
+choice at MPI_PROGRAM 
+{
+continue LOOP_0;
+}
+
+	or
+
+{
+Data(MPI_INT) from MPI_COMM_WORLD[5..5] to MPI_COMM_WORLD[3..3];
+
+}
+}
+}
+}
+

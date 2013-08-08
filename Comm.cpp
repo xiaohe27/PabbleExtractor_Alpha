@@ -5,6 +5,7 @@ using namespace clang;
 
 int InitEndIndex=100;
 
+string fileName="MPIProtocol";
 
 //some functions
 int min(int a, int b){if(a<b) return a; else return b;}
@@ -68,11 +69,20 @@ string convertDoubleToStr(double number)
 }
 
 void writeToFile(string content){
-	ofstream outputFile("A:/MPI_SessionType_Extractor/SessionTypeExtractor4MPI/Debug/Protocol.txt",
+	ofstream outputFile("A:/MPI_SessionType_Extractor/SessionTypeExtractor4MPI/Debug/Debug.txt",
 		ios_base::out | ios_base::app);
 
 	outputFile <<"\n"<< content <<"\n";
 
+}
+
+void writeProtocol(string protocol){
+	ofstream outputFile("Protocol.txt",
+		ios_base::out | ios_base::app);
+
+	outputFile <<"\n"<< protocol <<"\n";
+
+	outputFile.close();
 }
 
 

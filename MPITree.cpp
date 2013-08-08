@@ -8,14 +8,20 @@ using namespace std;
 /**************************************************************************/
 MPINode::MPINode(CommNode* node){
 	this->index=node->getPosIndex();
+	this->nodeType=node->getNodeType();
 	this->depth=node->getDepth();
 	this->op=nullptr;
+
+	this->labelInfo=node->getSrcCodeInfo();
 }
 
 MPINode::MPINode(MPIOperation* theOp){
 	this->index= theOp->theNode->getPosIndex();
+	this->nodeType=theOp->theNode->getNodeType();
 	this->depth=theOp->theNode->getDepth();
 	this->op=theOp;
+
+	this->labelInfo="";
 }
 
 bool MPINode::isLeaf(){
@@ -38,6 +44,23 @@ MPIOperation* MPINode::combineMPIOPs(MPIOperation* op1, MPIOperation* op2){
 			MPIOperation* combi=new MPIOperation(*op2);
 			combi->setExecutorCond(op1->getExecutor().OR(op2->getExecutor()));
 			combi->setTargetCond(op1->getTargetCond().OR(op2->getTargetCond()));
+			return combi;
+		}
+
+		else if (op1->getExecutor().isSameAsCond(op2->getExecutor()) && 
+				Condition::areTheseTwoCondAdjacent(op1->getTargetCond(),op2->getTargetCond()))
+		{
+			MPIOperation* combi=new MPIOperation(*op2);
+			combi->setExecutorCond(op1->getExecutor());
+			combi->setTargetCond(op1->getTargetCond().OR(op2->getTargetCond()));
+			return combi;
+		}
+
+		else if(op1->getTargetCond().isSameAsCond(op2->getTargetCond()) && 
+				Condition::areTheseTwoCondAdjacent(op1->getExecutor(),op2->getExecutor())){
+			MPIOperation* combi=new MPIOperation(*op2);
+			combi->setExecutorCond(op1->getExecutor().OR(op2->getExecutor()));
+			combi->setTargetCond(op1->getTargetCond());
 			return combi;
 		}
 

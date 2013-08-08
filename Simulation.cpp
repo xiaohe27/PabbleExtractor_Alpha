@@ -48,6 +48,31 @@ MPISimulator::MPISimulator(CommManager *commMgr, MPITree *tree){
 }
 
 
+void MPISimulator::insertToTmpContNodeList(MPINode *contNode){
+	if (contNode && contNode->getNodeType()==ST_NODE_CONTINUE)
+	{
+		this->listOfContMPINodes.push_back(contNode);
+	}
+}
+
+void MPISimulator::insertAllTheContNodesWithLabel(string loopLabel){
+	for (int i = 0; i < this->listOfContMPINodes.size(); i++)
+	{
+		MPINode* curCont=this->listOfContMPINodes.at(i);
+		if(curCont->getNodeType()!=ST_NODE_CONTINUE)
+			throw new MPI_TypeChecking_Error("Non cont node found in cont node list...");
+
+		if (curCont->getLabelInfo()!=loopLabel)
+			continue;
+
+		this->mpiTree->insertNode(curCont);
+
+		this->listOfContMPINodes.erase(this->listOfContMPINodes.begin()+i);
+		i--;
+	}
+}
+
+
 void MPISimulator::insertPosAndMPINodeTuple(int pos, MPINode *mpiNode){
 	if (this->posIndexAndMPINodeMapping.count(pos)>0)
 	{
@@ -70,7 +95,7 @@ void MPISimulator::insertNode(CommNode *node){
 
 	//set the condition for the node.
 	Condition newCond=curCond.AND(nodeCond);
-	newCond.normalize();
+	newCond.setNonRankVarName(nodeCond.getNonRankVarName());
 	node->setCond(newCond);
 
 	string commGroupName=node->getCond().getGroupName();

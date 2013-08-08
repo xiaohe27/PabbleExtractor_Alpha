@@ -96,6 +96,7 @@
     <ClCompile Include="MPIOP.cpp" />
     <ClCompile Include="MPITree.cpp" />
     <ClCompile Include="MPITypeCheckingConsumer.cpp" />
+    <ClCompile Include="ProtocolGen.cpp" />
     <ClCompile Include="RanAndCond.cpp" />
     <ClCompile Include="Roles.cpp" />
     <ClCompile Include="SessionTypeExtractor.cpp" />

@@ -48,6 +48,8 @@ private:
 
 	MPITree *mpiTree;
 
+	ProtocolGenerator *protocolGen;
+
 
 public:
 	void init(CompilerInstance *ci, int numOfProc);
@@ -84,6 +86,7 @@ public:
 	
 	string getVarInIncExpr(Expr *inc);
 
+	void handleUnknownSizeLoop();
 
 
 

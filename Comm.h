@@ -12,7 +12,7 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm>
-
+#include <climits>
 
 #include "clang/Frontend/CompilerInstance.h"
 #include "clang/AST/Stmt.h"
@@ -44,19 +44,21 @@
 #include "clang/AST/StmtVisitor.h"
 #include "clang/Frontend/Utils.h"
 
+using namespace std;
+using namespace clang;
 
 
 #define InitStartIndex -2
 
 extern int InitEndIndex;
 extern bool strict;
+extern string fileName;
 
 #define InvalidIndex -3
 
 #define WORLD "MPI_COMM_WORLD"
 
-using namespace std;
-using namespace clang;
+
 
 
 class MPI_TypeChecking_Error{
@@ -83,6 +85,8 @@ bool evalIntCmpTruth(int arg1, int arg2, string op);
 
 void writeToFile(string content);
 
+void writeProtocol(string protocol);
+
 
 int min(int a, int b);
 int max(int a, int b);
@@ -93,6 +97,7 @@ bool areTheseTwoNumsAdjacent(int a, int b);
 
 
 class CommNode;
+class RecurNode;
 class Condition;
 class MPIOperation;
 class Role;
@@ -154,6 +159,7 @@ private:
 	string nonRankVarName;
 
 	bool mixed;
+	bool isTrivialCond;
 
 public:
 	Condition();
@@ -213,6 +219,10 @@ public:
 	Range getTheRangeContainingTheNum(int num);
 
 	bool isSameAsCond(Condition other);
+
+	bool isTrivial(){return this->isTrivialCond;}
+
+	void setAsTrivial(){this->isTrivialCond=true;}
 
 	static bool areTheseTwoCondAdjacent(Condition cond1, Condition cond2);
 
@@ -291,6 +301,8 @@ public:
 	ParamRole(Condition cond);
 
 	~ParamRole(){delete actualRoles;}
+
+	string getFullParamRoleName();
 
 	bool hasARoleSatisfiesRange(Range ran);
 
@@ -388,9 +400,6 @@ private:
 
 	int depth;
 
-	//the pos number indicates the time of insertion, the smaller the earlier
-	int posIndex;
-
 	//the branch id specifies the executable path
 	string branchID;
 
@@ -409,11 +418,16 @@ private:
 
 	CommNode *sibling;
 
-	string info;
+	string srcCodeInfo;
 
 	//////////////////////////////////
 	//A node is master if it is the root of a master.
 	bool isMasterNode;
+
+
+protected:
+	//the pos number indicates the time of insertion, the smaller the earlier
+	int posIndex;
 
 public:
 	//construct an intermediate node
@@ -450,13 +464,17 @@ public:
 
 	void setCond(Condition cond){this->condition=cond;}
 
-	void setInfo(string info0){this->info=info0;}
+	void setInfo(string info0){this->srcCodeInfo=info0;}
+
+	string getSrcCodeInfo(){return this->srcCodeInfo;}
 
 	void setMarked();
 
 	bool isMarked();
 
 	CommNode* getClosestNonRankAncestor();
+
+	RecurNode* getInnerMostRecurNode();
 
 	CommNode* getParent()const{return this->parent;}
 
@@ -505,12 +523,15 @@ private:
 	RecurNode* refNode;
 
 public:
-	ContNode(RecurNode *node):CommNode(ST_NODE_CONTINUE,Condition(true)){this->refNode=node;}
+	string label;
+	ContNode(RecurNode *node);
 
 	void visit(){this->refNode->visitOnce();}
 
 	RecurNode* getRefNode(){return this->refNode;}
 	void setRefNode(RecurNode* refNode0){this->refNode=refNode0;}
+
+	void setToLastContNode(){this->posIndex=INT_MAX;}
 };
 
 
@@ -616,6 +637,8 @@ private:
 
 	map<int, MPINode*> posIndexAndMPINodeMapping;
 
+	vector<MPINode*> listOfContMPINodes;
+
 public:
 	MPISimulator(CommManager *commManager, MPITree *theMPITree);
 	CommNode* getCurNode(){return this->curNode;}
@@ -645,6 +668,9 @@ public:
 	void insertPosAndMPINodeTuple(int pos, MPINode *mpiNode);
 
 	void insertMPIOpToMPITree(MPIOperation *op);
+
+	void insertToTmpContNodeList(MPINode *contNode);
+	void insertAllTheContNodesWithLabel(string loopLabel);
 };
 
 
@@ -654,6 +680,8 @@ class MPINode{
 private:
 	int index;
 	int depth;
+	int nodeType;
+	string labelInfo;
 	MPIOperation* op;
 	vector<MPINode*> children;
 
@@ -662,9 +690,12 @@ public:
 	MPINode(MPIOperation* theOp);
 
 	bool isLeaf();
+	int getNodeType(){return this->nodeType;}
+	MPIOperation* getMPIOP(){return this->op;}
 	void insert(MPINode *child);
 	void insertToProperNode(MPINode *node);
-
+	vector<MPINode*> getChildren(){return this->children;}
+	string getLabelInfo(){return this->labelInfo;}
 	static MPIOperation* combineMPIOPs(MPIOperation* op1, MPIOperation* op2);
 };
 
@@ -672,10 +703,58 @@ class MPITree{
 private:
 	MPINode *root;
 
+
 public:
 	MPITree(MPINode *rtNode);
 	MPINode* getRoot(){return this->root;}
 	void insertNode(MPINode* mpiNode);
+
+};
+
+
+class ProtocolGenerator{
+private:
+	MPITree *mpiTree;
+	map<string,ParamRole*>  paramRoleNameMapping;
+
+	////////////////////////////////////////////////////////////////////////////////////
+	string genRoleName(string paramRoleName, Range ran);
+
+
+
+	////////////////////////////////////////////////////////////////////////////////////
+	//The component methods corresponding to the BNF spec
+	//The header part
+	string protocolName();
+	string globalProtocolHeader();
+	string localProtocolHeader(string roleName);
+	string roleDeclList();
+	string roleDecl(string roleName);
+
+	////////////////////////////////////////////////////////////////////////////////////
+	//The definition part
+	string globalDef();
+	string globalInteractionBlock(MPINode *theRoot);
+	string globalInteractionSeq(MPINode *theRoot);
+	string globalInteraction(MPINode *node);
+
+	string globalMsgTransfer(MPINode *node);
+	string globalChoice(MPINode *node);
+	string globalRecur(MPINode *node);
+	string globalContinue(MPINode *node);
+
+	string message(MPIOperation* mpiOP);
+	string msgOperator(){return "Data";}
+	string payLoad(MPIOperation* mpiOP);
+
+	string getReceiverRoles(MPIOperation *mpiOP, int pos);
+
+	string generateGlobalProtocol();
+	string generateLocalProtocol(ParamRole* paramRole);
+public:
+	ProtocolGenerator(MPITree *tree, map<string,ParamRole*>  paramRoleNameMapping0);
+
+	void generateTheProtocols();
 
 };
 

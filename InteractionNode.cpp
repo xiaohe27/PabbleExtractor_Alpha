@@ -15,6 +15,7 @@ void CommNode::init(int type, vector<MPIOperation*> *theOPs){
 	this->depth=0;
 	this->posIndex=0;
 	this->branchID="";
+	this->srcCodeInfo="";
 	this->ops=theOPs;
 	this->marked=false;
 	this->isMasterNode=false;
@@ -135,7 +136,7 @@ bool CommNode::isMarked() {
 
 void CommNode::setMarked(){
 	this->marked=true;
-	
+
 	if (this->getOPs())
 	{
 		delete this->ops;
@@ -300,6 +301,18 @@ int CommNode::sizeOfTheNode(){
 	return sum+1;
 }
 
+
+RecurNode* CommNode::getInnerMostRecurNode(){
+	if (this->getNodeType()==ST_NODE_RECUR)
+	{
+		return (RecurNode*)this;
+	}
+
+	else{
+		return this->getParent()->getInnerMostRecurNode();
+	}
+}
+
 /********************************************************************/
 //Class CommNode impl end										****
 /********************************************************************/
@@ -320,4 +333,19 @@ void RecurNode::visitOnce()
 
 /********************************************************************/
 //Class RecurNode impl end										****
+/********************************************************************/
+
+
+/********************************************************************/
+//Class ContNode impl start										****
+/********************************************************************/
+ContNode::ContNode(RecurNode *node):CommNode(ST_NODE_CONTINUE,Condition(true))
+{
+	this->refNode=node;
+
+	this->setInfo(this->refNode->getSrcCodeInfo());
+}
+
+/********************************************************************/
+//Class ContNode impl end										****
 /********************************************************************/

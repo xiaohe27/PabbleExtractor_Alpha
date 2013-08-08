@@ -280,6 +280,11 @@ bool ParamRole::hasARoleSatisfiesRange(Range ran){
 	return false;
 }
 
+
+string ParamRole::getFullParamRoleName(){
+	return this->paramRoleName+"[0..N-1]";
+}
+
 //used in constructing the comm tree
 void ParamRole::addAllTheRangesInTheCondition(Condition cond){
 	vector<Range> ranList=cond.getRangeList();

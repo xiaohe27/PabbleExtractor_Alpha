@@ -212,7 +212,17 @@ Condition Range::OR(Range other){
 
 	//the two ranges have no intersection
 	if(!this->hasIntersectionWith(other)){
-		if (areTheseTwoNumsAdjacent(other.getEnd(),this->getStart()))
+		if(this->size()==1 && other.size()==1){
+			int smallOne=min(this->getStart(),other.getStart());
+			int largeOne=max(this->getStart(),other.getStart());
+			if (areTheseTwoNumsAdjacent(smallOne,largeOne))
+				return Condition(Range(smallOne,largeOne));
+			else
+				return Condition(*this,other);
+			
+		}
+
+		else if (areTheseTwoNumsAdjacent(other.getEnd(),this->getStart()))
 		{
 			if(other.isSpecialRange()){
 				if(this->getEnd()>=other.getStart())
@@ -420,6 +430,7 @@ string Range::printRangeInfo(){
 Condition::Condition(){
 	this->shouldBeIgnored=false; this->complete=false;
 	this->mixed=false;
+	this->isTrivialCond=false;
 	this->groupName=WORLD;
 	this->nonRankVarName="";
 }
@@ -429,6 +440,7 @@ Condition::Condition(bool val){
 	this->nonRankVarName="";
 	rangeList.clear();
 	this->mixed=false;
+	this->isTrivialCond=false;
 
 	if(val){
 
@@ -448,6 +460,7 @@ Condition::Condition(Range ran){
 	this->shouldBeIgnored=false; 
 	this->complete=false;
 	this->mixed=false;
+	this->isTrivialCond=false;
 	this->groupName=WORLD;
 	this->rangeList.clear(); this->rangeList.push_back(ran);
 
@@ -458,6 +471,7 @@ Condition::Condition(Range ran1, Range ran2){
 	this->shouldBeIgnored=false; 
 	this->complete=false;
 	this->mixed=false;
+	this->isTrivialCond=false;
 	this->groupName=WORLD;
 	rangeList.clear(); rangeList.push_back(ran1);rangeList.push_back(ran2);
 

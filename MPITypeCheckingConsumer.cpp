@@ -6,7 +6,7 @@ using namespace clang;
 using namespace std;
 using namespace llvm;
 
-
+int labelIndex=0;
 
 MPITypeCheckingConsumer::MPITypeCheckingConsumer(CompilerInstance *ci, int numOfProc){
 	init(ci,numOfProc);
@@ -24,6 +24,8 @@ void MPITypeCheckingConsumer::init(CompilerInstance *ci, int numOfProc){
 	this->mpiTree=new MPITree(new MPINode(new CommNode(ST_NODE_ROOT,Condition(true))));
 
 	this->mpiSimulator=new MPISimulator(this->commManager,this->mpiTree);
+
+	this->protocolGen=new ProtocolGenerator(this->mpiTree,this->commManager->getParamRoleMapping());
 }
 
 void MPITypeCheckingConsumer::HandleTranslationUnit(ASTContext &Ctx) {
@@ -44,6 +46,7 @@ void MPITypeCheckingConsumer::HandleTranslationUnit(ASTContext &Ctx) {
 	//and the traversal of the comm tree can start
 	this->mpiSimulator->simulate();
 
+	this->protocolGen->generateTheProtocols();
 }
 
 
@@ -175,6 +178,24 @@ bool MPITypeCheckingConsumer::isChangingByOneUnit(Expr *inc){
 }
 
 
+void MPITypeCheckingConsumer::handleUnknownSizeLoop(){
+		CommNode *curN=this->mpiSimulator->getCurNode()->getParent();
+		if (curN->isMaster())
+		{
+			CommNode *theLoopNode=this->mpiSimulator->getCurNode();
+			theLoopNode->setInfo("LOOP_"+convertIntToStr(labelIndex++));
+			theLoopNode->setMaster();
+			MPINode *theLoopMPINode=new MPINode(theLoopNode);
+			this->mpiTree->insertNode(theLoopMPINode);
+
+			this->mpiSimulator->insertPosAndMPINodeTuple(theLoopNode->getPosIndex(),theLoopMPINode);
+		}
+
+		else{
+			throw new MPI_TypeChecking_Error
+				("It is NOT allowed to insert loop node with unknown iteration number to a rank-related node!");
+		}
+}
 
 
 

@@ -16,11 +16,40 @@ using namespace llvm;
 
 int numOfProcesses;
 string filePath;
-
 bool strict=false;
 
+
+//TODO
+string getFileName(string path){
+
+	char drive[_MAX_DRIVE];
+	char dir[_MAX_DIR];
+	char fname[_MAX_FNAME];
+	char ext[_MAX_EXT];
+	errno_t err;
+
+	
+
+	err = _splitpath_s( path.c_str(), drive, _MAX_DRIVE, dir, _MAX_DIR, fname,
+		_MAX_FNAME, ext, _MAX_EXT );
+	if (err != 0)
+	{
+		printf("Error splitting the path. Error code %d.\n", err);
+		exit(1);
+	}
+
+	printf( "Path extracted with _splitpath_s:\n" );
+	printf( "  Drive: %s\n", drive );
+	printf( "  Dir: %s\n", dir );
+	printf( "  Filename: %s\n", fname );
+	printf( "  Ext: %s\n", ext );
+
+	string name(fname);
+	return name;
+}
+
 void parseArgs(int argc, char *argv[]){
-		if (argc < 3) {
+	if (argc < 3) {
 		cout<<"Not enough args."<<endl;
 	} else { 
 
@@ -55,9 +84,6 @@ void parseArgs(int argc, char *argv[]){
 	}
 }
 
-void init(){
-	
-}
 
 int main(int argc, char *argv[])
 {
@@ -69,9 +95,8 @@ int main(int argc, char *argv[])
 	parseArgs(argc,argv);
 
 	if (filePath=="")
-	throw MPI_TypeChecking_Error("No MPI src code provided!");
+		throw MPI_TypeChecking_Error("No MPI src code provided!");
 
-	init();
 
 	ofstream outputFile("A:/MPI_SessionType_Extractor/SessionTypeExtractor4MPI/Debug/Protocol.txt");
 	outputFile.clear();
@@ -163,14 +188,14 @@ int main(int argc, char *argv[])
 	ci.createSema(clang::TU_Complete, NULL);
 
 
-	//read from the mpi src file
-	const FileEntry *pFile = ci.getFileManager().getFile(filePath);
-	ci.getSourceManager().createMainFileID(pFile);
-	/////////////////////////////////////////
-
-
-
 	try{
+		//read from the mpi src file
+		const FileEntry *pFile = ci.getFileManager().getFile(filePath);
+		ci.getSourceManager().createMainFileID(pFile);
+		/////////////////////////////////////////
+
+		fileName=getFileName(filePath);
+
 
 		ci.getDiagnosticClient().BeginSourceFile(ci.getLangOpts(),
 			&ci.getPreprocessor());

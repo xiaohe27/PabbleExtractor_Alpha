@@ -2,7 +2,7 @@
 
 using namespace clang;
 using namespace llvm;
-using namespace std;
+
 
 
 
@@ -108,7 +108,7 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	this->mpiSimulator->insertNode(choiceNode);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	
+
 
 	Expr *condExpr=ifStmt->getCond();
 	string typeOfCond=condExpr->getType().getAsString();
@@ -135,26 +135,31 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	//only the processes that satisfy the then part conditon can enter the block!
 	CommNode *thenNode=new CommNode(ST_NODE_ROOT,thenCond);
 	this->mpiSimulator->insertNode(thenNode);
-	
+
 	////////////////////////////////////////////////////////////////////////////////////
 	Condition theIFCond=this->mpiSimulator->getCurNode()->getCond();
+
+
+
 	bool shouldInsertToMPITree=false;
 	string ifCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr);
 
 	if (theIFCond.isComplete() && !this->commManager->containsRankStr(ifCondStr)
-		&& !theIFCond.isRelatedToRank()){
-		shouldInsertToMPITree=true;
+		&& !thenCond.isTrivial()){
+			shouldInsertToMPITree=true;
 
-		CommNode* theIfNode=this->mpiSimulator->getCurNode();
-		CommNode* theChoiceCommNode=theIfNode->getParent();
+			CommNode* theIfNode=this->mpiSimulator->getCurNode();
+			CommNode* theChoiceCommNode=theIfNode->getParent();
 
-		MPINode* theChoiceMPINode=new MPINode(theChoiceCommNode);
-		MPINode* theIfMPINode=new MPINode(theIfNode);
-		this->mpiTree->insertNode(theChoiceMPINode);
-		this->mpiTree->insertNode(theIfMPINode);
+			theIfNode->setMaster();
 
-		this->mpiSimulator->insertPosAndMPINodeTuple(theChoiceCommNode->getPosIndex(),theChoiceMPINode);
-		this->mpiSimulator->insertPosAndMPINodeTuple(theIfNode->getPosIndex(),theIfMPINode);
+			MPINode* theChoiceMPINode=new MPINode(theChoiceCommNode);
+			MPINode* theIfMPINode=new MPINode(theIfNode);
+			this->mpiTree->insertNode(theChoiceMPINode);
+			this->mpiTree->insertNode(theIfMPINode);
+
+			this->mpiSimulator->insertPosAndMPINodeTuple(theChoiceCommNode->getPosIndex(),theChoiceMPINode);
+			this->mpiSimulator->insertPosAndMPINodeTuple(theIfNode->getPosIndex(),theIfMPINode);
 	}
 	////////////////////////////////////////////////////////////////////////////////////
 
@@ -203,13 +208,14 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	if (shouldInsertToMPITree)
 	{
 		CommNode* theElseNode=this->mpiSimulator->getCurNode();
+		theElseNode->setMaster();
 
 		MPINode *theElseMPINode=new MPINode(theElseNode);
 		this->mpiTree->insertNode(theElseMPINode);
 
 		this->mpiSimulator->insertPosAndMPINodeTuple(theElseNode->getPosIndex(),theElseMPINode);
 	}
-	/////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////
 
 	//visit else part
 	cout<<"Going to visit else part of condition: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
@@ -229,7 +235,7 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 bool MPITypeCheckingConsumer::VisitDeclStmt(DeclStmt *S){
 
-	if(!this->visitStart){
+	
 		DeclGroupRef d=S->getDeclGroup();
 
 		DeclGroupRef::iterator it;
@@ -245,8 +251,8 @@ bool MPITypeCheckingConsumer::VisitDeclStmt(DeclStmt *S){
 				this->commManager->insertVarName(varName);
 			}
 		}
-		return true;
-	}
+	
+	
 
 	cout <<"The decl stmt is: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 	return true;
@@ -291,7 +297,7 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 
 	//analyse the non-rank var 
 	Condition theCondOfFor=this->commManager->extractCondFromBoolExpr(condOfFor);
-	if(!theCondOfFor.isComplete())
+	if(!theCondOfFor.isComplete() || this->commManager->containsRankStr(condOfForStr))
 		throw new MPI_TypeChecking_Error("The condition in for loop should not contain rank-related var!");
 
 	vector<string> nonRankVarList=this->analyzeNonRankVarCond(this->commManager->getTmpNonRankVarCondStackMap());
@@ -302,13 +308,24 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 	int size=this->analyzeForStmt(initFor,condOfFor,inc,bodyOfFor,nonRankVarList);
 
 	cout<<"The for loop will iterate "<<size<<" times!"<<endl;
+	
 
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//create node for 'for' stmt
 	RecurNode *forNode=new RecurNode(size);
 	this->mpiSimulator->insertNode(forNode);
 
+	//if the iter num is -1, then the iter num is unknown
+	if (size==-1)
+	{
+		//if the iter num is unknown, then either throw exception or create a recur node.
+		this->handleUnknownSizeLoop();
+	}
+
 	//visit each stmt inside the for loop
 	this->TraverseStmt(bodyOfFor);
+
+	this->mpiSimulator->insertAllTheContNodesWithLabel(forNode->getSrcCodeInfo());
 
 	this->mpiSimulator->gotoParent();
 
@@ -339,19 +356,24 @@ bool MPITypeCheckingConsumer::TraverseWhileStmt(WhileStmt *S){
 
 	//analyse the non-rank var 
 	Condition theCondOfWhile=this->commManager->extractCondFromBoolExpr(condOfWhile);
-	if(!theCondOfWhile.isComplete())
+	if(!theCondOfWhile.isComplete() || this->commManager->containsRankStr(condOfWhileStr))
 		throw new MPI_TypeChecking_Error("The condition in while loop should not contain rank-related var!");
 
 	vector<string> nonRankVarList=this->analyzeNonRankVarCond(this->commManager->getTmpNonRankVarCondStackMap());
 
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//create node for 'while' stmt
 	RecurNode *whileNode=new RecurNode(-1);
 	this->mpiSimulator->insertNode(whileNode);
 
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	this->handleUnknownSizeLoop();
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	//visit each stmt inside the for loop
 	this->TraverseStmt(bodyOfWhile);
+
+	this->mpiSimulator->insertAllTheContNodesWithLabel(whileNode->getSrcCodeInfo());
 
 	this->mpiSimulator->gotoParent();
 
@@ -405,7 +427,19 @@ bool MPITypeCheckingConsumer::VisitContinueStmt(ContinueStmt *S){
 	cout <<"Call Continue stmt" <<endl;
 
 	CommNode *cont=new CommNode(ST_NODE_CONTINUE,Condition(true));
+
 	this->mpiSimulator->insertNode(cont);
+
+	CommNode* curNd=this->mpiSimulator->getCurNode();
+	RecurNode* tmpRecurNode=curNd->getInnerMostRecurNode();
+
+
+	if (!tmpRecurNode->hasKnownNumberOfIterations())
+	{
+		cont->setInfo(tmpRecurNode->getSrcCodeInfo());
+		MPINode* contMPINode=new MPINode(cont);
+		this->mpiSimulator->insertToTmpContNodeList(contMPINode);
+	}
 	return true;
 }
 

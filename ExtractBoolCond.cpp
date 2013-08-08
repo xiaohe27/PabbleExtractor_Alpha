@@ -25,12 +25,17 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 		cout<<"The boolResult is "<<boolResult<<endl;
 
 		if(boolResult){
-
-			return Condition(true);
+			Condition trueCond(true);
+			trueCond.setAsTrivial();
+			return trueCond;
 
 		}
 
-		else{return Condition(false);}			
+		else{
+			Condition falseCond(false);
+			falseCond.setAsTrivial();
+			return falseCond;
+		}			
 
 	}
 
@@ -39,7 +44,9 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 	//if it is a single var
 	if(this->isAVar(exprStr)){
 		//a var can contain any value, so assume true.
-		return Condition(true);
+		Condition theCond(true);
+		theCond.setNonRankVarName(exprStr);
+		return theCond;
 	}
 
 
@@ -70,7 +77,9 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 					this->insertTmpNonRankVarCond(nonRankVarName,newC);
 				}
 
-				return Condition(true);
+				Condition theCond(true);
+				theCond.setNonRankVarName(nonRankVarName);
+				return theCond;
 			}
 			return Condition::negateCondition(theCond);
 		}
