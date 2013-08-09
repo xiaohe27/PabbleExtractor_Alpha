@@ -245,7 +245,7 @@ string ProtocolGenerator::globalRecur(MPINode *node){
 		tmpContNode->setToLastContNode();
 		MPINode *implicitContNode=new MPINode(tmpContNode);
 		
-		childrenOfTheNode.push_back(implicitContNode);
+		node->insertToEndOfChildrenList(implicitContNode);
 	}
 
 	string out="\nrec "+node->getLabelInfo()+" ";

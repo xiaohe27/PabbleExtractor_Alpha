@@ -18,7 +18,9 @@ void CommNode::init(int type, vector<MPIOperation*> *theOPs){
 	this->srcCodeInfo="";
 	this->ops=theOPs;
 	this->marked=false;
+	this->mpiOPIsForbidden=false;
 	this->isMasterNode=false;
+	this->isRelatedToRank=false;
 
 	this->parent=nullptr;
 	this->sibling=nullptr;
@@ -209,6 +211,17 @@ void CommNode::initTheBranchId(){
 	{
 		children.at(i)->initTheBranchId();
 	}
+}
+
+
+bool CommNode::isRankRelatedChoice(){
+	if (this->getNodeType()==ST_NODE_CHOICE && this->isRelatedToRank)
+	{
+		return true;
+	}
+
+	else
+		return false;
 }
 
 //print the tree rooted at this node

@@ -104,17 +104,9 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	//cout <<"The if stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(), ifStmt) <<endl;
 	CommNode *choiceNode=new CommNode(ST_NODE_CHOICE,Condition(true));
 
-	//the choice node will become the cur node automatically
-	this->mpiSimulator->insertNode(choiceNode);
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 	Expr *condExpr=ifStmt->getCond();
-	string typeOfCond=condExpr->getType().getAsString();
 
-	cout<<"Type of condition is "<<typeOfCond<<"\nCond Expr is: "
-		<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
 
 	this->commManager->clearTmpNonRankVarCondStackMap();	
 
@@ -126,6 +118,16 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 	//insert the non-rank var conditions to formal stack, if any
 	vector<string> stackOfNonRankVarNames=this->analyzeNonRankVarCond(this->commManager->getTmpNonRankVarCondStackMap());
+
+	if (stackOfNonRankVarNames.size()==0)
+	{
+		choiceNode->setAsRelatedToRank();
+	}
+	//the choice node will become the cur node automatically
+	this->mpiSimulator->insertNode(choiceNode);
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 	//visit then part
 	cout<<"Going to visit then part of condition: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;

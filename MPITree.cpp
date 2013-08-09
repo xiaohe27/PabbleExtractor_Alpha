@@ -32,6 +32,10 @@ bool MPINode::isLeaf(){
 		return true;
 }
 
+void MPINode::insertToEndOfChildrenList(MPINode *lastContNode)
+{
+	this->children.push_back(lastContNode);
+}
 
 MPIOperation* MPINode::combineMPIOPs(MPIOperation* op1, MPIOperation* op2){
 	//because every op has been transformed to sending op before inserted to the node

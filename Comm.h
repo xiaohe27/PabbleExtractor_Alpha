@@ -408,6 +408,10 @@ private:
 
 	bool marked;
 
+	bool mpiOPIsForbidden;
+
+	bool isRelatedToRank;
+
 	void init(int type,vector<MPIOperation*> *ops);
 
 	//the role visitor will check whether it can 
@@ -433,6 +437,7 @@ protected:
 	int posIndex;
 
 public:
+
 	//construct an intermediate node
 	CommNode(int type, Condition cond);
 
@@ -449,7 +454,13 @@ public:
 
 	bool isMaster(){return this->isMasterNode;}
 
+	bool HasMpiOPBeenForbidden(){return this->mpiOPIsForbidden;}
+
+	void forbidTheMPIOP(){this->mpiOPIsForbidden=true;}
+
 	bool isNegligible();
+
+	void setAsRelatedToRank(){this->isRelatedToRank=true;}
 
 	void initTheBranchId();
 
@@ -502,6 +513,8 @@ public:
 	void insertMPIOP(MPIOperation* theOP){this->ops->push_back(theOP);}
 
 	int getPosIndex() const{return this->posIndex;}
+
+	bool isRankRelatedChoice();
 
 	////////////////////////////////////////////////////////////////////////
 	//only used after the traversal of AST of the mpi pgm
@@ -649,6 +662,8 @@ public:
 	void gotoParent();
 	Condition getCurExecCond(){return this->curNode->getCond();}
 
+	void forbidMPIOP(CommNode *node);
+
 	void simulate();
 
 	void printTheRoles();
@@ -699,6 +714,7 @@ public:
 	void insertToProperNode(MPINode *node);
 	vector<MPINode*> getChildren(){return this->children;}
 	string getLabelInfo(){return this->labelInfo;}
+	void insertToEndOfChildrenList(MPINode *lastContNode);
 	static MPIOperation* combineMPIOPs(MPIOperation* op1, MPIOperation* op2);
 };
 

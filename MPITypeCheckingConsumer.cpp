@@ -192,13 +192,6 @@ void MPITypeCheckingConsumer::handleLoop(){
 
 		this->mpiSimulator->insertPosAndMPINodeTuple(theLoopNode->getPosIndex(),theLoopMPINode);
 	}
-
-	else{
-		RecurNode *recurN=(RecurNode*) theLoopNode;
-		if (!recurN->hasKnownNumberOfIterations())
-			throw new MPI_TypeChecking_Error
-			("It is NOT allowed to insert loop node with unknown iteration number to a rank-related node!");
-	}
 }
 
 

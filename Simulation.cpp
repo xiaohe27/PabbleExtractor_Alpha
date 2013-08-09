@@ -83,15 +83,42 @@ void MPISimulator::insertPosAndMPINodeTuple(int pos, MPINode *mpiNode){
 }
 
 
+void MPISimulator::forbidMPIOP(CommNode *node){
+	if (node->getOPs())
+		return;
+
+	if (node->isRankRelatedChoice())
+		return;
+
+	if(node->getNodeType()==ST_NODE_RECUR){
+		RecurNode *recurNode=(RecurNode*)node;
+		if (recurNode->hasKnownNumberOfIterations())
+			return;
+	}
+
+	node->forbidTheMPIOP();
+}
+
 void MPISimulator::insertNode(CommNode *node){
 	Condition curCond=this->curNode->getCond();
 	Condition nodeCond=node->getCond();
-	if (!curCond.isComplete() && !nodeCond.isRelatedToRank())
-	{
-		string errInfo="The non-rank related node cannot be inserted into the node ";
-		errInfo+="with condition "+curCond.printConditionInfo();
-		throw new MPI_TypeChecking_Error(errInfo);
+
+	if(this->curNode->HasMpiOPBeenForbidden()){
+		if(node->getOPs()){
+			string errInfo="The current node is not allowed to insert MPI operation!";
+			throw new MPI_TypeChecking_Error(errInfo);
+		}
+
+		node->forbidTheMPIOP();
 	}
+
+	if (!this->curNode->HasMpiOPBeenForbidden() && !curCond.isComplete())
+	{
+		//if the condition is satisfied, then the node needs
+		//to forbid the mpi op to be inserted into the tree
+		forbidMPIOP(node);
+	}
+
 
 	//set the condition for the node.
 	Condition newCond=curCond.AND(nodeCond);
