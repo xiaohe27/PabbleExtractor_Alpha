@@ -36,6 +36,23 @@ MPIOperation::MPIOperation(string opName0,int opType0, string dataType0,Conditio
 	this->isInPendingList=false;
 }
 
+string MPIOperation::getTarExprStr(){
+	string out=this->rankStr;
+
+	if (this->target.offset==0)
+		return this->rankStr;
+
+	
+	if (this->target.offset>0)
+	{
+		out+="+";
+	}
+
+	out+=convertIntToStr(this->target.offset);
+	return out;
+}
+
+
 string MPIOperation::printMPIOP(){
 	string out="\n";
 	out+=this->srcCode;
@@ -45,13 +62,13 @@ string MPIOperation::printMPIOP(){
 	if (this->isTargetDependOnExecutor)
 	{
 		if (this->getSrcCond().isIgnored())
-			out+="\nIts src proc are "+targetExprStr;
+			out+="\nIts src proc are "+this->targetExprStr;
 
 		else
 			out+="\nIts src proc are "+this->getSrcCond().printConditionInfo();
 
 		if (this->getDestCond().isIgnored())
-			out+="\nIts dest proc are "+targetExprStr;
+			out+="\nIts dest proc are "+this->targetExprStr;
 
 		else
 			out+="\nIts dest proc are "+this->getDestCond().printConditionInfo();
@@ -300,6 +317,9 @@ void MPIOperation::transformToSendingOP(){
 
 	if (this->isRecvingOp())
 	{
+		if (this->isDependentOnExecutor())
+			this->executor.offset=-this->target.offset;
+		
 		Condition tmpExec=this->executor;
 		this->executor=this->target;
 		this->target=tmpExec;
@@ -396,6 +416,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 					group);
 
 				mpiOP->setTargetExprStr(stmt2str(&ci->getSourceManager(),ci->getLangOpts(),E->getArg(3)));
+				mpiOP->rankStr=this->rankVar;
 			}
 
 			else{
@@ -439,6 +460,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 					tag, group);
 
 				mpiOP->setTargetExprStr(stmt2str(&ci->getSourceManager(),ci->getLangOpts(),E->getArg(3)));
+				mpiOP->rankStr=this->rankVar;
 			}
 
 			else{

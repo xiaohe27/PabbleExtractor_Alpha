@@ -235,24 +235,24 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 bool MPITypeCheckingConsumer::VisitDeclStmt(DeclStmt *S){
 
-	
-		DeclGroupRef d=S->getDeclGroup();
 
-		DeclGroupRef::iterator it;
+	DeclGroupRef d=S->getDeclGroup();
 
-		for( it = d.begin(); it != d.end(); it++)
-		{
+	DeclGroupRef::iterator it;
 
-			if(isa<VarDecl>(*it)){
-				VarDecl *var=cast<VarDecl>(*it);
-				string varName=var->getDeclName().getAsString();
-				cout<<"Find the var "<<varName<<endl;
+	for( it = d.begin(); it != d.end(); it++)
+	{
 
-				this->commManager->insertVarName(varName);
-			}
+		if(isa<VarDecl>(*it)){
+			VarDecl *var=cast<VarDecl>(*it);
+			string varName=var->getDeclName().getAsString();
+			cout<<"Find the var "<<varName<<endl;
+
+			this->commManager->insertVarName(varName);
 		}
-	
-	
+	}
+
+
 
 	cout <<"The decl stmt is: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 	return true;
@@ -308,7 +308,7 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 	int size=this->analyzeForStmt(initFor,condOfFor,inc,bodyOfFor,nonRankVarList);
 
 	cout<<"The for loop will iterate "<<size<<" times!"<<endl;
-	
+
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//create node for 'for' stmt
@@ -316,11 +316,9 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 	this->mpiSimulator->insertNode(forNode);
 
 	//if the iter num is -1, then the iter num is unknown
-	if (size==-1)
-	{
-		//if the iter num is unknown, then either throw exception or create a recur node.
-		this->handleUnknownSizeLoop();
-	}
+
+	//if the iter num is unknown, then either throw exception or create a recur node.
+	this->handleLoop();
 
 	//visit each stmt inside the for loop
 	this->TraverseStmt(bodyOfFor);
@@ -367,7 +365,7 @@ bool MPITypeCheckingConsumer::TraverseWhileStmt(WhileStmt *S){
 	this->mpiSimulator->insertNode(whileNode);
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	this->handleUnknownSizeLoop();
+	this->handleLoop();
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//visit each stmt inside the for loop

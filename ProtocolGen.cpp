@@ -17,9 +17,19 @@ ProtocolGenerator::ProtocolGenerator(MPITree *tree, map<string,ParamRole*>  para
 }
 
 
+////////////////////////////////////////////////////////////////////////////////////////////
 string ProtocolGenerator::genRoleName(string paramRoleName, Range ran){
 	return paramRoleName+ran.printRangeInfo();
 }
+
+
+string ProtocolGenerator::insertRankInfoToRangeStr(string rangeInfoStr){
+	
+	rangeInfoStr.insert(1,rankName+":");
+
+	return rangeInfoStr;
+}
+///////////////////////////////////////////////////////////////////////////////////////////
 
 
 //TODO
@@ -126,6 +136,7 @@ string ProtocolGenerator::globalInteraction(MPINode *node){
 		return globalContinue(node);
 	}
 
+
 	throw new MPI_TypeChecking_Error("Encounter an un-supported request. Program abort unexpectedly.");
 }
 
@@ -150,7 +161,12 @@ string ProtocolGenerator::getReceiverRoles(MPIOperation *mpiOP, int pos){
 	if (mpiOP->isUnicast())
 	{
 		Range ran=mpiOP->getDestCond().getRangeList().at(pos);
-		out=WORLD+ran.printRangeInfo();
+		out=genRoleName(WORLD,ran);
+
+		if (mpiOP->isDependentOnExecutor())
+		{
+			out="["+mpiOP->getTarExprStr()+"]";
+		}
 	}
 
 	else if (mpiOP->isMulticast())
@@ -191,7 +207,13 @@ string ProtocolGenerator::globalMsgTransfer(MPINode *node){
 	{
 		Range ran=execCond.getRangeList().at(i);
 
-		output+=msg+" from "+genRoleName(WORLD,ran)+" to "+getReceiverRoles(theMPIOP, i)+";\n";
+		string senderRoleName=genRoleName(WORLD,ran);
+		if (theMPIOP->isUnicast() && theMPIOP->isDependentOnExecutor())
+		{
+			senderRoleName=WORLD+this->insertRankInfoToRangeStr(ran.printRangeInfo());
+		}
+
+		output+=msg+" from "+senderRoleName+" to "+getReceiverRoles(theMPIOP, i)+";\n";
 	}
 
 	return output;
@@ -237,7 +259,6 @@ string ProtocolGenerator::globalContinue(MPINode *node){
 
 	return out;
 }
-
 
 
 

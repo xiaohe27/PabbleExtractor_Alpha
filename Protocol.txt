@@ -1,3 +1,4 @@
+const N=28;
 
 global protocol test_ProToCoL (role MPI_COMM_WORLD[0..N-1])
 {
@@ -9,7 +10,7 @@ Data(MPI_INT) from MPI_COMM_WORLD[0..0] to MPI_COMM_WORLD[0..N-1];
 Data(MPI_INT) from MPI_COMM_WORLD[5..9] to MPI_COMM_WORLD[2..2];
 
 
-Data(MPI_INT) from MPI_COMM_WORLD[3..7] to MPI_COMM_WORLD[5..9];
+Data(MPI_INT) from MPI_COMM_WORLD[rank:3..7] to [rank+2];
 
 
 Data(MPI_INT) from MPI_COMM_WORLD[2..2] to MPI_COMM_WORLD[0..N-1];
@@ -20,7 +21,7 @@ Data(MPI_INT) from MPI_COMM_WORLD[2..2] to MPI_COMM_WORLD[0..N-1];
 
 {
 rec LOOP_0 {
-Data(MPI_INT) from MPI_COMM_WORLD[2..2] to MPI_COMM_WORLD[1..1];
+Data(MPI_INT) from MPI_COMM_WORLD[rank:2..2] to [rank-1];
 
 
 choice at MPI_PROGRAM 
@@ -31,8 +32,10 @@ continue LOOP_0;
 	or
 
 {
-Data(MPI_INT) from MPI_COMM_WORLD[5..5] to MPI_COMM_WORLD[3..3];
+rec LOOP_1 {
+Data(MPI_INT) from MPI_COMM_WORLD[7..7] to MPI_COMM_WORLD[0..N-1];
 
+}
 }
 }
 }

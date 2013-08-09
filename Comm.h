@@ -162,6 +162,8 @@ private:
 	bool isTrivialCond;
 
 public:
+	int offset;
+
 	Condition();
 
 	Condition(bool val);
@@ -337,6 +339,7 @@ private:
 
 
 public:
+	string rankStr;
 	CommNode *theNode;
 	bool isInPendingList;
 
@@ -379,7 +382,7 @@ public:
 
 	void transformToSendingOP();
 	string printMPIOP();
-
+	string getTarExprStr();
 };
 
 
@@ -718,8 +721,9 @@ private:
 	map<string,ParamRole*>  paramRoleNameMapping;
 
 	////////////////////////////////////////////////////////////////////////////////////
+	//helper methods
 	string genRoleName(string paramRoleName, Range ran);
-
+	string insertRankInfoToRangeStr(string rangeInfoStr);
 
 
 	////////////////////////////////////////////////////////////////////////////////////
@@ -743,6 +747,7 @@ private:
 	string globalRecur(MPINode *node);
 	string globalContinue(MPINode *node);
 
+
 	string message(MPIOperation* mpiOP);
 	string msgOperator(){return "Data";}
 	string payLoad(MPIOperation* mpiOP);
@@ -751,7 +756,10 @@ private:
 
 	string generateGlobalProtocol();
 	string generateLocalProtocol(ParamRole* paramRole);
+
 public:
+	string rankName;
+
 	ProtocolGenerator(MPITree *tree, map<string,ParamRole*>  paramRoleNameMapping0);
 
 	void generateTheProtocols();

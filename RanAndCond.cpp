@@ -413,8 +413,19 @@ string Range::printRangeInfo(){
 	int exceed=this->getEnd()-InitEndIndex;
 	string sign= exceed>0?"+":"";
 	endPosStr="N"+sign+(exceed==0?"":convertIntToStr(exceed));
+
+	if (this->getEnd()>=InitEndIndex-1 )
+	{
+		if(this->getEnd()==this->getStart())
+			return "["+endPosStr+".."+endPosStr+"]";
+
+		else
+			return "["+convertIntToStr(this->getStart())+".."+endPosStr+"]";
+	}
+
+	else
 	return "["+convertIntToStr(this->getStart())+
-		".."+((this->getEnd()>=InitEndIndex-1 && this->getEnd()!=this->getStart())?endPosStr:convertIntToStr(this->getEnd()))+"]";
+		".."+convertIntToStr(this->getEnd())+"]";
 
 }
 
@@ -433,6 +444,7 @@ Condition::Condition(){
 	this->isTrivialCond=false;
 	this->groupName=WORLD;
 	this->nonRankVarName="";
+	this->offset=0;
 }
 
 Condition::Condition(bool val){
@@ -441,6 +453,7 @@ Condition::Condition(bool val){
 	rangeList.clear();
 	this->mixed=false;
 	this->isTrivialCond=false;
+	this->offset=0;
 
 	if(val){
 
@@ -462,6 +475,7 @@ Condition::Condition(Range ran){
 	this->mixed=false;
 	this->isTrivialCond=false;
 	this->groupName=WORLD;
+	this->offset=0;
 	this->rangeList.clear(); this->rangeList.push_back(ran);
 
 }
@@ -473,6 +487,7 @@ Condition::Condition(Range ran1, Range ran2){
 	this->mixed=false;
 	this->isTrivialCond=false;
 	this->groupName=WORLD;
+	this->offset=0;
 	rangeList.clear(); rangeList.push_back(ran1);rangeList.push_back(ran2);
 
 }
@@ -651,6 +666,7 @@ Condition Condition::AND(Condition other){
 
 	cond.normalize();
 
+	cond.offset=this->offset;
 	return cond;
 
 }
@@ -679,6 +695,7 @@ Condition Condition::OR(Condition other){
 
 	cond.normalize();
 
+	cond.offset=this->offset;
 	return cond;
 }
 
@@ -724,6 +741,7 @@ bool Condition::hasSameGroupComparedTo(Condition other){
 
 
 Condition Condition::addANumber(int num){
+	this->offset+=num;
 	vector<Range> tmp;
 
 	for (int i = 0; i < this->rangeList.size(); i++)

@@ -30,7 +30,7 @@ void MPITypeCheckingConsumer::init(CompilerInstance *ci, int numOfProc){
 
 void MPITypeCheckingConsumer::HandleTranslationUnit(ASTContext &Ctx) {
 	cout<<"all the parts have been parsed!"<<endl;
-	
+
 	int numOfErrs=ci->getDiagnosticClient().getNumErrors();
 
 	if(numOfErrs>0){
@@ -40,6 +40,8 @@ void MPITypeCheckingConsumer::HandleTranslationUnit(ASTContext &Ctx) {
 	this->visitStart=true;
 
 	this->VisitDecl(this->mainFunc);
+
+	this->protocolGen->rankName=this->rankVar;
 
 	//after the main function has been visited, 
 	//the comm tree and roles will have been constructed,
@@ -106,25 +108,25 @@ void MPITypeCheckingConsumer::analyzeDecl(FunctionDecl *funcDecl){
 	}
 
 
-		//analyze the body of the function
-		/***********************************************************************/
+	//analyze the body of the function
+	/***********************************************************************/
 
-		if(funcDecl->hasBody()){
-			this->funcsList.push_back(funcDecl->getQualifiedNameAsString());
+	if(funcDecl->hasBody()){
+		this->funcsList.push_back(funcDecl->getQualifiedNameAsString());
 
-			cout<<"add "<<funcDecl->getQualifiedNameAsString()<<" to list "<<endl;
-		}
+		cout<<"add "<<funcDecl->getQualifiedNameAsString()<<" to list "<<endl;
+	}
 
 
-		this->VisitFunctionDecl(funcDecl);
+	this->VisitFunctionDecl(funcDecl);
 
 }
 
 void MPITypeCheckingConsumer::removeFuncFromList(){
 	if(!this->funcsList.empty()){
-	string popped=this->funcsList.back();
-	cout<<"The decl with name "<<popped<<" is going to be removed."<<endl;
-	this->funcsList.pop_back();
+		string popped=this->funcsList.back();
+		cout<<"The decl with name "<<popped<<" is going to be removed."<<endl;
+		this->funcsList.pop_back();
 	}
 }
 
@@ -132,7 +134,7 @@ void MPITypeCheckingConsumer::removeFuncFromList(){
 string MPITypeCheckingConsumer::getVarInIncExpr(Expr *inc){
 	if (isa<UnaryOperator>(inc)){
 		UnaryOperator *uOP=cast<UnaryOperator>(inc);
-		
+
 		return expr2str(&ci->getSourceManager(),ci->getLangOpts(),uOP->getSubExpr());
 	}
 
@@ -140,7 +142,7 @@ string MPITypeCheckingConsumer::getVarInIncExpr(Expr *inc){
 	{
 		BinaryOperator *binOP=cast<BinaryOperator>(inc);
 		Expr *lhs=binOP->getLHS();
-		
+
 		return expr2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
 	}
 
@@ -150,10 +152,10 @@ string MPITypeCheckingConsumer::getVarInIncExpr(Expr *inc){
 bool MPITypeCheckingConsumer::isChangingByOneUnit(Expr *inc){
 	if (isa<UnaryOperator>(inc)){
 		UnaryOperator *uOP=cast<UnaryOperator>(inc);
-		
+
 		return uOP->isIncrementDecrementOp();
 	}
-	
+
 	if (isa<BinaryOperator>(inc))
 	{
 		BinaryOperator *binOP=cast<BinaryOperator>(inc);
@@ -178,23 +180,25 @@ bool MPITypeCheckingConsumer::isChangingByOneUnit(Expr *inc){
 }
 
 
-void MPITypeCheckingConsumer::handleUnknownSizeLoop(){
-		CommNode *curN=this->mpiSimulator->getCurNode()->getParent();
-		if (curN->isMaster())
-		{
-			CommNode *theLoopNode=this->mpiSimulator->getCurNode();
-			theLoopNode->setInfo("LOOP_"+convertIntToStr(labelIndex++));
-			theLoopNode->setMaster();
-			MPINode *theLoopMPINode=new MPINode(theLoopNode);
-			this->mpiTree->insertNode(theLoopMPINode);
+void MPITypeCheckingConsumer::handleLoop(){
+	CommNode *theLoopNode=this->mpiSimulator->getCurNode();
+	CommNode *curP=theLoopNode->getParent();
+	if (curP->isMaster())
+	{
+		theLoopNode->setInfo("LOOP_"+convertIntToStr(labelIndex++));
+		theLoopNode->setMaster();
+		MPINode *theLoopMPINode=new MPINode(theLoopNode);
+		this->mpiTree->insertNode(theLoopMPINode);
 
-			this->mpiSimulator->insertPosAndMPINodeTuple(theLoopNode->getPosIndex(),theLoopMPINode);
-		}
+		this->mpiSimulator->insertPosAndMPINodeTuple(theLoopNode->getPosIndex(),theLoopMPINode);
+	}
 
-		else{
+	else{
+		RecurNode *recurN=(RecurNode*) theLoopNode;
+		if (!recurN->hasKnownNumberOfIterations())
 			throw new MPI_TypeChecking_Error
-				("It is NOT allowed to insert loop node with unknown iteration number to a rank-related node!");
-		}
+			("It is NOT allowed to insert loop node with unknown iteration number to a rank-related node!");
+	}
 }
 
 
@@ -249,7 +253,7 @@ string expr2str(SourceManager *sm, LangOptions lopt,clang::Expr *expr){
 		offset++;
 		endChar--;
 	}
-	
+
 
 	string out=string(endChar+1,offset);
 
@@ -259,8 +263,8 @@ string expr2str(SourceManager *sm, LangOptions lopt,clang::Expr *expr){
 
 
 string delSpaces(string &str){
-   str.erase(std::remove(str.begin(), str.end(), ' '), str.end());
-   return str;
+	str.erase(std::remove(str.begin(), str.end(), ' '), str.end());
+	return str;
 }
 
 

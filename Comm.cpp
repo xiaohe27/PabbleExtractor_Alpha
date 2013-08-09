@@ -78,7 +78,9 @@ void writeToFile(string content){
 
 void writeProtocol(string protocol){
 	ofstream outputFile("Protocol.txt",
-		ios_base::out | ios_base::app);
+		ios_base::out | ios_base::trunc);
+
+	outputFile <<"const N="<<InitEndIndex<<";\n";
 
 	outputFile <<"\n"<< protocol <<"\n";
 

@@ -86,7 +86,7 @@ public:
 	
 	string getVarInIncExpr(Expr *inc);
 
-	void handleUnknownSizeLoop();
+	void handleLoop();
 
 
 

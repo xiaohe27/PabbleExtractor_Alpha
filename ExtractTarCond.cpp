@@ -131,7 +131,6 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr, Condition execCond)
 		}
 
 
-
 		throw new MPI_TypeChecking_Error(errInfo);
 
 	}
