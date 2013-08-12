@@ -98,6 +98,7 @@ bool areTheseTwoNumsAdjacent(int a, int b);
 
 
 class CommNode;
+class ForEachNode;
 class Condition;
 class MPIOperation;
 class Role;
@@ -464,6 +465,10 @@ public:
 
 	bool isNegligible();
 
+	bool isBelowARankSpecificForLoop();
+
+	vector<ForEachNode*> getAllTheSurroundingRankSpecificForLoops();
+
 	void reportFinished(Condition executor);
 
 	void setAsRelatedToRank(){this->isRelatedToRank=true;}
@@ -718,9 +723,14 @@ private:
 	MPINode *parent;
 
 public:
+	bool isInRankSpecificForLoop;
+	vector<ForEachNode*> rankSpecificForLoops;
+
+
 	MPINode(CommNode* node);
 	MPINode(MPIOperation* theOp);
-
+	
+	void initMPIOpNode(MPIOperation* op);
 	bool isLeaf();
 	MPINode* getParent(){return this->parent;}
 	int getNodeType(){return this->nodeType;}
@@ -765,7 +775,7 @@ private:
 	string genRoleName(string paramRoleName, Range ran);
 	string insertRankInfoToRangeStr(string rangeInfoStr);
 	string genRoleByVar(string paramRoleName, string varName);
-
+	string selfCreatedLoop(MPINode *mpinode);
 	////////////////////////////////////////////////////////////////////////////////////
 	//The component methods corresponding to the BNF spec
 	//The header part

@@ -98,6 +98,37 @@ bool CommNode::isNonRankChoiceNode(){
 	return true;
 }
 
+//used when the comm tree has been constructed.
+bool CommNode::isBelowARankSpecificForLoop(){
+	if (this->isMaster())
+		return false;
+	
+	if (this->nodeType==ST_NODE_FOREACH)
+		return true;
+
+	return this->parent->isBelowARankSpecificForLoop();
+}
+
+vector<ForEachNode*> CommNode::getAllTheSurroundingRankSpecificForLoops(){
+	
+	vector<ForEachNode*> forList;
+	if(!this->isLeaf())
+		return forList;
+
+	CommNode *cur=this;
+	while(true){
+		if (cur->isMaster())	
+			return forList;
+		
+
+		if (cur->nodeType==ST_NODE_FOREACH)		
+			forList.push_back((ForEachNode*)cur);
+		
+		cur=cur->parent;
+	}
+
+}
+
 
 void CommNode::reportFinished(Condition executor){
 	Condition repeatedCond=executor.Diff(this->condition);

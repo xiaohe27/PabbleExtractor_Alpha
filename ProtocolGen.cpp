@@ -34,6 +34,28 @@ string ProtocolGenerator::insertRankInfoToRangeStr(string rangeInfoStr){
 string ProtocolGenerator::genRoleByVar(string paramRoleName, string varName){
 	return paramRoleName+"["+varName+"]";
 }
+
+
+//TODO
+string ProtocolGenerator::selfCreatedLoop(MPINode *mpinode){
+	mpinode->isInRankSpecificForLoop=false;
+
+	ForEachNode *theFinalForEachNode, *cur;
+
+	vector<ForEachNode*> forloops=mpinode->rankSpecificForLoops;
+	cur=forloops.at(0);
+	MPIForEachNode *mpi4Each=new MPIForEachNode(cur);
+	mpi4Each->insert(mpinode);
+
+	for (int i = 1; i < forloops.size(); i++)
+	{
+		MPIForEachNode* tmp=new MPIForEachNode(forloops.at(i));
+		tmp->insert(mpi4Each);
+		mpi4Each=tmp;
+	}
+
+	return this->globalForeach(mpi4Each);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -116,6 +138,11 @@ string ProtocolGenerator::globalInteractionSeq(MPINode *rootNode){
 
 
 string ProtocolGenerator::globalInteraction(MPINode *node){
+	if (node->isInRankSpecificForLoop)
+	{
+		return this->selfCreatedLoop(node);
+	}
+
 	//if the node is a leaf node, then it must be an MPI op node.
 	if (node->isLeaf())
 	{

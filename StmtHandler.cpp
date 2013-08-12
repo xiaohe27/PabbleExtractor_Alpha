@@ -515,8 +515,6 @@ bool MPITypeCheckingConsumer::VisitFunctionDecl(FunctionDecl *funcDecl){
 	else
 	{
 		cout<<"The function "<<funcName<<" do not have a body here!"<<endl;
-
-
 	}	
 
 	return true;

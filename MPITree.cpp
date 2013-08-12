@@ -6,6 +6,7 @@ using namespace std;
 /**************************************************************************/
 //MPINode impl start
 /**************************************************************************/
+
 MPINode::MPINode(CommNode* node){
 	this->index=node->getPosIndex();
 	this->nodeType=node->getNodeType();
@@ -13,9 +14,12 @@ MPINode::MPINode(CommNode* node){
 	this->op=nullptr;
 	this->parent=nullptr;
 	this->labelInfo=node->getSrcCodeInfo();
+
+	this->isInRankSpecificForLoop=false;
 }
 
-MPINode::MPINode(MPIOperation* theOp){
+
+void MPINode::initMPIOpNode(MPIOperation* theOp){
 	this->index= theOp->theNode->getPosIndex();
 	this->nodeType=theOp->theNode->getNodeType();
 	this->depth=theOp->theNode->getDepth();
@@ -24,10 +28,25 @@ MPINode::MPINode(MPIOperation* theOp){
 	this->labelInfo="";
 }
 
+MPINode::MPINode(MPIOperation* theOp){
+	this->initMPIOpNode(theOp);
+
+	if (!theOp->theNode->isBelowARankSpecificForLoop())
+		this->isInRankSpecificForLoop=false;
+
+
+	else{
+		this->isInRankSpecificForLoop=true;
+		this->rankSpecificForLoops=theOp->theNode->getAllTheSurroundingRankSpecificForLoops();
+	}
+
+}
+
+
 bool MPINode::isLeaf(){
 	if (this->op==nullptr)
 		return false;
-	
+
 	else
 		return true;
 }
@@ -52,7 +71,7 @@ MPIOperation* MPINode::combineMPIOPs(MPIOperation* op1, MPIOperation* op2){
 		}
 
 		else if (op1->getExecutor().isSameAsCond(op2->getExecutor()) && 
-				Condition::areTheseTwoCondAdjacent(op1->getTargetCond(),op2->getTargetCond()))
+			Condition::areTheseTwoCondAdjacent(op1->getTargetCond(),op2->getTargetCond()))
 		{
 			MPIOperation* combi=new MPIOperation(*op2);
 			combi->isTargetDependOnExecutor=false;
@@ -63,13 +82,13 @@ MPIOperation* MPINode::combineMPIOPs(MPIOperation* op1, MPIOperation* op2){
 		}
 
 		else if(op1->getTargetCond().isSameAsCond(op2->getTargetCond()) && 
-				Condition::areTheseTwoCondAdjacent(op1->getExecutor(),op2->getExecutor())){
-			MPIOperation* combi=new MPIOperation(*op2);
-			combi->isTargetDependOnExecutor=false;
-			combi->isBothCastAndGather=true;
-			combi->setExecutorCond(op1->getExecutor().OR(op2->getExecutor()));
-			combi->setTargetCond(op1->getTargetCond());
-			return combi;
+			Condition::areTheseTwoCondAdjacent(op1->getExecutor(),op2->getExecutor())){
+				MPIOperation* combi=new MPIOperation(*op2);
+				combi->isTargetDependOnExecutor=false;
+				combi->isBothCastAndGather=true;
+				combi->setExecutorCond(op1->getExecutor().OR(op2->getExecutor()));
+				combi->setTargetCond(op1->getTargetCond());
+				return combi;
 		}
 
 		else
@@ -138,7 +157,7 @@ void MPINode::insert(MPINode *child){
 				delete childOP;
 				delete curOp;
 				childOP=theCombinedOP;
-				
+
 				if (theLivingNode==nullptr)
 					theLivingNode=curVNode;
 
@@ -157,7 +176,7 @@ void MPINode::insert(MPINode *child){
 		}
 	}
 
-	
+
 	bool inserted=false;
 
 	for (int i = 0; i < children.size(); i++)
@@ -202,18 +221,18 @@ void MPINode::insertToProperNode(MPINode *node){
 			{
 				if (i-1<0)
 					throw new MPI_TypeChecking_Error("Fail to build the MPI Tree!");
-				
+
 				this->children.at(i-1)->insertToProperNode(node);
 				return;
 			}
 		}
-	
+
 		if (this->children.size()==0)
 			throw new MPI_TypeChecking_Error("Fail to build the MPI Tree!");
 
 		this->children.back()->insertToProperNode(node);
 
-		
+
 	}
 }
 
@@ -227,10 +246,10 @@ void MPINode::insertToProperNode(MPINode *node){
 /**************************************************************************/
 
 MPIForEachNode::MPIForEachNode(ForEachNode *forEach):
-MPINode(forEach){
-	this->iterVarName=forEach->getIterVarName();
-	this->startPos=forEach->getStartingIndex();
-	this->endPos=forEach->getEndingIndex();
+	MPINode(forEach){
+		this->iterVarName=forEach->getIterVarName();
+		this->startPos=forEach->getStartingIndex();
+		this->endPos=forEach->getEndingIndex();
 }
 
 /**************************************************************************/

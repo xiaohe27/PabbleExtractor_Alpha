@@ -87,7 +87,7 @@ void MPISimulator::forbidMPIOP(CommNode *node){
 	if (node->getOPs())
 		return;
 
-	if (node->isRankRelatedChoice())
+	if (node->isRankRelatedChoice() || this->curNode->isRankRelatedChoice())
 		return;
 
 	if(node->getNodeType()==ST_NODE_FOREACH)
