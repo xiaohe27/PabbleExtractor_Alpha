@@ -2,7 +2,15 @@ const N=28;
 
 global protocol test_ProToCoL (role MPI_COMM_WORLD[0..N-1])
 {
-Data(MPI_INT) from MPI_COMM_WORLD[rank:0..0] to [rank+2];
+foreach (i:2..6){
+Data(MPI_INT) from MPI_COMM_WORLD[i] to MPI_COMM_WORLD[0..N-1];
+
+
+Data(MPI_INT) from MPI_COMM_WORLD[rank:3..7] to MPI_COMM_WORLD[rank+2];
+
+}
+
+Data(MPI_INT) from MPI_COMM_WORLD[rank:0..0] to MPI_COMM_WORLD[rank+2];
 
 }
 

@@ -78,7 +78,8 @@ public:
 	void removeAndAddNewNonRankVarCondInStack(vector<string> stackOfNonRankVarNames);
 
 	//return the expected iteration numbers. If it is not clear, then -1 will be returned
-	int analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr* incExpr, Stmt* body, vector<string> nonRankVarList);
+	int analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr* incExpr, Stmt* body, vector<string> nonRankVarList,
+						string &iterVarName, int &starting, int &ending);
 
 	void printTheTree(){cout<<this->mpiSimulator->printTheTree()<<endl;}
 

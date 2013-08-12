@@ -90,11 +90,9 @@ void MPISimulator::forbidMPIOP(CommNode *node){
 	if (node->isRankRelatedChoice())
 		return;
 
-	if(node->getNodeType()==ST_NODE_RECUR){
-		RecurNode *recurNode=(RecurNode*)node;
-		if (recurNode->hasKnownNumberOfIterations())
-			return;
-	}
+	if(node->getNodeType()==ST_NODE_FOREACH)
+		return;
+
 
 	node->forbidTheMPIOP();
 }
@@ -138,18 +136,10 @@ void MPISimulator::insertNode(CommNode *node){
 
 
 	if(node->getNodeType()==ST_NODE_CONTINUE){
-		CommNode *theParent=this->curNode;
-		while (theParent->getNodeType()!=ST_NODE_RECUR)
-		{
-			theParent=theParent->getParent();
-		}
 
-		if(theParent!=nullptr){
-			ContNode *contNode=(ContNode*)node;
-			RecurNode *loopNode=(RecurNode*)(theParent);
-
-			contNode->setRefNode(loopNode);
-		}
+		ContNode *contNode=(ContNode*)node;
+		CommNode *loopNode=node->getInnerMostRecurNode();
+		contNode->setRefNode(loopNode);
 
 	}
 
@@ -166,11 +156,9 @@ void MPISimulator::insertNode(CommNode *node){
 	//insert the node
 	this->curNode->insert(node);
 
-	if(nodeT==ST_NODE_CHOICE || nodeT==ST_NODE_RECUR
-		||nodeT==ST_NODE_ROOT || nodeT==ST_NODE_PARALLEL){
-
+	if(nodeT==ST_NODE_CHOICE || nodeT==ST_NODE_RECUR 
+		|| nodeT==ST_NODE_FOREACH || nodeT==ST_NODE_ROOT)
 			this->curNode=node;
-	}
 
 }
 
@@ -516,9 +504,9 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 
 
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			this->insertMPIOpToMPITree(actuallyHappenedOP);
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 			///////////////////////////////////////////////////////////////////////////////////////////////////////

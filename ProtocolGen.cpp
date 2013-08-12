@@ -17,6 +17,7 @@ ProtocolGenerator::ProtocolGenerator(MPITree *tree, map<string,ParamRole*>  para
 }
 
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 string ProtocolGenerator::genRoleName(string paramRoleName, Range ran){
 	return paramRoleName+ran.printRangeInfo();
@@ -24,19 +25,24 @@ string ProtocolGenerator::genRoleName(string paramRoleName, Range ran){
 
 
 string ProtocolGenerator::insertRankInfoToRangeStr(string rangeInfoStr){
-	
+
 	rangeInfoStr.insert(1,rankName+":");
 
 	return rangeInfoStr;
 }
+
+string ProtocolGenerator::genRoleByVar(string paramRoleName, string varName){
+	return paramRoleName+"["+varName+"]";
+}
 ///////////////////////////////////////////////////////////////////////////////////////////
+
 
 
 //TODO
 void ProtocolGenerator::generateTheProtocols(){
 	string globalP=this->generateGlobalProtocol();
 
-//	cout<<"\n\n\n"<<globalP<<"\n\n\n"<<endl;
+	//	cout<<"\n\n\n"<<globalP<<"\n\n\n"<<endl;
 	writeProtocol(globalP);
 
 	for (auto &x: paramRoleNameMapping)
@@ -131,6 +137,11 @@ string ProtocolGenerator::globalInteraction(MPINode *node){
 		return globalRecur(node);
 	}
 
+	if (node->getNodeType()==ST_NODE_FOREACH)
+	{
+		return globalForeach((MPIForEachNode*)node);
+	}
+
 	if (node->getNodeType()==ST_NODE_CONTINUE)
 	{
 		return globalContinue(node);
@@ -165,7 +176,7 @@ string ProtocolGenerator::getReceiverRoles(MPIOperation *mpiOP, int pos){
 
 		if (mpiOP->isDependentOnExecutor())
 		{
-			out="["+mpiOP->getTarExprStr()+"]";
+			out=genRoleByVar(WORLD,mpiOP->getTarExprStr());
 		}
 	}
 
@@ -189,7 +200,7 @@ string ProtocolGenerator::getReceiverRoles(MPIOperation *mpiOP, int pos){
 	}
 
 	else{
-	throw new MPI_TypeChecking_Error("NOT supported MPI op...");
+		throw new MPI_TypeChecking_Error("NOT supported MPI op...");
 	}
 
 	return out;
@@ -207,13 +218,57 @@ string ProtocolGenerator::globalMsgTransfer(MPINode *node){
 	{
 		Range ran=execCond.getRangeList().at(i);
 
-		string senderRoleName=genRoleName(WORLD,ran);
-		if (theMPIOP->isUnicast() && theMPIOP->isDependentOnExecutor())
+		//the mpi op which is both cast and gather needs to be analyzed in rank level.
+		if (theMPIOP->isBothCastAndGather)
 		{
-			senderRoleName=WORLD+this->insertRankInfoToRangeStr(ran.printRangeInfo());
+			MPINode *parentNode=node->getParent();
+			if (parentNode->getNodeType()==ST_NODE_FOREACH)
+			{
+				if (theMPIOP->isCollectiveOp())
+				{
+					if(theMPIOP->execExprStr==""){
+						output+=msg+" from "+genRoleName(WORLD,Range(0,InitEndIndex-1));
+						output+=" to "+genRoleByVar(WORLD,theMPIOP->getTarExprStr())+";\n";
+					}
+
+					else{
+						output+=msg+" from "+genRoleByVar(WORLD,theMPIOP->execExprStr);
+						output+=" to "+genRoleName(WORLD,Range(0,InitEndIndex-1))+";\n";
+					}
+				}
+
+				else
+				{
+					if (theMPIOP->execExprStr=="")
+					{
+						output+=msg+" from "+genRoleName(WORLD,ran);
+						output+=" to "+genRoleByVar(WORLD,theMPIOP->getTarExprStr())+";\n";
+					}
+
+					else{
+						output+=msg+" from "+genRoleByVar(WORLD,theMPIOP->execExprStr);
+						output+=" to "+this->getReceiverRoles(theMPIOP,i)+";\n";
+					}
+				}
+
+			}
+
+			//if the parent is NOT foreach node, then we might need to generate a 
+			//foreach output from scratch.
+			else{
+			//TODO
+			}
 		}
 
-		output+=msg+" from "+senderRoleName+" to "+getReceiverRoles(theMPIOP, i)+";\n";
+		else{
+			string senderRoleName=genRoleName(WORLD,ran);
+			if (theMPIOP->isUnicast() && theMPIOP->isDependentOnExecutor())
+			{
+				senderRoleName=WORLD+this->insertRankInfoToRangeStr(ran.printRangeInfo());
+			}
+
+			output+=msg+" from "+senderRoleName+" to "+getReceiverRoles(theMPIOP, i)+";\n";
+		}
 	}
 
 	return output;
@@ -239,12 +294,12 @@ string ProtocolGenerator::globalRecur(MPINode *node){
 
 	if (childrenOfTheNode.back()->getNodeType()!=ST_NODE_CONTINUE)
 	{
-		RecurNode *recurNode=new RecurNode();
+		CommNode *recurNode=new CommNode(ST_NODE_RECUR,Condition(true));
 		recurNode->setInfo(node->getLabelInfo());
 		ContNode *tmpContNode=new ContNode(recurNode);
 		tmpContNode->setToLastContNode();
 		MPINode *implicitContNode=new MPINode(tmpContNode);
-		
+
 		node->insertToEndOfChildrenList(implicitContNode);
 	}
 
@@ -259,6 +314,20 @@ string ProtocolGenerator::globalContinue(MPINode *node){
 
 	return out;
 }
+
+
+string ProtocolGenerator::globalForeach(MPIForEachNode *node){
+	string out="\nforeach ("+node->iterVarName+":";
+	out+=node->startPos==InitEndIndex-1 ? "N-1" : convertIntToStr(node->startPos);
+	out+="..";
+	out+=node->endPos==InitEndIndex-1 ? "N-1" : convertIntToStr(node->endPos);
+	out+=")";
+
+	out+=globalInteractionBlock(node);
+
+	return out;
+}
+
 
 
 

@@ -49,6 +49,7 @@ using namespace clang;
 
 
 #define InitStartIndex -2
+#define ST_NODE_FOREACH 8
 
 extern int InitEndIndex;
 extern bool strict;
@@ -97,7 +98,6 @@ bool areTheseTwoNumsAdjacent(int a, int b);
 
 
 class CommNode;
-class RecurNode;
 class Condition;
 class MPIOperation;
 class Role;
@@ -328,7 +328,7 @@ private:
 	string targetExprStr;
 	string tag;
 	string group;
-	bool isTargetDependOnExecutor;
+	
 	string srcCode;
 	string opName;
 
@@ -341,7 +341,11 @@ private:
 public:
 	string rankStr;
 	CommNode *theNode;
+	string execExprStr;
 	bool isInPendingList;
+	bool isTargetDependOnExecutor;
+	bool isBothCastAndGather;
+
 
 	MPIOperation(string opName0,int opType0, string dataType0,Condition executor0, Condition target0, string tag0, string group0);
 	MPIOperation(string opName0,int opType0, string dataType0,Condition executor0, Expr *targetExpr0, string tag0, string group0);
@@ -460,6 +464,8 @@ public:
 
 	bool isNegligible();
 
+	void reportFinished(Condition executor);
+
 	void setAsRelatedToRank(){this->isRelatedToRank=true;}
 
 	void initTheBranchId();
@@ -488,7 +494,7 @@ public:
 
 	CommNode* getClosestNonRankAncestor();
 
-	RecurNode* getInnerMostRecurNode();
+	CommNode* getInnerMostRecurNode();
 
 	CommNode* getParent()const{return this->parent;}
 
@@ -522,30 +528,31 @@ public:
 
 };
 
-class RecurNode: public CommNode{
+class ForEachNode: public CommNode{
 private:
-	int remainingNumOfIterations;
+	string iterVarName;
+	int startingIndex;
+	int endingIndex;
 
 public:
-	RecurNode():CommNode(ST_NODE_RECUR,Condition(true)){this->remainingNumOfIterations=-1;}
-	RecurNode(int size):CommNode(ST_NODE_RECUR,Condition(true)){this->remainingNumOfIterations=size;}
-	bool hasKnownNumberOfIterations(){return this->remainingNumOfIterations!=-1;}
-	void visitOnce();
+	ForEachNode(string varName,int start,int end);
+
+	string getIterVarName(){return this->iterVarName;}
+	int getStartingIndex(){return this->startingIndex;}
+	int getEndingIndex(){return this->endingIndex;}
 
 };
 
 class ContNode: public CommNode{
 private:
-	RecurNode* refNode;
+	CommNode* refNode;
 
 public:
 	string label;
-	ContNode(RecurNode *node);
+	ContNode(CommNode *node);
 
-	void visit(){this->refNode->visitOnce();}
-
-	RecurNode* getRefNode(){return this->refNode;}
-	void setRefNode(RecurNode* refNode0){this->refNode=refNode0;}
+	CommNode* getRefNode(){return this->refNode;}
+	void setRefNode(CommNode* refNode0){this->refNode=refNode0;}
 
 	void setToLastContNode(){this->posIndex=INT_MAX;}
 };
@@ -628,13 +635,19 @@ private:
 
 	map<string,vector<CommNode*>*> participatingCommNodesMap;
 
-	MPIOperation* insertCollectiveOPAndCondPair(string opName,int rank, Condition cond, CommNode* node);
+	map<string,int> remainingTimesNeedToDoTheOP;
+
+	map<int,Condition> commNodeAndInitExecutorCondMap;
+
+	MPIOperation* insertCollectiveOPAndCondPair(string opName,int rank, Condition cond, MPIOperation*op);
 
 public:
 	//if the collective op fires, then relevant nodes will be unblocked
 	//The actually happened collective ops will be returned if there are any
 	vector<MPIOperation*> insertCollectiveOP(MPIOperation* op);
 
+	void unlockCollectiveOP(string opNameKey);
+	void dec(string opName); //each time a collective op happens, the dec() will be called
 };
 
 
@@ -702,12 +715,14 @@ private:
 	string labelInfo;
 	MPIOperation* op;
 	vector<MPINode*> children;
+	MPINode *parent;
 
 public:
 	MPINode(CommNode* node);
 	MPINode(MPIOperation* theOp);
 
 	bool isLeaf();
+	MPINode* getParent(){return this->parent;}
 	int getNodeType(){return this->nodeType;}
 	MPIOperation* getMPIOP(){return this->op;}
 	void insert(MPINode *child);
@@ -716,6 +731,15 @@ public:
 	string getLabelInfo(){return this->labelInfo;}
 	void insertToEndOfChildrenList(MPINode *lastContNode);
 	static MPIOperation* combineMPIOPs(MPIOperation* op1, MPIOperation* op2);
+};
+
+class MPIForEachNode: public MPINode{
+public:
+	string iterVarName;
+	int startPos;
+	int endPos;
+
+	MPIForEachNode(ForEachNode *forEach);
 };
 
 class MPITree{
@@ -740,7 +764,7 @@ private:
 	//helper methods
 	string genRoleName(string paramRoleName, Range ran);
 	string insertRankInfoToRangeStr(string rangeInfoStr);
-
+	string genRoleByVar(string paramRoleName, string varName);
 
 	////////////////////////////////////////////////////////////////////////////////////
 	//The component methods corresponding to the BNF spec
@@ -762,6 +786,7 @@ private:
 	string globalChoice(MPINode *node);
 	string globalRecur(MPINode *node);
 	string globalContinue(MPINode *node);
+	string globalForeach(MPIForEachNode *node);
 
 
 	string message(MPIOperation* mpiOP);

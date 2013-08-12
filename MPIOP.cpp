@@ -21,6 +21,10 @@ MPIOperation::MPIOperation(string opName0,int opType0, string dataType0,Conditio
 
 	this->isTargetDependOnExecutor=false;
 	this->isInPendingList=false;
+	this->isBothCastAndGather=false;
+
+	this->setTargetExprStr("");
+	this->execExprStr="";
 }
 
 MPIOperation::MPIOperation(string opName0,int opType0, string dataType0,Condition executor0, Expr *targetExpr0, string tag0, string group0){
@@ -34,15 +38,24 @@ MPIOperation::MPIOperation(string opName0,int opType0, string dataType0,Conditio
 
 	this->isTargetDependOnExecutor=true;
 	this->isInPendingList=false;
+	this->isBothCastAndGather=false;
+
+	this->execExprStr="";
 }
 
+//calc the target expr 
 string MPIOperation::getTarExprStr(){
+	if (this->targetExprStr.find(this->rankStr)==string::npos)
+	{
+		return this->targetExprStr;
+	}
+
 	string out=this->rankStr;
 
 	if (this->target.offset==0)
 		return this->rankStr;
 
-	
+
 	if (this->target.offset>0)
 	{
 		out+="+";
@@ -181,7 +194,7 @@ bool MPIOperation::isSendingOp(){
 
 	if (this->getOPType()==ST_NODE_SEND)
 		return true;
-	
+
 
 	else
 		return false;
@@ -191,7 +204,7 @@ bool MPIOperation::isSendingOp(){
 bool MPIOperation::isRecvingOp(){
 	if (this->getOPType()==ST_NODE_RECV)	
 		return true;
-	
+
 
 	else
 		return false;
@@ -285,6 +298,9 @@ bool MPIOperation::isTheSameMPIOP(MPIOperation *other){
 
 
 bool MPIOperation::isUnicast(){
+	if (this->isBothCastAndGather)
+		return false;
+
 	if(this->isDependentOnExecutor())
 		return true;
 
@@ -292,19 +308,22 @@ bool MPIOperation::isUnicast(){
 }
 
 bool MPIOperation::isMulticast(){
-	if (this->getSrcCond().size()==1 && this->getDestCond().size()>=1)
-	{
+	if (this->isBothCastAndGather)
 		return true;
-	}
+
+	if (this->getSrcCond().size()==1 && this->getDestCond().size()>=1)
+		return true;
 
 	return false;
 } 
 
 bool MPIOperation::isGatherOp(){
-	if (this->getSrcCond().size()>=1 && this->getDestCond().size()==1)
-	{
+	if (this->isBothCastAndGather)
 		return true;
-	}
+
+	if (this->getSrcCond().size()>=1 && this->getDestCond().size()==1)
+		return true;
+
 
 	return false;
 }
@@ -319,11 +338,21 @@ void MPIOperation::transformToSendingOP(){
 	{
 		if (this->isDependentOnExecutor())
 			this->executor.offset=-this->target.offset;
-		
+
 		Condition tmpExec=this->executor;
 		this->executor=this->target;
 		this->target=tmpExec;
 		this->opType=ST_NODE_SEND;
+
+		if(!this->isCollectiveOp() && this->targetExprStr.find(this->rankStr)==string::npos){
+			this->execExprStr=this->targetExprStr;
+			this->targetExprStr="";
+		}
+
+		if(this->isCollectiveOp()){
+			this->targetExprStr=this->execExprStr;
+			this->execExprStr="";
+		}
 	}
 }
 
@@ -434,6 +463,8 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 
 			mpiOP->setSrcCode(funcSrcCode);
 
+			mpiOP->setTargetExprStr(dest);
+
 			CommNode *sendNode=new CommNode(mpiOP);
 
 			this->mpiSimulator->insertNode(sendNode);
@@ -474,6 +505,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 
 
 			mpiOP->setSrcCode(funcSrcCode);
+			mpiOP->setTargetExprStr(src);
 			CommNode *recvNode=new CommNode(mpiOP);
 
 			this->mpiSimulator->insertNode(recvNode);
@@ -502,7 +534,6 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 				Condition bcaster=this->commManager->extractCondFromTargetExpr(E->getArg(3),
 					this->mpiSimulator->getCurExecCond());
 
-
 				mpiOP=new MPIOperation(	funcName,
 					ST_NODE_SEND, 
 					dataType,
@@ -511,10 +542,11 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 					"", 
 					group);
 
+				mpiOP->execExprStr=root;
 			}
 
 			mpiOP->setSrcCode(funcSrcCode);
-
+			mpiOP->execExprStr=root;
 			CommNode *bcastNode=new CommNode(mpiOP);
 
 			this->mpiSimulator->insertNode(bcastNode);

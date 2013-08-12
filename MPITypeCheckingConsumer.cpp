@@ -187,7 +187,12 @@ void MPITypeCheckingConsumer::handleLoop(){
 	{
 		theLoopNode->setInfo("LOOP_"+convertIntToStr(labelIndex++));
 		theLoopNode->setMaster();
-		MPINode *theLoopMPINode=new MPINode(theLoopNode);
+		MPINode *theLoopMPINode;
+		if (theLoopNode->getNodeType()==ST_NODE_FOREACH)		
+			theLoopMPINode=new MPIForEachNode((ForEachNode*)theLoopNode);
+		else
+			theLoopMPINode=new MPINode(theLoopNode);
+
 		this->mpiTree->insertNode(theLoopMPINode);
 
 		this->mpiSimulator->insertPosAndMPINodeTuple(theLoopNode->getPosIndex(),theLoopMPINode);

@@ -11,7 +11,7 @@ MPINode::MPINode(CommNode* node){
 	this->nodeType=node->getNodeType();
 	this->depth=node->getDepth();
 	this->op=nullptr;
-
+	this->parent=nullptr;
 	this->labelInfo=node->getSrcCodeInfo();
 }
 
@@ -20,7 +20,7 @@ MPINode::MPINode(MPIOperation* theOp){
 	this->nodeType=theOp->theNode->getNodeType();
 	this->depth=theOp->theNode->getDepth();
 	this->op=theOp;
-
+	this->parent=nullptr;
 	this->labelInfo="";
 }
 
@@ -55,6 +55,8 @@ MPIOperation* MPINode::combineMPIOPs(MPIOperation* op1, MPIOperation* op2){
 				Condition::areTheseTwoCondAdjacent(op1->getTargetCond(),op2->getTargetCond()))
 		{
 			MPIOperation* combi=new MPIOperation(*op2);
+			combi->isTargetDependOnExecutor=false;
+			combi->isBothCastAndGather=true;
 			combi->setExecutorCond(op1->getExecutor());
 			combi->setTargetCond(op1->getTargetCond().OR(op2->getTargetCond()));
 			return combi;
@@ -63,6 +65,8 @@ MPIOperation* MPINode::combineMPIOPs(MPIOperation* op1, MPIOperation* op2){
 		else if(op1->getTargetCond().isSameAsCond(op2->getTargetCond()) && 
 				Condition::areTheseTwoCondAdjacent(op1->getExecutor(),op2->getExecutor())){
 			MPIOperation* combi=new MPIOperation(*op2);
+			combi->isTargetDependOnExecutor=false;
+			combi->isBothCastAndGather=true;
 			combi->setExecutorCond(op1->getExecutor().OR(op2->getExecutor()));
 			combi->setTargetCond(op1->getTargetCond());
 			return combi;
@@ -78,25 +82,25 @@ MPIOperation* MPINode::combineMPIOPs(MPIOperation* op1, MPIOperation* op2){
 			Condition::areTheseTwoCondAdjacent(op1->getTargetCond(),op2->getTargetCond()))
 		{
 			MPIOperation* combi=new MPIOperation(*op2);
+			combi->isTargetDependOnExecutor=false;
+			combi->isBothCastAndGather=true;
 			combi->setTargetCond(op1->getTargetCond().OR(op2->getTargetCond()));
 			return combi;
 		}
 
-		else nullptr;
-	}
-
-	if (op1->isGatherOp() && op2->isGatherOp())
-	{
-		if (op1->getTargetCond().isSameAsCond(op2->getTargetCond()) && 
+		else if (op1->getTargetCond().isSameAsCond(op2->getTargetCond()) && 
 			Condition::areTheseTwoCondAdjacent(op1->getExecutor(),op2->getExecutor()))
 		{
 			MPIOperation* combi=new MPIOperation(*op2);
+			combi->isTargetDependOnExecutor=false;
+			combi->isBothCastAndGather=true;
 			combi->setExecutorCond(op1->getExecutor().OR(op2->getExecutor()));
 			return combi;
 		}
 
 		else nullptr;
 	}
+
 
 	return nullptr;
 }
@@ -108,11 +112,16 @@ void MPINode::insert(MPINode *child){
 		throw new MPI_TypeChecking_Error
 		("Can't insert a child to the leaf MPI op node. Fail to build MPI tree!");
 
+	child->parent=this;
+
 	//if the inserted node is mpi op node, then some combination may happen
 	MPIOperation *childOP=child->op;
 	if (childOP)
 	{
 		childOP->transformToSendingOP();
+
+		bool hasCombined=false;
+		MPINode* theLivingNode=nullptr;//use this node to put the final combined mpi op.
 
 		for (int i = 0; i < children.size(); i++)
 		{
@@ -125,11 +134,26 @@ void MPINode::insert(MPINode *child){
 			MPIOperation *theCombinedOP=MPINode::combineMPIOPs(childOP,curOp);
 			if (theCombinedOP)
 			{
+				hasCombined=true;
 				delete childOP;
 				delete curOp;
-				curVNode->op=theCombinedOP;
-				return;
+				childOP=theCombinedOP;
+				
+				if (theLivingNode==nullptr)
+					theLivingNode=curVNode;
+
+				else{
+					delete curVNode;
+					this->children.erase(children.begin()+i);
+					i--;
+				}
 			}
+		}
+
+		if (hasCombined)
+		{
+			theLivingNode->op=childOP;
+			return; //the op has been combined with an existing op, so return.
 		}
 	}
 
@@ -197,6 +221,21 @@ void MPINode::insertToProperNode(MPINode *node){
 //MPINode impl end
 /**************************************************************************/
 
+
+/**************************************************************************/
+//MPIForEach impl start
+/**************************************************************************/
+
+MPIForEachNode::MPIForEachNode(ForEachNode *forEach):
+MPINode(forEach){
+	this->iterVarName=forEach->getIterVarName();
+	this->startPos=forEach->getStartingIndex();
+	this->endPos=forEach->getEndingIndex();
+}
+
+/**************************************************************************/
+//MPIForEach impl end
+/**************************************************************************/
 
 
 /**************************************************************************/

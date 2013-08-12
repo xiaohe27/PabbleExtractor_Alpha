@@ -30,6 +30,8 @@ void CommNode::init(int type, vector<MPIOperation*> *theOPs){
 
 	case ST_NODE_RECUR: this->nodeName="RECUR"; break;
 
+	case ST_NODE_FOREACH: this->nodeName="FOREACH"; break;
+
 	case ST_NODE_ROOT: this->nodeName="ROOT"; break;
 
 	case ST_NODE_PARALLEL: this->nodeName="PARALLEL"; break;
@@ -96,6 +98,24 @@ bool CommNode::isNonRankChoiceNode(){
 	return true;
 }
 
+
+void CommNode::reportFinished(Condition executor){
+	Condition repeatedCond=executor.Diff(this->condition);
+	if (!repeatedCond.isIgnored())
+	{
+		throw new MPI_TypeChecking_Error("Error! The processes with condition "
+			+repeatedCond.printConditionInfo()+" repeat the mpi op in "+
+			this->printTheNode());
+	}
+
+	this->condition=this->condition.Diff(executor);
+
+	if (this->condition.isIgnored())
+	{
+		this->setMarked();
+	}
+}
+
 void CommNode::setNodeType(int type){
 	this->nodeType=type;
 }
@@ -142,6 +162,7 @@ void CommNode::setMarked(){
 	if (this->getOPs())
 	{
 		delete this->ops;
+		this->ops=nullptr;
 	}
 }
 
@@ -315,10 +336,10 @@ int CommNode::sizeOfTheNode(){
 }
 
 
-RecurNode* CommNode::getInnerMostRecurNode(){
+CommNode* CommNode::getInnerMostRecurNode(){
 	if (this->getNodeType()==ST_NODE_RECUR)
 	{
-		return (RecurNode*)this;
+		return this;
 	}
 
 	else{
@@ -332,27 +353,12 @@ RecurNode* CommNode::getInnerMostRecurNode(){
 
 
 
-/********************************************************************/
-//Class RecurNode impl start										****
-/********************************************************************/
-void RecurNode::visitOnce()
-{
-	if(remainingNumOfIterations>0)remainingNumOfIterations--;
-
-	if(remainingNumOfIterations==0){
-		this->setMarked();
-	}
-}
-
-/********************************************************************/
-//Class RecurNode impl end										****
-/********************************************************************/
 
 
 /********************************************************************/
 //Class ContNode impl start										****
 /********************************************************************/
-ContNode::ContNode(RecurNode *node):CommNode(ST_NODE_CONTINUE,Condition(true))
+ContNode::ContNode(CommNode *node):CommNode(ST_NODE_CONTINUE,Condition(true))
 {
 	this->refNode=node;
 
@@ -361,4 +367,20 @@ ContNode::ContNode(RecurNode *node):CommNode(ST_NODE_CONTINUE,Condition(true))
 
 /********************************************************************/
 //Class ContNode impl end										****
+/********************************************************************/
+
+
+/********************************************************************/
+//Class ForEachNode impl start										****
+/********************************************************************/
+
+ForEachNode::ForEachNode(string iterVar,int start,int end):CommNode(ST_NODE_FOREACH,Condition(true))
+{
+	this->iterVarName=iterVar;
+	this->startingIndex=start;
+	this->endingIndex=end;
+}
+
+/********************************************************************/
+//Class ForEachNode impl end										****
 /********************************************************************/

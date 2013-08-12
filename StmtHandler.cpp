@@ -255,7 +255,6 @@ bool MPITypeCheckingConsumer::VisitDeclStmt(DeclStmt *S){
 	}
 
 
-
 	cout <<"The decl stmt is: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 	return true;
 }
@@ -281,6 +280,7 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 	Stmt *initFor = S->getInit();
 	cout<<"type of init stmt in for stmt is "<<initFor->getStmtClassName()<<endl;
 	string initForStmtStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), initFor);
+	this->TraverseStmt(initFor);
 
 	Expr *inc=S->getInc();
 	string incOfForStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), inc);
@@ -305,16 +305,25 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 	vector<string> nonRankVarList=this->analyzeNonRankVarCond(this->commManager->getTmpNonRankVarCondStackMap());
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	string iterVarName="";
+	int startPos=-1;
+	int endPos=-1;
 
-
-	int size=this->analyzeForStmt(initFor,condOfFor,inc,bodyOfFor,nonRankVarList);
+	int size=this->analyzeForStmt(initFor,condOfFor,inc,bodyOfFor,nonRankVarList,
+									iterVarName,startPos,endPos);
 
 	cout<<"The for loop will iterate "<<size<<" times!"<<endl;
 
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//create node for 'for' stmt
-	RecurNode *forNode=new RecurNode(size);
+	CommNode* forNode;
+	if(size==-1)
+		forNode=new CommNode(ST_NODE_RECUR,Condition(true));
+
+	else
+		forNode=new ForEachNode(iterVarName,startPos,endPos);
+
 	this->mpiSimulator->insertNode(forNode);
 
 	//if the iter num is -1, then the iter num is unknown
@@ -363,7 +372,7 @@ bool MPITypeCheckingConsumer::TraverseWhileStmt(WhileStmt *S){
 
 
 	//create node for 'while' stmt
-	RecurNode *whileNode=new RecurNode(-1);
+	CommNode *whileNode=new CommNode(ST_NODE_RECUR,Condition(true));
 	this->mpiSimulator->insertNode(whileNode);
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -431,10 +440,10 @@ bool MPITypeCheckingConsumer::VisitContinueStmt(ContinueStmt *S){
 	this->mpiSimulator->insertNode(cont);
 
 	CommNode* curNd=this->mpiSimulator->getCurNode();
-	RecurNode* tmpRecurNode=curNd->getInnerMostRecurNode();
+	CommNode* tmpRecurNode=curNd->getInnerMostRecurNode();
 
 
-	if (!tmpRecurNode->hasKnownNumberOfIterations())
+	if (tmpRecurNode->getNodeType()==ST_NODE_RECUR)
 	{
 		cont->setInfo(tmpRecurNode->getSrcCodeInfo());
 		MPINode* contMPINode=new MPINode(cont);
@@ -536,7 +545,8 @@ bool MPITypeCheckingConsumer::VisitFunctionDecl(FunctionDecl *funcDecl){
 /*************************************************************************
 Analyze For Stmt!
 *************************************************************************/
-int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr* incExpr, Stmt* body,vector<string> nonRankVarList)
+int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr* incExpr, Stmt* body,vector<string> nonRankVarList
+											,string &iterVarName, int &starting, int &ending)
 {
 
 	map<string,int> varValMap;
@@ -653,7 +663,9 @@ int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr
 		}
 
 		string theVar=nonRankVarList.back();
+		iterVarName=theVar; //the iter var name is initialized.
 		int initValOfTheVar=varValMap[theVar];
+		starting=initValOfTheVar; //the starting index for the var has been init.
 		Condition cond4TheVar=this->commManager->getTopCond4NonRankVar(theVar);
 		Range theTargetRange=cond4TheVar.getTheRangeContainingTheNum(initValOfTheVar);
 
@@ -666,7 +678,7 @@ int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr
 		{
 			this->commManager->removeTopCond4NonRankVar(theVar);
 			this->commManager->insertNonRankVarAndCondtion(theVar,Condition(Range(initValOfTheVar,theTargetRange.getEnd())));
-
+			ending=theTargetRange.getEnd();
 			return theTargetRange.getEnd()-initValOfTheVar+1;
 		}
 
@@ -677,7 +689,7 @@ int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr
 		{
 			this->commManager->removeTopCond4NonRankVar(theVar);
 			this->commManager->insertNonRankVarAndCondtion(theVar,Condition(Range(theTargetRange.getStart(),initValOfTheVar)));
-
+			ending=theTargetRange.getStart();
 			return initValOfTheVar-theTargetRange.getStart()+1;
 		}
 
