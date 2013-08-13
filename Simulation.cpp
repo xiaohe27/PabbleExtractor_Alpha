@@ -158,7 +158,7 @@ void MPISimulator::insertNode(CommNode *node){
 
 	if(nodeT==ST_NODE_CHOICE || nodeT==ST_NODE_RECUR 
 		|| nodeT==ST_NODE_FOREACH || nodeT==ST_NODE_ROOT)
-			this->curNode=node;
+		this->curNode=node;
 
 }
 
@@ -425,7 +425,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 		//if the operations are complementary
 		if (op->isComplementaryOpOf(curVisitOP))
 		{
-
+			//assume the actual executor and target of the happened op are the same as this op.
 			Condition targetOfThisOp=op->getTargetCond();
 			Condition execCondOfCurVisitOp=curVisitOP->getExecutor();
 			Condition actualTarget=targetOfThisOp.AND(execCondOfCurVisitOp);
@@ -440,12 +440,31 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 			Condition remainingTarCond4CurVisitOp=targetOfCurOp.Diff(actualExecutor);
 
 
-
-			if(actualTarget.isIgnored())
+			if(actualTarget.isIgnored() || actualExecutor.isIgnored())
 				continue;
 
+			//VERY IMPORTANT! NEED TO ENSURE THE EXPECTED TARGET IS THE SAME AS THE ACTUAL ONE!
+			if(op->isDependentOnExecutor()){
+				Condition expectedTar=this->commManager->extractCondFromTargetExpr(
+					op->getTargetExpr(), actualExecutor);
 
-			MPIOperation *actuallyHappenedOP=new MPIOperation(*op);
+				if (!expectedTar.isSameAsCond(actualTarget))
+					continue;
+			}
+			/////////////////////////////////////////////////////////////////////////////////////////////////////////
+			MPIOperation *actuallyHappenedOP;
+			if (op->isSendingOp())
+				actuallyHappenedOP=new MPIOperation(*op);
+			else if(curVisitOP->isSendingOp()){
+				actuallyHappenedOP=new MPIOperation(*curVisitOP);
+				Condition theTmpCond=actualExecutor;
+				actualExecutor=actualTarget;
+				actualTarget=theTmpCond;
+			} else{
+				throw new MPI_TypeChecking_Error
+					("In order to make an interaction happen, one of the ops must be sending op!");
+			}
+
 			actuallyHappenedOP->setExecutorCond(actualExecutor);
 			actuallyHappenedOP->setTargetCond(actualTarget);
 
@@ -459,7 +478,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 			/////////////////////////////////////////////////////////////////////////////////////////////////
 			Condition unblockedRoleCond(false);
 
-			if(op->isUnicast()){
+			if(op->isUnicast() && curVisitOP->isUnicast()){
 				//After the comm happens, some roles may be unblocked
 				unblockedRoleCond= actuallyHappenedOP->isBlockingOP()?
 					actuallyHappenedOP->getExecutor():actuallyHappenedOP->getTargetCond();
@@ -599,7 +618,6 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					this->insertOpToPendingList(thisOP1);
 					this->insertOpToPendingList(thisOP2);
 
-					return;
 				}
 
 				else if(thisOP1){
@@ -610,7 +628,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					tmpNode->getOPs()->at(index)=thisOP1;
 
 					op=thisOP1;
-					continue;
+
 				}
 
 				else if(thisOP2){
@@ -621,7 +639,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					tmpNode->getOPs()->at(index)=thisOP2;
 
 					op=thisOP2;
-					continue;
+
 				}
 
 				else{
@@ -631,7 +649,6 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 
 					tmpNode->getOPs()->at(index)=nullptr;
 
-					return;
 				}
 				//////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -681,6 +698,15 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					this->pendingOPs.erase(this->pendingOPs.begin()+i);
 					i--;
 				}
+
+
+			/////////////////////////////////////////////////////////////////////////////
+				if (thisOP1 && thisOP2 || !thisOP1 && !thisOP2)
+					return;
+
+				else
+					continue;
+									
 			}
 
 		}

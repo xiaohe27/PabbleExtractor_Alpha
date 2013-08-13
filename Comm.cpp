@@ -1,10 +1,9 @@
 #include "Comm.h"
 
-using namespace llvm;
-using namespace clang;
+
 
 int InitEndIndex=100;
-
+string RANKVAR="";
 string fileName="MPIProtocol";
 
 //some functions
@@ -165,12 +164,12 @@ bool CommManager::isVarRelatedToRank(string varName){
 
 
 
-void CommManager::insertRankVarAndCommGroupMapping(string rankVar, string commGroup){
-	this->rankVarCommGroupMapping[rankVar]=commGroup;
+void CommManager::insertRankVarAndCommGroupMapping(string rankVar0, string commGroup){
+	this->rankVarCommGroupMapping[rankVar0]=commGroup;
 }
 
-string CommManager::getCommGroup4RankVar(string rankVar){
-	return this->rankVarCommGroupMapping[rankVar];
+string CommManager::getCommGroup4RankVar(string rankVar0){
+	return this->rankVarCommGroupMapping[rankVar0];
 }
 
 void CommManager::insertNonRankVarAndCondtion(string nonRankVar, Condition cond){

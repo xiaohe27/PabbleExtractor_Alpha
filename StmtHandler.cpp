@@ -56,7 +56,8 @@ bool MPITypeCheckingConsumer::VisitAsmStmt(AsmStmt *S){
 }
 
 //analyze and then insert the tuples to the formal nonRankVarCondStack
-vector<string> MPITypeCheckingConsumer::analyzeNonRankVarCond(map<string,stack<Condition>> tmpNonRankVarCondMap){
+vector<string> MPITypeCheckingConsumer::analyzeNonRankVarCond(){
+	map<string,stack<Condition>> tmpNonRankVarCondMap=this->commManager->getTmpNonRankVarCondStackMap();
 	vector<string> stackOfNonRankVarNames;
 
 	for (map<string,stack<Condition>>::iterator it=tmpNonRankVarCondMap.begin(); it!=tmpNonRankVarCondMap.end(); ++it){
@@ -74,7 +75,7 @@ vector<string> MPITypeCheckingConsumer::analyzeNonRankVarCond(map<string,stack<C
 		stackOfNonRankVarNames.push_back(it->first);
 	}
 
-	tmpNonRankVarCondMap.clear();
+	this->commManager->clearTmpNonRankVarCondStackMap();
 	return stackOfNonRankVarNames;
 }
 
@@ -117,7 +118,7 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 		<<"\n\n\n\n\n"<<endl;
 
 	//insert the non-rank var conditions to formal stack, if any
-	vector<string> stackOfNonRankVarNames=this->analyzeNonRankVarCond(this->commManager->getTmpNonRankVarCondStackMap());
+	vector<string> stackOfNonRankVarNames=this->analyzeNonRankVarCond();
 
 	if (stackOfNonRankVarNames.size()==0)
 	{
@@ -302,7 +303,7 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 	if(!theCondOfFor.isComplete() || this->commManager->containsRankStr(condOfForStr))
 		throw new MPI_TypeChecking_Error("The condition in for loop should not contain rank-related var!");
 
-	vector<string> nonRankVarList=this->analyzeNonRankVarCond(this->commManager->getTmpNonRankVarCondStackMap());
+	vector<string> nonRankVarList=this->analyzeNonRankVarCond();
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	string iterVarName="";
@@ -368,7 +369,7 @@ bool MPITypeCheckingConsumer::TraverseWhileStmt(WhileStmt *S){
 	if(!theCondOfWhile.isComplete() || this->commManager->containsRankStr(condOfWhileStr))
 		throw new MPI_TypeChecking_Error("The condition in while loop should not contain rank-related var!");
 
-	vector<string> nonRankVarList=this->analyzeNonRankVarCond(this->commManager->getTmpNonRankVarCondStackMap());
+	vector<string> nonRankVarList=this->analyzeNonRankVarCond();
 
 
 	//create node for 'while' stmt

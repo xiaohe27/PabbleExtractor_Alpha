@@ -36,8 +36,6 @@ private:
 	//the list holds all the functions which have not finished execution
 	list<string> funcsList;
 
-	string rankVar;
-
 	string numOfProcessesVar;
 
 	int numOfProcs;
@@ -69,7 +67,7 @@ public:
 	void removeFuncFromList();
 
 	//return the list of non-rank var names that have been inserted to the formal stack
-	vector<string> analyzeNonRankVarCond(map<string,stack<Condition>> tmpNonRankVarCondMap);
+	vector<string> analyzeNonRankVarCond();
 
 	//remove the non-rank var from the stack after visiting the relevant block
 	void removeNonRankVarCondInStack(vector<string> stackOfNonRankVarNames);

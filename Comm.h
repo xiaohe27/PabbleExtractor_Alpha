@@ -54,6 +54,7 @@ using namespace clang;
 extern int InitEndIndex;
 extern bool strict;
 extern string fileName;
+extern string RANKVAR;
 
 #define InvalidIndex -3
 
@@ -340,7 +341,6 @@ private:
 
 
 public:
-	string rankStr;
 	CommNode *theNode;
 	string execExprStr;
 	bool isInPendingList;
@@ -385,7 +385,7 @@ public:
 	bool isFinished();
 	bool isEmptyOP();
 
-	void transformToSendingOP();
+//	void transformToSendingOP();
 	string printMPIOP();
 	string getTarExprStr();
 };
@@ -809,7 +809,6 @@ private:
 	string generateLocalProtocol(ParamRole* paramRole);
 
 public:
-	string rankName;
 
 	ProtocolGenerator(MPITree *tree, map<string,ParamRole*>  paramRoleNameMapping0);
 

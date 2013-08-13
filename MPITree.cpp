@@ -61,6 +61,12 @@ MPIOperation* MPINode::combineMPIOPs(MPIOperation* op1, MPIOperation* op2){
 	//we can assume both ops are sending ops
 	if (op1->isUnicast() && op2->isUnicast())
 	{
+		if (op1->isDependentOnExecutor() && op2->isDependentOnExecutor())
+		{
+			if(op1->getTarExprStr()!=op2->getTarExprStr())
+				return nullptr;
+		}
+		
 		if (Condition::areTheseTwoCondAdjacent(op1->getExecutor(),op2->getExecutor()) &&
 			Condition::areTheseTwoCondAdjacent(op1->getTargetCond(),op2->getTargetCond()))
 		{
@@ -95,7 +101,8 @@ MPIOperation* MPINode::combineMPIOPs(MPIOperation* op1, MPIOperation* op2){
 			return nullptr;
 	}
 
-	if (op1->isMulticast() && op2->isMulticast())
+	if (op1->isMulticast() && op2->isMulticast() || 
+		op1->isGatherOp() && op2->isGatherOp())
 	{
 		if (op1->getExecutor().isSameAsCond(op2->getExecutor()) && 
 			Condition::areTheseTwoCondAdjacent(op1->getTargetCond(),op2->getTargetCond()))
@@ -137,7 +144,7 @@ void MPINode::insert(MPINode *child){
 	MPIOperation *childOP=child->op;
 	if (childOP)
 	{
-		childOP->transformToSendingOP();
+//		childOP->transformToSendingOP();
 
 		bool hasCombined=false;
 		MPINode* theLivingNode=nullptr;//use this node to put the final combined mpi op.
@@ -162,7 +169,6 @@ void MPINode::insert(MPINode *child){
 					theLivingNode=curVNode;
 
 				else{
-					delete curVNode;
 					this->children.erase(children.begin()+i);
 					i--;
 				}

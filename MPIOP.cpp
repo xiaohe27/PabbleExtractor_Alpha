@@ -45,24 +45,7 @@ MPIOperation::MPIOperation(string opName0,int opType0, string dataType0,Conditio
 
 //calc the target expr 
 string MPIOperation::getTarExprStr(){
-	if (this->targetExprStr.find(this->rankStr)==string::npos)
-	{
-		return this->targetExprStr;
-	}
-
-	string out=this->rankStr;
-
-	if (this->target.offset==0)
-		return this->rankStr;
-
-
-	if (this->target.offset>0)
-	{
-		out+="+";
-	}
-
-	out+=convertIntToStr(this->target.offset);
-	return out;
+	return this->targetExprStr;
 }
 
 
@@ -328,9 +311,10 @@ bool MPIOperation::isGatherOp(){
 	return false;
 }
 
-
+/*
 //transform the current mpi op to equiv send op
 void MPIOperation::transformToSendingOP(){
+	
 	if (this->isSendingOp())
 		return;
 
@@ -344,7 +328,8 @@ void MPIOperation::transformToSendingOP(){
 		this->target=tmpExec;
 		this->opType=ST_NODE_SEND;
 
-		if(!this->isCollectiveOp() && this->targetExprStr.find(this->rankStr)==string::npos){
+		size_t found=this->targetExprStr.find(RANKVAR);
+		if(!this->isCollectiveOp() && found==string::npos){
 			this->execExprStr=this->targetExprStr;
 			this->targetExprStr="";
 		}
@@ -353,8 +338,13 @@ void MPIOperation::transformToSendingOP(){
 			this->targetExprStr=this->execExprStr;
 			this->execExprStr="";
 		}
+
+		if(found!=string::npos){
+			this->targetExprStr=this->getTarExprStr();
+		}
 	}
-}
+	
+}*/
 
 /********************************************************************/
 //Class MPIOperation impl end										****
@@ -413,13 +403,13 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 		if(funcName=="MPI_Comm_rank"){
 			string commGroup=args[0];
 
-			this->rankVar=args[1].substr(1,args[1].length()-1);
+			RANKVAR=args[1].substr(1,args[1].length()-1);
 
-			this->commManager->insertRankVarAndOffset(rankVar,0);
+			this->commManager->insertRankVarAndOffset(RANKVAR,0);
 
-			this->commManager->insertRankVarAndCommGroupMapping(this->rankVar,commGroup);
+			this->commManager->insertRankVarAndCommGroupMapping(RANKVAR,commGroup);
 
-			cout<<"Rank var is "<<this->rankVar <<".\t AND it is associated with group "<<commGroup<<endl;
+			cout<<"Rank var is "<<RANKVAR <<".\t AND it is associated with group "<<commGroup<<endl;
 		}
 
 		if(funcName=="MPI_Send"){
@@ -445,7 +435,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 					group);
 
 				mpiOP->setTargetExprStr(stmt2str(&ci->getSourceManager(),ci->getLangOpts(),E->getArg(3)));
-				mpiOP->rankStr=this->rankVar;
+
 			}
 
 			else{
@@ -462,7 +452,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			}
 
 			mpiOP->setSrcCode(funcSrcCode);
-
+			
 			mpiOP->setTargetExprStr(dest);
 
 			CommNode *sendNode=new CommNode(mpiOP);
@@ -491,7 +481,6 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 					tag, group);
 
 				mpiOP->setTargetExprStr(stmt2str(&ci->getSourceManager(),ci->getLangOpts(),E->getArg(3)));
-				mpiOP->rankStr=this->rankVar;
 			}
 
 			else{
@@ -507,7 +496,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			mpiOP->setSrcCode(funcSrcCode);
 			mpiOP->setTargetExprStr(src);
 			CommNode *recvNode=new CommNode(mpiOP);
-
+			
 			this->mpiSimulator->insertNode(recvNode);
 
 
@@ -542,7 +531,6 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 					"", 
 					group);
 
-				mpiOP->execExprStr=root;
 			}
 
 			mpiOP->setSrcCode(funcSrcCode);

@@ -26,7 +26,7 @@ string ProtocolGenerator::genRoleName(string paramRoleName, Range ran){
 
 string ProtocolGenerator::insertRankInfoToRangeStr(string rangeInfoStr){
 
-	rangeInfoStr.insert(1,rankName+":");
+	rangeInfoStr.insert(1,RANKVAR+":");
 
 	return rangeInfoStr;
 }
@@ -45,6 +45,11 @@ string ProtocolGenerator::selfCreatedLoop(MPINode *mpinode){
 	vector<ForEachNode*> forloops=mpinode->rankSpecificForLoops;
 	cur=forloops.at(0);
 	MPIForEachNode *mpi4Each=new MPIForEachNode(cur);
+
+////////////////////////////////////////////////////////////////////////////	
+	mpinode->getMPIOP()->isBothCastAndGather=true;
+////////////////////////////////////////////////////////////////////////////
+
 	mpi4Each->insert(mpinode);
 
 	for (int i = 1; i < forloops.size(); i++)

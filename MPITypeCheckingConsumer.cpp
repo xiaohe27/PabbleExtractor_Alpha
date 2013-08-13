@@ -41,7 +41,6 @@ void MPITypeCheckingConsumer::HandleTranslationUnit(ASTContext &Ctx) {
 
 	this->VisitDecl(this->mainFunc);
 
-	this->protocolGen->rankName=this->rankVar;
 
 	//after the main function has been visited, 
 	//the comm tree and roles will have been constructed,
