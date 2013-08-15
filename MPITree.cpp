@@ -61,11 +61,11 @@ MPIOperation* MPINode::combineMPIOPs(MPIOperation* op1, MPIOperation* op2){
 	//we can assume both ops are sending ops
 	if (op1->isUnicast() && op2->isUnicast())
 	{
-		if (op1->isDependentOnExecutor() && op2->isDependentOnExecutor())
-		{
-			if(op1->getTarExprStr()!=op2->getTarExprStr())
-				return nullptr;
-		}
+		int span1=Condition::getDistBetweenTwoCond(op1->getExecutor(),op1->getTargetCond());
+		int span2=Condition::getDistBetweenTwoCond(op2->getExecutor(),op2->getTargetCond());
+		if (span1 != span2)
+			return nullptr;
+	
 		
 		if (Condition::areTheseTwoCondAdjacent(op1->getExecutor(),op2->getExecutor()) &&
 			Condition::areTheseTwoCondAdjacent(op1->getTargetCond(),op2->getTargetCond()))

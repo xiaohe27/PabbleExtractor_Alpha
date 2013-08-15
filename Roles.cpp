@@ -192,8 +192,16 @@ VisitResult* Role::visit(){
 		else{
 			//enumerate the node types
 			cout<<this->getRoleName()<<" visits the "<<curVisitNode->getNodeName()<<" node"<<endl;
+			if(curVisitNode->getNodeType()==MPI_Wait){
+				WaitNode *wn=(WaitNode*)curVisitNode;
+				if(wn->type==WaitNode::waitNormal){
+					this->blocked=true;
 
-			if (curVisitNode->isLeaf())
+					return new VisitResult(nullptr,escapedRoles);
+				}
+			}
+
+			else if (curVisitNode->isLeaf())
 			{
 				curVisitNode->setMarked();
 
@@ -341,7 +349,7 @@ void ParamRole::insertActualRole(Role *r, bool forceUpdate){
 
 			int curPosForRoleR=r->getCurVisitNode()->getPosIndex();
 
-			if(curPosForRoleR >= curPosForI){
+			if(curPosForRoleR >= curPosForI || !r->IsBlocked()){
 				delete  actualRoles->at(i);
 				actualRoles->at(i)=r;
 			}

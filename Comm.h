@@ -50,6 +50,7 @@ using namespace clang;
 
 #define InitStartIndex -2
 #define ST_NODE_FOREACH 8
+#define MPI_Wait 9
 
 extern int InitEndIndex;
 extern bool strict;
@@ -99,6 +100,7 @@ bool areTheseTwoNumsAdjacent(int a, int b);
 
 
 class CommNode;
+class WaitNode;
 class ForEachNode;
 class Condition;
 class MPIOperation;
@@ -189,6 +191,8 @@ public:
 	static Condition negateCondition(Condition cond);
 
 	static Condition createCondByOp(string op, int num);
+
+	static int getDistBetweenTwoCond(Condition cond1,Condition cond2);
 
 	void normalize();
 
@@ -343,6 +347,8 @@ private:
 public:
 	CommNode *theNode;
 	string execExprStr;
+	string reqVarName;
+	WaitNode *theWaitNode; 
 	bool isInPendingList;
 	bool isTargetDependOnExecutor;
 	bool isBothCastAndGather;
@@ -364,6 +370,7 @@ public:
 
 	static bool isOpBlocking(string opStr);
 	bool isBlockingOP();
+	bool isNonBlockingOPWithReqVar(string reqName);
 	bool isDependentOnExecutor(){return this->isTargetDependOnExecutor;}
 	void setSrcCode(string srcC){this->srcCode=srcC;}
 	void setExecutorCond(Condition execCond){this->executor=execCond;}
@@ -419,15 +426,6 @@ private:
 
 	void init(int type,vector<MPIOperation*> *ops);
 
-	//the role visitor will check whether it can 
-	//satisfy the condition in the node.
-	//if the condition is satisfied, then it will goto visit the 
-	//first child of the cur node.
-	//else it will skip to the next sibling.
-	//If the condition in the src code does not contain a rank related var,
-	//then the condition here will be a condition whose "complete" field is true
-	Condition condition;
-
 	CommNode *sibling;
 
 	string srcCodeInfo;
@@ -440,6 +438,15 @@ private:
 protected:
 	//the pos number indicates the time of insertion, the smaller the earlier
 	int posIndex;
+
+	//the role visitor will check whether it can 
+	//satisfy the condition in the node.
+	//if the condition is satisfied, then it will goto visit the 
+	//first child of the cur node.
+	//else it will skip to the next sibling.
+	//If the condition in the src code does not contain a rank related var,
+	//then the condition here will be a condition whose "complete" field is true
+	Condition condition;
 
 public:
 
@@ -466,6 +473,8 @@ public:
 	bool isNegligible();
 
 	bool isBelowARankSpecificForLoop();
+
+	MPIOperation* findTheClosestNonblockingOPWithReqName(string reqName);
 
 	vector<ForEachNode*> getAllTheSurroundingRankSpecificForLoops();
 
@@ -562,6 +571,21 @@ public:
 	void setToLastContNode(){this->posIndex=INT_MAX;}
 };
 
+class WaitNode: public CommNode{
+public:
+    static const int waitNormal=0;
+	static const int waitAny=1;
+	static const int waitAll=2;
+
+	int type;
+	string req;
+	int numOfWait;
+
+	WaitNode():CommNode(MPI_Wait,Condition(true)){this->type=waitAny;}
+	WaitNode(string req0):CommNode(MPI_Wait,Condition(true)){this->type=waitNormal; this->req=req0;}
+	WaitNode(int tmp):CommNode(MPI_Wait,Condition(true)){this->type=waitAll;this->numOfWait=tmp;}
+
+};
 
 
 
@@ -707,6 +731,8 @@ public:
 
 	void insertToTmpContNodeList(MPINode *contNode);
 	void insertAllTheContNodesWithLabel(string loopLabel);
+
+	void unblockTheRolesWithCond(Condition unblockingCond, CommNode *unblockedNode);
 };
 
 

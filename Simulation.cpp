@@ -152,6 +152,18 @@ void MPISimulator::insertNode(CommNode *node){
 		}
 	}
 
+	if (node->getNodeType()==MPI_Wait)
+	{
+		WaitNode *wn=(WaitNode*)node;
+		if(wn->req.size()!=0){
+			MPIOperation *matchedOP=this->curNode->findTheClosestNonblockingOPWithReqName(wn->req);
+			if(matchedOP==nullptr)
+				return; //the work of this wait node has been done by some other similar wait node,no need to repeat.
+
+			else
+				matchedOP->theWaitNode=wn;
+		}
+	}
 
 	//insert the node
 	this->curNode->insert(node);
@@ -451,8 +463,23 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 				if (!expectedTar.isSameAsCond(actualTarget))
 					continue;
 			}
+
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////
 			MPIOperation *actuallyHappenedOP;
+
+			op->theNode->setCond(op->theNode->getCond().Diff(actualExecutor));
+			curVisitOP->theNode->setCond(curVisitOP->theNode->getCond().Diff(actualTarget));
+
+			if (op->theWaitNode){
+				op->theWaitNode->reportFinished(actualExecutor);
+				this->unblockTheRolesWithCond(actualExecutor,op->theNode);
+			}
+
+			if (curVisitOP->theWaitNode){
+				curVisitOP->theWaitNode->reportFinished(actualTarget);
+				this->unblockTheRolesWithCond(actualTarget,curVisitOP->theNode);
+			}
+			/////////////////////////////////////////////////////////////////////////////////////////////////////////
 			if (op->isSendingOp())
 				actuallyHappenedOP=new MPIOperation(*op);
 			else if(curVisitOP->isSendingOp()){
@@ -480,48 +507,22 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 
 			if(op->isUnicast() && curVisitOP->isUnicast()){
 				//After the comm happens, some roles may be unblocked
-				unblockedRoleCond= actuallyHappenedOP->isBlockingOP()?
-					actuallyHappenedOP->getExecutor():actuallyHappenedOP->getTargetCond();
+				unblockedRoleCond= actuallyHappenedOP->getTargetCond();
 			}
 
-			else{
-				if (actuallyHappenedOP->isBlockingOP())
-				{
-					if(actualTarget.isSameAsCond(targetOfThisOp))
-						unblockedRoleCond=actualExecutor;
-				}
-
-				else{
-					if(actualExecutor.isSameAsCond(targetOfCurOp))
-						unblockedRoleCond=actualTarget;
-				}
-
-			}
+			else if(actualExecutor.isSameAsCond(targetOfCurOp))
+				unblockedRoleCond=actualTarget;
 
 
 			cout<<"The cond "<<unblockedRoleCond.printConditionInfo()<<" is unblocked!"<<endl;
+			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-			Condition nonBlockingRoleCond= actuallyHappenedOP->isBlockingOP()?
-				actuallyHappenedOP->getTargetCond():actuallyHappenedOP->getExecutor();
 
-			CommNode *unblockingNode= op->isBlockingOP()?
+			CommNode *unblockingNode= op->isRecvingOp()?
 				op->theNode:curVisitOP->theNode;
+	
 
-			CommNode *nonBlockedNode= op->isBlockingOP()?
-				curVisitOP->theNode:op->theNode;
-
-			unblockingNode->setCond(unblockingNode->getCond().Diff(unblockedRoleCond));
-			nonBlockedNode->setCond(nonBlockedNode->getCond().Diff(nonBlockingRoleCond));
-
-			for (int i = 0; i < unblockedRoleCond.getRangeList().size(); i++)
-			{
-				Role *unblockedRole=new Role(unblockedRoleCond.getRangeList()[i]);
-				unblockedRole->setCurVisitNode(unblockingNode);
-				ParamRole *paramRoleI=this->commManager->getParamRoleWithName(unblockedRole->getParamRoleName());
-				paramRoleI->insertActualRole(unblockedRole,true);
-			}
-
-
+			this->unblockTheRolesWithCond(unblockedRoleCond,unblockingNode);
 
 			//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			this->insertMPIOpToMPITree(actuallyHappenedOP);
@@ -700,13 +701,13 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 				}
 
 
-			/////////////////////////////////////////////////////////////////////////////
+				/////////////////////////////////////////////////////////////////////////////
 				if (thisOP1 && thisOP2 || !thisOP1 && !thisOP2)
 					return;
 
 				else
 					continue;
-									
+
 			}
 
 		}
@@ -732,6 +733,17 @@ void MPISimulator::insertMPIOpToMPITree(MPIOperation *actuallyHappenedOP){
 		theParentMPINode->insert(new MPINode(actuallyHappenedOP));
 	}
 
+}
+
+
+void MPISimulator::unblockTheRolesWithCond(Condition unblockedRoleCond, CommNode *unblockingNode){
+	for (int i = 0; i < unblockedRoleCond.getRangeList().size(); i++)
+	{
+		Role *unblockedRole=new Role(unblockedRoleCond.getRangeList()[i]);
+		unblockedRole->setCurVisitNode(unblockingNode);
+		ParamRole *paramRoleI=this->commManager->getParamRoleWithName(unblockedRole->getParamRoleName());
+		paramRoleI->insertActualRole(unblockedRole,true);
+	}
 }
 /********************************************************************/
 //Class MPISimulator impl end									****

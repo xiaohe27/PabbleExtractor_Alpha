@@ -87,7 +87,10 @@ public:
 
 	void handleLoop();
 
+	void genSendingOP(vector<string> args,CallExpr *E,string funcName,string funcSrcCode);
 
+	void genRecvingOP(vector<string> args,CallExpr *E,string funcName,string funcSrcCode);
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 	bool VisitAsmStmt(AsmStmt *S);

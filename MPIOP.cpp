@@ -24,7 +24,8 @@ MPIOperation::MPIOperation(string opName0,int opType0, string dataType0,Conditio
 	this->isBothCastAndGather=false;
 
 	this->setTargetExprStr("");
-	this->execExprStr="";
+	this->theWaitNode=nullptr;
+
 }
 
 MPIOperation::MPIOperation(string opName0,int opType0, string dataType0,Condition executor0, Expr *targetExpr0, string tag0, string group0){
@@ -40,7 +41,7 @@ MPIOperation::MPIOperation(string opName0,int opType0, string dataType0,Conditio
 	this->isInPendingList=false;
 	this->isBothCastAndGather=false;
 
-	this->execExprStr="";
+	this->theWaitNode=nullptr;
 }
 
 //calc the target expr 
@@ -311,41 +312,13 @@ bool MPIOperation::isGatherOp(){
 	return false;
 }
 
-/*
-//transform the current mpi op to equiv send op
-void MPIOperation::transformToSendingOP(){
-	
-	if (this->isSendingOp())
-		return;
 
-	if (this->isRecvingOp())
-	{
-		if (this->isDependentOnExecutor())
-			this->executor.offset=-this->target.offset;
+bool MPIOperation::isNonBlockingOPWithReqVar(string reqName){
+	if(this->reqVarName.size()==0)
+		return false;
 
-		Condition tmpExec=this->executor;
-		this->executor=this->target;
-		this->target=tmpExec;
-		this->opType=ST_NODE_SEND;
-
-		size_t found=this->targetExprStr.find(RANKVAR);
-		if(!this->isCollectiveOp() && found==string::npos){
-			this->execExprStr=this->targetExprStr;
-			this->targetExprStr="";
-		}
-
-		if(this->isCollectiveOp()){
-			this->targetExprStr=this->execExprStr;
-			this->execExprStr="";
-		}
-
-		if(found!=string::npos){
-			this->targetExprStr=this->getTarExprStr();
-		}
-	}
-	
-}*/
-
+	return this->reqVarName==reqName;
+}
 /********************************************************************/
 //Class MPIOperation impl end										****
 /********************************************************************/
@@ -412,97 +385,12 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			cout<<"Rank var is "<<RANKVAR <<".\t AND it is associated with group "<<commGroup<<endl;
 		}
 
-		if(funcName=="MPI_Send"){
-
-			string dataType=args[2];
-			string dest=args[3];
-			string tag=args[4];
-			string group=args[5];
-
-			MPIOperation *mpiOP;
-
-			if (this->commManager->containsRankStr(dest))
-			{
-				//if the target is related to the executor of the op,
-				//then the change of executor will affect the target condition
-				//so use the target expr instead of target condition in constructor
-				mpiOP=new MPIOperation(			funcName,
-					ST_NODE_SEND, 
-					dataType,
-					this->mpiSimulator->getCurExecCond(), //the performer
-					E->getArg(3), //the dest
-					tag, 
-					group);
-
-				mpiOP->setTargetExprStr(stmt2str(&ci->getSourceManager(),ci->getLangOpts(),E->getArg(3)));
-
-			}
-
-			else{
-				Condition execCond=this->mpiSimulator->getCurExecCond();
-
-				mpiOP=new MPIOperation(		funcName,
-					ST_NODE_SEND, 
-					dataType,
-					execCond, //the performer
-					this->commManager->extractCondFromTargetExpr(E->getArg(3),execCond), //the dest
-					tag, 
-					group);
-
-			}
-
-			mpiOP->setSrcCode(funcSrcCode);
-			
-			mpiOP->setTargetExprStr(dest);
-
-			CommNode *sendNode=new CommNode(mpiOP);
-
-			this->mpiSimulator->insertNode(sendNode);
-
-
-			cout <<"\n\n\n\n\nThe dest of mpi send is"
-				<< mpiOP->getDestCond().printConditionInfo()<<"\n\n\n\n\n" <<endl;
-
+		if(funcName=="MPI_Send" || funcName=="MPI_Ssend" || funcName=="MPI_Isend"){
+			this->genSendingOP(args,E,funcName,funcSrcCode);
 		}
 
-		if(funcName=="MPI_Recv"){
-
-			string dataType=args[2];
-			string src=args[3];
-			string tag=args[4];
-			string group=args[5];
-
-			MPIOperation *mpiOP;
-
-			if (this->commManager->containsRankStr(src)){
-				mpiOP=new MPIOperation(funcName,ST_NODE_RECV, dataType,							
-					this->mpiSimulator->getCurExecCond(), 
-					E->getArg(3),
-					tag, group);
-
-				mpiOP->setTargetExprStr(stmt2str(&ci->getSourceManager(),ci->getLangOpts(),E->getArg(3)));
-			}
-
-			else{
-				Condition execCond=this->mpiSimulator->getCurExecCond();
-				mpiOP=new MPIOperation(funcName,ST_NODE_RECV, dataType,								
-					execCond, 
-					this->commManager->extractCondFromTargetExpr(E->getArg(3),execCond),
-					tag, group);
-			}
-
-
-
-			mpiOP->setSrcCode(funcSrcCode);
-			mpiOP->setTargetExprStr(src);
-			CommNode *recvNode=new CommNode(mpiOP);
-			
-			this->mpiSimulator->insertNode(recvNode);
-
-
-			cout <<"\n\n\n\n\nThe src of mpi recv is"<<
-				mpiOP->getSrcCond().printConditionInfo()<<"\n\n\n\n\n" <<endl;
-
+		if(funcName=="MPI_Recv" || funcName=="MPI_Irecv"){
+			this->genRecvingOP(args,E,funcName,funcSrcCode);
 		}
 
 
@@ -545,30 +433,21 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 
 		}
 
+		/////////////////////////////////////////////////////////////////////////////////////////////
+		if (funcName=="MPI_Wait" || funcName=="MPI_Waitall" || funcName=="MPI_Waitany")
+		{
+			WaitNode *waitNode;
+			if(funcName=="MPI_Wait")
+				waitNode=new WaitNode(args[0]);
+			
+			if (funcName=="MPI_Waitall")
+				waitNode==new WaitNode(WaitNode::waitAll);
 
+			if (funcName=="MPI_Waitany")
+				waitNode=new WaitNode();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+			this->mpiSimulator->insertNode(waitNode);
+		}
 
 
 
@@ -585,4 +464,111 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 
 	args.clear();
 	return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+void MPITypeCheckingConsumer::genSendingOP(vector<string> args,CallExpr *E,string funcName,string funcSrcCode){
+	string dataType=args[2];
+	string dest=args[3];
+	string tag=args[4];
+	string group=args[5];
+
+	MPIOperation *mpiOP;
+
+	if (this->commManager->containsRankStr(dest))
+	{
+		//if the target is related to the executor of the op,
+		//then the change of executor will affect the target condition
+		//so use the target expr instead of target condition in constructor
+		mpiOP=new MPIOperation(			funcName,
+			ST_NODE_SEND, 
+			dataType,
+			this->mpiSimulator->getCurExecCond(), //the performer
+			E->getArg(3), //the dest
+			tag, 
+			group);
+
+		mpiOP->setTargetExprStr(stmt2str(&ci->getSourceManager(),ci->getLangOpts(),E->getArg(3)));
+
+	}
+
+	else{
+		Condition execCond=this->mpiSimulator->getCurExecCond();
+
+		mpiOP=new MPIOperation(		funcName,
+			ST_NODE_SEND, 
+			dataType,
+			execCond, //the performer
+			this->commManager->extractCondFromTargetExpr(E->getArg(3),execCond), //the dest
+			tag, 
+			group);
+
+	}
+
+	mpiOP->setSrcCode(funcSrcCode);
+
+	mpiOP->setTargetExprStr(dest);
+
+	if(funcName=="MPI_Isend")
+		mpiOP->reqVarName=args[6];
+
+	CommNode *sendNode=new CommNode(mpiOP);
+
+	this->mpiSimulator->insertNode(sendNode);
+
+
+	cout <<"\n\n\n\n\nThe dest of mpi send is"
+		<< mpiOP->getDestCond().printConditionInfo()<<"\n\n\n\n\n" <<endl;
+}
+
+
+void MPITypeCheckingConsumer::genRecvingOP(vector<string> args,CallExpr *E,string funcName,string funcSrcCode){
+	string dataType=args[2];
+	string src=args[3];
+	string tag=args[4];
+	string group=args[5];
+
+	MPIOperation *mpiOP;
+
+	if (this->commManager->containsRankStr(src)){
+		mpiOP=new MPIOperation(funcName,ST_NODE_RECV, dataType,							
+			this->mpiSimulator->getCurExecCond(), 
+			E->getArg(3),
+			tag, group);
+
+		mpiOP->setTargetExprStr(stmt2str(&ci->getSourceManager(),ci->getLangOpts(),E->getArg(3)));
+	}
+
+	else{
+		Condition execCond=this->mpiSimulator->getCurExecCond();
+		mpiOP=new MPIOperation(funcName,ST_NODE_RECV, dataType,								
+			execCond, 
+			this->commManager->extractCondFromTargetExpr(E->getArg(3),execCond),
+			tag, group);
+	}
+
+
+
+	mpiOP->setSrcCode(funcSrcCode);
+	mpiOP->setTargetExprStr(src);
+	if(funcName=="MPI_Irecv")
+		mpiOP->reqVarName=args[6];
+
+	CommNode *recvNode=new CommNode(mpiOP);
+
+	this->mpiSimulator->insertNode(recvNode);
+
+
+	cout <<"\n\n\n\n\nThe src of mpi recv is"<<
+		mpiOP->getSrcCond().printConditionInfo()<<"\n\n\n\n\n" <<endl;
+
 }

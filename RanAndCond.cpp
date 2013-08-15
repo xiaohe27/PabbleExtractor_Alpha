@@ -512,6 +512,16 @@ bool Condition::isRangeInside(Range ran){
 	return false;
 }
 
+
+int Condition::getDistBetweenTwoCond(Condition cond1,Condition cond2){
+	if (cond1.isIgnored() || cond2.isIgnored())
+		return -1;
+
+	Range ran1=cond1.getRangeList().at(0);
+	Range ran2=cond2.getRangeList().at(0);
+	return ran2.getStart()-ran1.getStart();
+}
+
 bool Condition::areTheseTwoCondAdjacent(Condition cond1, Condition cond2){
 	if (cond1.AND(cond2).isIgnored())
 	{

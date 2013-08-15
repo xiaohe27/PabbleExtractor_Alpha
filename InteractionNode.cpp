@@ -145,6 +145,7 @@ void CommNode::reportFinished(Condition executor){
 	{
 		this->setMarked();
 	}
+
 }
 
 void CommNode::setNodeType(int type){
@@ -376,6 +377,29 @@ CommNode* CommNode::getInnerMostRecurNode(){
 	else{
 		return this->getParent()->getInnerMostRecurNode();
 	}
+}
+
+//this method is executed by the parent of the wait node.
+MPIOperation* CommNode::findTheClosestNonblockingOPWithReqName(string reqName){
+	for (int i = this->children.size()-1; i >=0 ; i--)
+	{
+		CommNode* curChild=this->children.at(i);
+		if (curChild->ops && curChild->ops->at(0)->isNonBlockingOPWithReqVar(reqName))
+		{
+			return curChild->ops->at(0);
+		}
+
+		if (curChild->getNodeType()==MPI_Wait)
+		{
+			WaitNode *waitN=(WaitNode*)curChild;
+			if(waitN->type==WaitNode::waitAll)
+				return nullptr;
+			if(waitN->type==WaitNode::waitNormal && waitN->req==reqName)
+				return nullptr;
+		}
+	}
+
+	throw new MPI_TypeChecking_Error("Cannot Find the corresponding non-blocking op with req var "+reqName);
 }
 
 /********************************************************************/

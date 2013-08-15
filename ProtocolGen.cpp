@@ -258,7 +258,7 @@ string ProtocolGenerator::globalMsgTransfer(MPINode *node){
 			{
 				if (theMPIOP->isCollectiveOp())
 				{
-					if(theMPIOP->execExprStr==""){
+					if(theMPIOP->execExprStr.size()==0){
 						output+=msg+" from "+genRoleName(WORLD,Range(0,InitEndIndex-1));
 						output+=" to "+genRoleByVar(WORLD,theMPIOP->getTarExprStr())+";\n";
 					}
@@ -271,7 +271,7 @@ string ProtocolGenerator::globalMsgTransfer(MPINode *node){
 
 				else
 				{
-					if (theMPIOP->execExprStr=="")
+					if (theMPIOP->execExprStr.size()==0)
 					{
 						output+=msg+" from "+genRoleName(WORLD,ran);
 						output+=" to "+genRoleByVar(WORLD,theMPIOP->getTarExprStr())+";\n";
