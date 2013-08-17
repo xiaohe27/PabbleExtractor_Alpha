@@ -160,7 +160,7 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 			Condition andCond=lCond.AND(rCond);
 
 			if(mixed || lCond.isMixtureCond() || rCond.isMixtureCond())
-			andCond.setAsMixedCond();
+				andCond.setAsMixedCond();
 
 			andCond.setNonRankVarName(nonRankVarName);
 			cout <<"\n\n\n\n\n"<< andCond.printConditionInfo()<<"\n\n\n\n\n" <<endl;
@@ -217,7 +217,7 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 			Condition orCond=lCond.OR(rCond);
 
 			if(mixed || lCond.isMixtureCond() || rCond.isMixtureCond())
-			orCond.setAsMixedCond();
+				orCond.setAsMixedCond();
 
 			orCond.setNonRankVarName(nonRankVarName);
 			cout <<"\n\n\n\n\n"<< orCond.printConditionInfo()<<"\n\n\n\n\n" <<endl;
@@ -281,11 +281,24 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 				if(this->isAVar(rVarName)){rightIsVar=true;}
 			}
 
+			///////////////////////////////////////////////////////////////////////////////
+			//if i has range [0..2], and the expr is rank==i,
+			//then the proc with range [0..2] will do the tasks.
+			if(op=="=="){
+				if (lVarName==RANKVAR)
+				{
+					return this->extractCondFromTargetExpr(rhs,Condition(true));
+				}
+
+				if (rVarName==RANKVAR)
+				{
+					return this->extractCondFromTargetExpr(lhs,Condition(true));
+				}
+			}
+
 			////////////////////////////////////////////////////////////////////////////////
-
-
-
 			if(leftIsVar && rightIsVar){
+
 				cout<<"Both lhs and rhs are var, so, all Range Condition!"<<endl;
 
 				return Condition(true);

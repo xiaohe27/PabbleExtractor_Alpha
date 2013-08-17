@@ -59,14 +59,12 @@ void MPINode::insertToEndOfChildrenList(MPINode *lastContNode)
 MPIOperation* MPINode::combineMPIOPs(MPIOperation* op1, MPIOperation* op2){
 	//because every op has been transformed to sending op before inserted to the node
 	//we can assume both ops are sending ops
-	if (op1->isUnicast() && op2->isUnicast())
+	int span1=Condition::getDistBetweenTwoCond(op1->getExecutor(),op1->getTargetCond());
+	int span2=Condition::getDistBetweenTwoCond(op2->getExecutor(),op2->getTargetCond());
+
+	if (op1->isUnicast() && op2->isUnicast() && span1==span2)
 	{
-		int span1=Condition::getDistBetweenTwoCond(op1->getExecutor(),op1->getTargetCond());
-		int span2=Condition::getDistBetweenTwoCond(op2->getExecutor(),op2->getTargetCond());
-		if (span1 != span2)
-			return nullptr;
-	
-		
+
 		if (Condition::areTheseTwoCondAdjacent(op1->getExecutor(),op2->getExecutor()) &&
 			Condition::areTheseTwoCondAdjacent(op1->getTargetCond(),op2->getTargetCond()))
 		{
@@ -127,7 +125,6 @@ MPIOperation* MPINode::combineMPIOPs(MPIOperation* op1, MPIOperation* op2){
 		else nullptr;
 	}
 
-
 	return nullptr;
 }
 
@@ -144,7 +141,7 @@ void MPINode::insert(MPINode *child){
 	MPIOperation *childOP=child->op;
 	if (childOP)
 	{
-//		childOP->transformToSendingOP();
+		//		childOP->transformToSendingOP();
 
 		bool hasCombined=false;
 		MPINode* theLivingNode=nullptr;//use this node to put the final combined mpi op.
@@ -163,6 +160,7 @@ void MPINode::insert(MPINode *child){
 				hasCombined=true;
 				delete childOP;
 				delete curOp;
+				curVNode->op=nullptr;
 				childOP=theCombinedOP;
 
 				if (theLivingNode==nullptr)
@@ -170,8 +168,9 @@ void MPINode::insert(MPINode *child){
 
 				else{
 					this->children.erase(children.begin()+i);
-					i--;
 				}
+
+				i=-1;
 			}
 		}
 

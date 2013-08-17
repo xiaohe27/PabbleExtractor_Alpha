@@ -216,7 +216,6 @@ bool MPIOperation::isComplementaryOpOf(MPIOperation *otherOP){
 		return false;
 	}
 
-
 	if (this->isCollectiveOp() && otherOP->isCollectiveOp())
 	{
 		//for the collective ops, the op name and executor must be exactly the same 
@@ -224,6 +223,20 @@ bool MPIOperation::isComplementaryOpOf(MPIOperation *otherOP){
 		return this->getOpName()==otherOP->getOpName() && 
 			this->executor.isSameAsCond(otherOP->executor);
 	}
+
+	if(this->opType == otherOP->opType)
+		return false;
+
+	if (this->isUnicast() && !otherOP->isUnicast() && (otherOP->isMulticast() || otherOP->isGatherOp()))
+	{
+		return MPIOperation::areTheseTwoOpsCompatible(this,otherOP);
+	}
+
+	if (otherOP->isUnicast() && !this->isUnicast() && (this->isMulticast() || this->isGatherOp()))
+	{
+		return MPIOperation::areTheseTwoOpsCompatible(this,otherOP);
+	}
+
 
 	if (this->isRecvingOp())
 	{
@@ -318,6 +331,25 @@ bool MPIOperation::isNonBlockingOPWithReqVar(string reqName){
 		return false;
 
 	return this->reqVarName==reqName;
+}
+
+//compare whether a unicast op is compatible with a multicast or gather op.
+bool MPIOperation::areTheseTwoOpsCompatible(MPIOperation* op1, MPIOperation* op2){
+	if (op1->isUnicast() && op2->isUnicast() || 
+		!op1->isUnicast() && !op2->isUnicast())
+		return op1->isComplementaryOpOf(op2);
+
+	MPIOperation *unicast=op1->isUnicast()?op1:op2;
+	MPIOperation *nonUnicast=op1->isUnicast()?op2:op1;
+
+	int offsetFromExecToTar=Condition::getDistBetweenTwoCond(unicast->getExecutor(),unicast->getTargetCond());
+	Condition execOfNonU=nonUnicast->getExecutor().addANumber(-offsetFromExecToTar);
+
+	if (execOfNonU.AND(nonUnicast->getTargetCond()).isIgnored())
+		return false;
+
+	else
+		return true;
 }
 /********************************************************************/
 //Class MPIOperation impl end										****
@@ -449,6 +481,16 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			this->mpiSimulator->insertNode(waitNode);
 		}
 
+		if(funcName=="MPI_Barrier"){
+			BarrierNode *barNode=new BarrierNode();
+
+			if(args[0]!=WORLD)
+				throw new MPI_TypeChecking_Error("Current program does not support communicators other than MPI_COMM_WORLD.");
+
+			this->mpiSimulator->insertNode(barNode);
+		}
+
+
 
 
 		/*******************Enum the possible MPI OPs end***********************************/
@@ -503,15 +545,19 @@ void MPITypeCheckingConsumer::genSendingOP(vector<string> args,CallExpr *E,strin
 
 	else{
 		Condition execCond=this->mpiSimulator->getCurExecCond();
+		Condition destCond=this->commManager->extractCondFromTargetExpr(E->getArg(3),execCond);
 
 		mpiOP=new MPIOperation(		funcName,
 			ST_NODE_SEND, 
 			dataType,
 			execCond, //the performer
-			this->commManager->extractCondFromTargetExpr(E->getArg(3),execCond), //the dest
+			destCond, //the dest
 			tag, 
-			group);
+			group);	
 
+		if(destCond.outsideOfBound())
+		throw new MPI_TypeChecking_Error("Destination condition for the op "+
+		mpiOP->printMPIOP()+" is "+destCond.printConditionInfo()+"\nRank outside of bound.");
 	}
 
 	mpiOP->setSrcCode(funcSrcCode);
@@ -550,10 +596,16 @@ void MPITypeCheckingConsumer::genRecvingOP(vector<string> args,CallExpr *E,strin
 
 	else{
 		Condition execCond=this->mpiSimulator->getCurExecCond();
+		Condition tarCond=this->commManager->extractCondFromTargetExpr(E->getArg(3),execCond);
+
 		mpiOP=new MPIOperation(funcName,ST_NODE_RECV, dataType,								
 			execCond, 
-			this->commManager->extractCondFromTargetExpr(E->getArg(3),execCond),
+			tarCond,
 			tag, group);
+
+		if(tarCond.outsideOfBound())
+		throw new MPI_TypeChecking_Error("Src condition for the op "+
+		mpiOP->printMPIOP()+" is "+tarCond.printConditionInfo()+"\nRank outside of bound.");
 	}
 
 

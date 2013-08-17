@@ -201,6 +201,15 @@ VisitResult* Role::visit(){
 				}
 			}
 
+			else if(curVisitNode->getNodeType()==MPI_Barrier){
+				BarrierNode* bar=(BarrierNode*)curVisitNode;
+				this->blocked=true;
+				bar->visit(Condition(this->getRange()));
+				escapedRoles.clear();
+
+				return new VisitResult(nullptr,escapedRoles);
+			}
+
 			else if (curVisitNode->isLeaf())
 			{
 				curVisitNode->setMarked();

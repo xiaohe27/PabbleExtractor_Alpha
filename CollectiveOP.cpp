@@ -1,7 +1,6 @@
 #include "Comm.h"
 using namespace llvm;
 using namespace clang;
-using namespace std;
 
 
 vector<MPIOperation*> CollectiveOPManager::insertCollectiveOP(MPIOperation* op){
@@ -18,6 +17,10 @@ vector<MPIOperation*> CollectiveOPManager::insertCollectiveOP(MPIOperation* op){
 	Condition execCond=op->getExecutor();
 	Condition participants=op->getTargetCond();
 	CommNode *node=op->theNode;
+
+	if(execCond.outsideOfBound())
+		throw new MPI_TypeChecking_Error("Executor condition for the op "+
+		op->printMPIOP()+" is "+execCond.printConditionInfo()+"\nRank outside of bound.");
 
 	//record the comm node and its initial executor cond
 	if(this->commNodeAndInitExecutorCondMap.count(node->getPosIndex()))

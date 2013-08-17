@@ -51,6 +51,7 @@ using namespace clang;
 #define InitStartIndex -2
 #define ST_NODE_FOREACH 8
 #define MPI_Wait 9
+#define MPI_Barrier 10
 
 extern int InitEndIndex;
 extern bool strict;
@@ -234,6 +235,8 @@ public:
 
 	static bool areTheseTwoCondAdjacent(Condition cond1, Condition cond2);
 
+	bool outsideOfBound(){return this->isRankInside(InitEndIndex) || this->isRankInside(-1);}
+
 	string printConditionInfo();
 };
 
@@ -369,6 +372,7 @@ public:
 	string getGroup(){return this->group;}
 
 	static bool isOpBlocking(string opStr);
+	static bool areTheseTwoOpsCompatible(MPIOperation* op1, MPIOperation* op2);
 	bool isBlockingOP();
 	bool isNonBlockingOPWithReqVar(string reqName);
 	bool isDependentOnExecutor(){return this->isTargetDependOnExecutor;}
@@ -426,6 +430,8 @@ private:
 
 	void init(int type,vector<MPIOperation*> *ops);
 
+	void deleteItsTree();
+
 	CommNode *sibling;
 
 	string srcCodeInfo;
@@ -457,10 +463,10 @@ public:
 	CommNode(MPIOperation *op0);
 
 	~CommNode(){
-		delete parent;
 		delete ops;
-		delete sibling;
 	}
+
+	bool isStructureNode();
 
 	bool isLeaf() const;
 
@@ -540,6 +546,7 @@ public:
 	//only used after the traversal of AST of the mpi pgm
 	bool isNonRankChoiceNode();
 
+	void optimize();
 };
 
 class ForEachNode: public CommNode{
@@ -587,7 +594,14 @@ public:
 
 };
 
+class BarrierNode: public CommNode{
+public:
+	Condition curArrivedProcCond;
 
+	BarrierNode();//the cur pgm only support the barrier of world communicator
+
+	void visit(Condition visitorCond);
+};
 
 class CommManager{
 

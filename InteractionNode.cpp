@@ -44,6 +44,10 @@ void CommNode::init(int type, vector<MPIOperation*> *theOPs){
 
 	case ST_NODE_CONTINUE: this->nodeName="CONTINUE"; break;
 
+	case MPI_Wait: this->nodeName="WAIT"; break;
+
+	case MPI_Barrier: this->nodeName="BARRIER"; break;
+
 	default: this->nodeName="UNKNOWN";
 
 	}
@@ -102,7 +106,7 @@ bool CommNode::isNonRankChoiceNode(){
 bool CommNode::isBelowARankSpecificForLoop(){
 	if (this->isMaster())
 		return false;
-	
+
 	if (this->nodeType==ST_NODE_FOREACH)
 		return true;
 
@@ -110,7 +114,7 @@ bool CommNode::isBelowARankSpecificForLoop(){
 }
 
 vector<ForEachNode*> CommNode::getAllTheSurroundingRankSpecificForLoops(){
-	
+
 	vector<ForEachNode*> forList;
 	if(!this->isLeaf())
 		return forList;
@@ -119,11 +123,11 @@ vector<ForEachNode*> CommNode::getAllTheSurroundingRankSpecificForLoops(){
 	while(true){
 		if (cur->isMaster())	
 			return forList;
-		
+
 
 		if (cur->nodeType==ST_NODE_FOREACH)		
 			forList.push_back((ForEachNode*)cur);
-		
+
 		cur=cur->parent;
 	}
 
@@ -303,6 +307,16 @@ string CommNode::printTheNode(){
 	return output;
 }
 
+bool CommNode::isStructureNode(){
+	if(	this->nodeType==ST_NODE_ROOT || 
+		this->nodeType==ST_NODE_RECUR ||
+		this->nodeType==ST_NODE_CHOICE)
+		return true;
+
+	else
+		return false;
+}
+
 bool CommNode::isLeaf() const{
 	if (children.size()==0)
 	{
@@ -402,6 +416,68 @@ MPIOperation* CommNode::findTheClosestNonblockingOPWithReqName(string reqName){
 	throw new MPI_TypeChecking_Error("Cannot Find the corresponding non-blocking op with req var "+reqName);
 }
 
+
+void CommNode::optimize(){
+	for (int i = 0; i < this->children.size(); ++i)
+	{
+		CommNode *childI=this->children.at(i);
+		if (childI->condition.isIgnored())
+		{
+			childI->deleteItsTree();
+
+			this->children.erase(this->children.begin()+i);
+			--i;
+			if(i>=0){
+					this->children.at(i)->sibling=nullptr;
+
+				if(i+1<children.size())
+					this->children.at(i)->sibling=this->children.at(i+1);
+			}
+		}
+
+		else if(childI->nodeType==ST_NODE_ROOT && childI->children.size()==0)
+		{
+			childI->deleteItsTree();
+
+			this->children.erase(this->children.begin()+i);
+			--i;
+			if(i>=0){
+		
+					this->children.at(i)->sibling=nullptr;
+				
+				if(i+1<children.size())
+					this->children.at(i)->sibling=this->children.at(i+1);
+			}
+		}
+		else{
+			childI->optimize();
+			if(childI->isStructureNode() && childI->children.size()==0)
+			{
+				childI->deleteItsTree();
+
+				this->children.erase(this->children.begin()+i);
+				--i;
+				if(i>=0){
+
+						this->children.at(i)->sibling=nullptr;
+					
+					if(i+1<children.size())
+					this->children.at(i)->sibling=this->children.at(i+1);
+				}
+			}
+		}
+	}
+
+}
+
+void CommNode::deleteItsTree(){
+	for (int i = 0; i < this->children.size(); i++)
+	{
+		this->children.at(i)->deleteItsTree();
+	}
+
+	delete this;
+}
 /********************************************************************/
 //Class CommNode impl end										****
 /********************************************************************/
@@ -438,4 +514,26 @@ ForEachNode::ForEachNode(string iterVar,int start,int end):CommNode(ST_NODE_FORE
 
 /********************************************************************/
 //Class ForEachNode impl end										****
+/********************************************************************/
+
+
+/********************************************************************/
+//Class BarrierNode impl start										****
+/********************************************************************/
+
+BarrierNode::BarrierNode():CommNode(MPI_Barrier,Condition(true)){
+	this->curArrivedProcCond=Condition(false);
+}
+
+void BarrierNode::visit(Condition visitorCond){
+	this->curArrivedProcCond=this->curArrivedProcCond.OR(visitorCond);
+
+	if (this->curArrivedProcCond.isComplete())
+	{
+		this->setMarked();
+	}
+}
+
+/********************************************************************/
+//Class BarrierNode impl end										****
 /********************************************************************/
