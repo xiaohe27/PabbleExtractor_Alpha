@@ -100,7 +100,7 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 
 		cout<<"The bin op is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),binOP)<<"\n";
 		cout<<"The lhs is "<<lhsStr<<"\n";
-		cout<<"The rhs is "<<rhs<<"\n";
+		cout<<"The rhs is "<<rhsStr<<"\n";
 		cout<<"The operator is : "<<op<<endl;
 
 
@@ -116,7 +116,7 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 			if(!lCond.hasSameRankNature(rCond)){
 				//if warning level is high, then forbid the mixture of rank
 				//and non-rank condition...
-				if (strict)
+				if (STRICT)
 				{
 					string lCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
 					string rCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs);
@@ -175,7 +175,7 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 			if(!lCond.hasSameRankNature(rCond)){
 				//if warning level is high, then forbid the mixture of rank
 				//and non-rank condition...
-				if (strict)
+				if (STRICT)
 				{
 					string lCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
 					string rCondStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs);
@@ -222,16 +222,13 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 			orCond.setNonRankVarName(nonRankVarName);
 			cout <<"\n\n\n\n\n"<< orCond.printConditionInfo()<<"\n\n\n\n\n" <<endl;
 			return orCond;
-		}
+		} 
+
 		////it is a basic op
 		else {
 
 			//if the cur op is not a comparison op, then return true;
 			if(!binOP->isComparisonOp())
-				return Condition(true);
-
-			//if either lhs or rhs are bin op, then return true;
-			if(isa<BinaryOperator>(lhs) || isa<BinaryOperator>(rhs))
 				return Condition(true);
 
 
@@ -287,14 +284,34 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 			if(op=="=="){
 				if (lVarName==RANKVAR)
 				{
-					return this->extractCondFromTargetExpr(rhs,Condition(true));
+					Condition theCond=this->extractCondFromTargetExpr(rhs);
+
+					if(this->containsRankStr(rhsStr) && !theCond.isSameAsCond(VarCondMap[RANKVAR]))
+						return Condition(false);
+
+					if(theCond.size()>1)
+						theCond.execStr=rhsStr;
+
+					return theCond;
 				}
 
 				if (rVarName==RANKVAR)
 				{
-					return this->extractCondFromTargetExpr(lhs,Condition(true));
+					Condition theCond=this->extractCondFromTargetExpr(lhs);
+					if(this->containsRankStr(lhsStr) && !theCond.isSameAsCond(VarCondMap[RANKVAR]))
+						return Condition(false);
+
+					if(theCond.size()>1)
+						theCond.execStr=lhsStr;
+
+					return theCond;
 				}
 			}
+
+			//if either lhs or rhs are bin op, then return true;
+			if(isa<BinaryOperator>(lhs) || isa<BinaryOperator>(rhs))
+				return Condition(true);
+
 
 			////////////////////////////////////////////////////////////////////////////////
 			if(leftIsVar && rightIsVar){

@@ -60,6 +60,9 @@
     <ClCompile Include="ProtocolGen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ExtractMPIOP.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MPITypeCheckingConsumer.h">

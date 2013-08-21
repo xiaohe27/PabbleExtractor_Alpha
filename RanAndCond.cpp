@@ -8,21 +8,16 @@ using namespace clang;
 /********************************************************************/
 
 Range::Range(int s,int e){
-
 	this->shouldBeIgnored=false;
 
-	if(s<0 || s>=InitEndIndex)
-		s=0;
-
 	this->startPos=s; this->endPos=e;
-
 }
 
 Range::Range(){
 	shouldBeIgnored=true;
 
 	this->startPos=InitStartIndex;
-	this->endPos=InitEndIndex;
+	this->endPos=N;
 
 }
 
@@ -33,23 +28,23 @@ int Range::size(){
 	}
 
 	else{
-		return this->endPos+1 + InitEndIndex-this->startPos;
+		return this->endPos+1 + N-this->startPos;
 	}
 }
 
 Range Range::createByStartIndex(int start){
-	if(start>=InitEndIndex)
+	if(start>=N)
 		return Range();
 
-	return Range(start,InitEndIndex-1);
+	return Range(start,N-1);
 }
 
 Range Range::createByEndIndex(int end){
 	if (end<0)
 		return Range();
 
-	else if(end>=InitEndIndex)
-		return Range(0,InitEndIndex-1);
+	else if(end>=N)
+		return Range(0,N-1);
 
 	return Range(0,end);
 }
@@ -57,7 +52,7 @@ Range Range::createByEndIndex(int end){
 
 Range Range::createByOp(string op, int num){
 	if(op=="=="){
-		if(num<0 || num>= InitEndIndex)
+		if(num<0 || num>= N)
 			return Range();
 
 		else
@@ -68,22 +63,22 @@ Range Range::createByOp(string op, int num){
 		if(num<=0)
 			return Range();
 
-		else if(num<= InitEndIndex)
+		else if(num<= N)
 			return Range(0,num-1);
 
 		else
-			return Range(0,InitEndIndex-1);
+			return Range(0,N-1);
 	}
 
 	if(op=="<="){
 		if(num<0)
 			return Range();
 
-		else if(num<InitEndIndex)
+		else if(num<N)
 			return Range(0,num);
 
 		else
-			return Range(0,InitEndIndex-1);
+			return Range(0,N-1);
 	}
 
 	if(op==">"){	
@@ -99,21 +94,9 @@ Range Range::createByOp(string op, int num){
 }
 
 void Range::addNumber(int num){
-	if (!this->isSpecialRange())
-	{
+
 		this->startPos+=num;
 		this->endPos+=num;
-
-		Condition cond=this->AND(Range(0,InitEndIndex-1));
-		if (cond.isIgnored())
-		{
-			this->shouldBeIgnored=true;
-		}
-
-		else{
-			*this=cond.getRangeList().at(0);
-		}
-	}
 
 }
 
@@ -355,7 +338,7 @@ bool Range::isAllRange(){
 	if (this->shouldBeIgnored)
 		return false;
 
-	if(getStart()==0 && getEnd()==InitEndIndex-1)
+	if(getStart()==0 && getEnd()==N-1)
 		return true;
 
 	if(getEnd()==getStart()-1)
@@ -382,7 +365,7 @@ bool Range::isThisNumInside(int num){
 //ok. already considered the case of end < start
 Condition Range::negateOfRange(Range ran){
 	if(ran.isIgnored()){
-		Range allRange=Range(0,InitEndIndex);
+		Range allRange=Range(0,N);
 		return Condition(allRange);
 	}
 
@@ -410,11 +393,11 @@ string Range::printRangeInfo(){
 
 
 	string endPosStr="";
-	int exceed=this->getEnd()-InitEndIndex;
+	int exceed=this->getEnd()-N;
 	string sign= exceed>0?"+":"";
 	endPosStr="N"+sign+(exceed==0?"":convertIntToStr(exceed));
 
-	if (this->getEnd()>=InitEndIndex-1 )
+	if (this->getEnd()>=N-1 )
 	{
 		if(this->getEnd()==this->getStart())
 			return "["+endPosStr+".."+endPosStr+"]";
@@ -459,7 +442,7 @@ Condition::Condition(bool val){
 
 		this->complete=true;
 		this->shouldBeIgnored=false;
-		this->rangeList.push_back(Range(0,InitEndIndex-1));
+		this->rangeList.push_back(Range(0,N-1));
 	}
 
 	else{
@@ -608,9 +591,6 @@ void Condition::normalize(){
 		if(rangeList[i].isIgnored())
 			continue;
 
-		if(rangeList[i].isAllRange())
-			rangeList[i]=Range(0,InitEndIndex-1);
-
 		for (int j = i+1; j < rangeList.size(); j++)
 		{
 			if (rangeList[j].isIgnored())
@@ -752,33 +732,11 @@ bool Condition::hasSameGroupComparedTo(Condition other){
 
 Condition Condition::addANumber(int num){
 	this->offset+=num;
-	vector<Range> tmp;
 
 	for (int i = 0; i < this->rangeList.size(); i++)
 	{
-		if(!this->rangeList[i].isSpecialRange())
-			this->rangeList[i].addNumber(num);
-
-		else{
-			Range ran1(0,this->rangeList[i].getEnd());
-			Range ran2(this->rangeList[i].getStart(),InitEndIndex-1);
-
-			ran1.addNumber(num);
-			ran2.addNumber(num);
-			tmp.push_back(ran1);
-			tmp.push_back(ran2);
-
-			this->rangeList.erase(rangeList.begin()+i);
-			i--;
-		}
+		this->rangeList.at(i).addNumber(num);
 	}
-
-	for (int i = 0; i < tmp.size(); i++)
-	{
-		this->rangeList.push_back(tmp[i]);
-	}
-
-	this->normalize();
 
 	return *this;
 }

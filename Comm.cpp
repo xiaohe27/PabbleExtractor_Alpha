@@ -2,19 +2,21 @@
 
 
 
-int InitEndIndex=100;
-string RANKVAR="";
-string fileName="MPIProtocol";
+int N=100;
+int LFP=0;
+string RANKVAR;
+map<string,Condition> VarCondMap;
+string MPI_FILE_NAME="MPIProtocol";
 
 //some functions
 int min(int a, int b){if(a<b) return a; else return b;}
 int max(int a, int b){if(a<b) return b; else return a;}
 
 int minEnd(int a, int b){
-	if(a==InitEndIndex)
+	if(a==N)
 		return b;
 
-	if(b==InitEndIndex)
+	if(b==N)
 		return a;
 
 	return min(a,b);
@@ -22,10 +24,10 @@ int minEnd(int a, int b){
 
 
 int maxEnd(int a, int b){
-	if(a==InitEndIndex)
+	if(a==N)
 		return a;
 
-	if(b==InitEndIndex)
+	if(b==N)
 		return b;
 
 	return max(a,b);
@@ -40,14 +42,29 @@ int compute(string op, int operand1, int operand2){
 	if(op=="-")
 		return operand1-operand2;
 
+	if(op=="*")
+		return operand1*operand2;
+
+	if(op=="/")
+		return operand1/operand2;
+
+	if(op=="%")
+		return operand1%operand2;
+
+	if(op=="<<")
+		return operand1<<operand2;
+
+	if(op==">>")
+		return operand1>>operand2;
+	
 	return -1;
 }
 
 bool areTheseTwoNumsAdjacent(int a, int b){
 	if(a==b) return true;
 
-	if(a==(b-1+InitEndIndex)%InitEndIndex ||
-		a==(b+1)%InitEndIndex)
+	if(a==(b-1+N)%N ||
+		a==(b+1)%N)
 		return true;
 
 	return false;
@@ -68,7 +85,7 @@ string convertDoubleToStr(double number)
 }
 
 void writeToFile(string content){
-	ofstream outputFile("A:/MPI_SessionType_Extractor/SessionTypeExtractor4MPI/Debug/Debug.txt",
+	ofstream outputFile("Debug.txt",
 		ios_base::out | ios_base::app);
 
 	outputFile <<"\n"<< content <<"\n";
@@ -79,7 +96,7 @@ void writeProtocol(string protocol){
 	ofstream outputFile("Protocol.txt",
 		ios_base::out | ios_base::trunc);
 
-	outputFile <<"const N="<<InitEndIndex<<";\n";
+	outputFile <<"const N="<<N<<";\n";
 
 	outputFile <<"\n"<< protocol <<"\n";
 
@@ -255,6 +272,9 @@ void CommManager::removeTopCond4NonRankVar(string nonRankVar){
 
 
 bool CommManager::hasAssociatedWithCondition(string varName){
+	if(VarCondMap.count(varName))
+		return true;
+
 	if(this->isVarRelatedToRank(varName))
 		return true;
 

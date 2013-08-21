@@ -53,10 +53,21 @@ using namespace clang;
 #define MPI_Wait 9
 #define MPI_Barrier 10
 
-extern int InitEndIndex;
-extern bool strict;
-extern string fileName;
+class CommNode;
+class WaitNode;
+class ForEachNode;
+class Condition;
+class MPIOperation;
+class Role;
+class MPINode;
+class MPITree;
+
+extern int N;
+extern int LFP; //the largest known rank number
+extern bool STRICT;
+extern string MPI_FILE_NAME;
 extern string RANKVAR;
+extern map<string,Condition> VarCondMap;
 
 #define InvalidIndex -3
 
@@ -99,15 +110,6 @@ int maxEnd(int a, int b);
 int compute(string op, int operand1, int operand2);
 bool areTheseTwoNumsAdjacent(int a, int b);
 
-
-class CommNode;
-class WaitNode;
-class ForEachNode;
-class Condition;
-class MPIOperation;
-class Role;
-class MPINode;
-class MPITree;
 
 class Range{
 private:
@@ -168,6 +170,7 @@ private:
 
 public:
 	int offset;
+	string execStr; //the expr str of the executor.
 
 	Condition();
 
@@ -235,7 +238,7 @@ public:
 
 	static bool areTheseTwoCondAdjacent(Condition cond1, Condition cond2);
 
-	bool outsideOfBound(){return this->isRankInside(InitEndIndex) || this->isRankInside(-1);}
+	bool outsideOfBound(){return this->isRankInside(N) || this->isRankInside(-1);}
 
 	string printConditionInfo();
 };
@@ -337,8 +340,6 @@ private:
 	string targetExprStr;
 	string tag;
 	string group;
-	
-	string srcCode;
 	string opName;
 
 	static set<string> blockingOPSet;
@@ -352,6 +353,8 @@ public:
 	string execExprStr;
 	string reqVarName;
 	WaitNode *theWaitNode; 
+	string operatorStr;
+	string srcCode;
 	bool isInPendingList;
 	bool isTargetDependOnExecutor;
 	bool isBothCastAndGather;
@@ -646,7 +649,7 @@ public:
 
 	Condition extractCondFromBoolExpr(Expr *expr);
 
-	Condition extractCondFromTargetExpr(Expr *expr, Condition execCond);
+	Condition extractCondFromTargetExpr(Expr *expr);
 
 
 	void insertRankVarAndOffset(string varName, int offset);
@@ -674,23 +677,16 @@ public:
 //////////////////////////////////////////////////////////////////////////////
 class CollectiveOPManager{
 private:
-	map<string,Condition> collectiveOPFinishInfoMap;
-
-	map<string,vector<CommNode*>*> participatingCommNodesMap;
-
-	map<string,int> remainingTimesNeedToDoTheOP;
-
 	map<int,Condition> commNodeAndInitExecutorCondMap;
-
-	MPIOperation* insertCollectiveOPAndCondPair(string opName,int rank, Condition cond, MPIOperation*op);
+	vector<CommNode*> participatingCommNodesVec;
+	MPIOperation *curCollectiveOP;
 
 public:
+	CollectiveOPManager();
 	//if the collective op fires, then relevant nodes will be unblocked
-	//The actually happened collective ops will be returned if there are any
-	vector<MPIOperation*> insertCollectiveOP(MPIOperation* op);
-
-	void unlockCollectiveOP(string opNameKey);
-	void dec(string opName); //each time a collective op happens, the dec() will be called
+	//The actually happened collective op will be returned if there is any
+	MPIOperation* insertCollectiveOP(MPIOperation* op);
+	void unlockCollectiveOP();
 };
 
 

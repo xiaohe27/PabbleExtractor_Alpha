@@ -12,27 +12,38 @@ bool MPITypeCheckingConsumer::VisitBinaryOperator(BinaryOperator *op){
 	if(!this->visitStart)
 		return true;
 
+	string str=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),op);
 	cout <<"Visit '"<< op->getStmtClassName()<<"':\n" ;
-	cout << stmt2str(&ci->getSourceManager(),ci->getLangOpts(),op) <<endl;
+	cout << str <<endl;
 
 	Expr *lhs=op->getLHS();
+	string lhsVarName;
 	if (DeclRefExpr *DRE = dyn_cast<DeclRefExpr>(lhs)) {
 		// It's a reference to a declaration...
 		if (VarDecl *VD = dyn_cast<VarDecl>(DRE->getDecl())) {
 			// It's a reference to a variable (a local, function parameter, global, or static data member).
-			std::cout << "Look! LHS is the var:" << VD->getQualifiedNameAsString() <<"!!!"<< std::endl;
+			lhsVarName=VD->getQualifiedNameAsString();
 		}
 	}
 
-	APSInt Result;
-	Expr *rhs=op->getRHS();
+	if(lhsVarName.size()==0)
+		lhsVarName=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),lhs);
+	cout<<"LHS is "<<lhsVarName<<endl;
 
-	//	cout << "RHS has textual content: \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),rhs)<<"\n"<<endl;
-
-
-	if (rhs->EvaluateAsInt(Result, this->ci->getASTContext())) {
-		std::cout << "RHS has value " << Result.toString(10) << std::endl;
+	if(!this->commManager->isAVar(lhsVarName)){
+		cout<<"The str "<<lhsVarName<<"is not a known var."<<endl;
+		return true;
 	}
+
+
+	try{
+		if(op->isAssignmentOp())
+			VarCondMap[lhsVarName]=this->commManager->extractCondFromTargetExpr(op->getRHS());	
+	}
+	catch(MPI_TypeChecking_Error *err){
+		cout<<"Cannot extract condition from "<<str<<endl;
+	}
+
 	return true;
 }
 
@@ -178,7 +189,7 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 
 	Condition condInElsePart;
-	if(strict){ //if only the same type of expr appears in the conditional expr
+	if(STRICT){ //if only the same type of expr appears in the conditional expr
 		if (!thenCond.isRelatedToRank())
 			condInElsePart=Condition(thenCond);
 		else
@@ -238,23 +249,36 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 bool MPITypeCheckingConsumer::VisitDeclStmt(DeclStmt *S){
 
-
 	DeclGroupRef d=S->getDeclGroup();
 
 	DeclGroupRef::iterator it;
 
 	for( it = d.begin(); it != d.end(); it++)
 	{
-
 		if(isa<VarDecl>(*it)){
 			VarDecl *var=cast<VarDecl>(*it);
 			string varName=var->getDeclName().getAsString();
 			cout<<"Find the var "<<varName<<endl;
-
 			this->commManager->insertVarName(varName);
+			Expr *initializerOP=var->getInit();
+
+			if(initializerOP){
+				string rhsVal=expr2str(&ci->getSourceManager(),ci->getLangOpts(),initializerOP);
+				if(this->setOfWorldCommGroup.find(rhsVal)!=this->setOfWorldCommGroup.end())
+				{
+					this->setOfWorldCommGroup.insert(varName);
+					continue;
+				}
+
+				try{
+					VarCondMap[varName]=this->commManager->extractCondFromTargetExpr(initializerOP);
+				}
+				catch(MPI_TypeChecking_Error *err){
+					cout<<"Cannot extract condition from init expr of var "<<varName<<endl;
+				}
+			}
 		}
 	}
-
 
 	cout <<"The decl stmt is: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 	return true;
@@ -311,7 +335,7 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 	int endPos=-1;
 
 	int size=this->analyzeForStmt(initFor,condOfFor,inc,bodyOfFor,nonRankVarList,
-									iterVarName,startPos,endPos);
+		iterVarName,startPos,endPos);
 
 	cout<<"The for loop will iterate "<<size<<" times!"<<endl;
 

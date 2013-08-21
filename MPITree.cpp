@@ -141,8 +141,6 @@ void MPINode::insert(MPINode *child){
 	MPIOperation *childOP=child->op;
 	if (childOP)
 	{
-		//		childOP->transformToSendingOP();
-
 		bool hasCombined=false;
 		MPINode* theLivingNode=nullptr;//use this node to put the final combined mpi op.
 

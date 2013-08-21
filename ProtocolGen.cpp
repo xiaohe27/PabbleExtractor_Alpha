@@ -46,9 +46,9 @@ string ProtocolGenerator::selfCreatedLoop(MPINode *mpinode){
 	cur=forloops.at(0);
 	MPIForEachNode *mpi4Each=new MPIForEachNode(cur);
 
-////////////////////////////////////////////////////////////////////////////	
+	////////////////////////////////////////////////////////////////////////////	
 	mpinode->getMPIOP()->isBothCastAndGather=true;
-////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////
 
 	mpi4Each->insert(mpinode);
 
@@ -81,7 +81,7 @@ void ProtocolGenerator::generateTheProtocols(){
 }
 
 string ProtocolGenerator::protocolName(){
-	return fileName+"_ProToCoL";
+	return MPI_FILE_NAME+"_ProToCoL";
 }
 
 string ProtocolGenerator::globalProtocolHeader(){
@@ -245,58 +245,81 @@ string ProtocolGenerator::globalMsgTransfer(MPINode *node){
 
 	string msg=message(theMPIOP);
 	string output="\n";
+
+	if(theMPIOP->isCollectiveOp()){
+		if(theMPIOP->getExecutor().size()==1)
+			theMPIOP->execExprStr=convertIntToStr(theMPIOP->getExecutor().getRangeList().at(0).getStart());
+			
+
+		if (theMPIOP->isSendingOp())
+		{
+			output+=msg+" from "+genRoleByVar(WORLD,theMPIOP->execExprStr)
+				+" to "+genRoleName(WORLD,Range(0,N-1));
+		}
+
+		else
+		{
+			output+=msg+" from "+genRoleName(WORLD,Range(0,N-1)) +
+				+" to "+genRoleByVar(WORLD,theMPIOP->execExprStr);
+		}
+		return output;
+	}
+
+	/*
+	if(theMPIOP->isRecvingOp()){
+	Condition tmp=theMPIOP->getExecutor();
+	theMPIOP->setExecutorCond(theMPIOP->getTargetCond());
+	theMPIOP->setTargetCond(tmp);
+	}
+	*/
+
 	Condition execCond=theMPIOP->getExecutor();
 	for (int i = 0; i < execCond.getRangeList().size(); i++)
 	{
 		Range ran=execCond.getRangeList().at(i);
 
-		//the mpi op which is both cast and gather needs to be analyzed in rank level.
-		if (theMPIOP->isBothCastAndGather)
+
+		MPINode *parentNode=node->getParent();
+		if (parentNode->getNodeType()==ST_NODE_FOREACH)
 		{
-			MPINode *parentNode=node->getParent();
-			if (parentNode->getNodeType()==ST_NODE_FOREACH)
+
+			if (theMPIOP->execExprStr.size()==0)
 			{
-				if (theMPIOP->isCollectiveOp())
-				{
-					if(theMPIOP->execExprStr.size()==0){
-						output+=msg+" from "+genRoleName(WORLD,Range(0,InitEndIndex-1));
-						output+=" to "+genRoleByVar(WORLD,theMPIOP->getTarExprStr())+";\n";
-					}
-
-					else{
-						output+=msg+" from "+genRoleByVar(WORLD,theMPIOP->execExprStr);
-						output+=" to "+genRoleName(WORLD,Range(0,InitEndIndex-1))+";\n";
-					}
+				if (theMPIOP->isUnicast() && theMPIOP->isDependentOnExecutor()){
+					output+=msg+" from "+WORLD+this->insertRankInfoToRangeStr(ran.printRangeInfo());
+					output+=" to "+getReceiverRoles(theMPIOP, i)+";\n";
 				}
 
-				else
-				{
-					if (theMPIOP->execExprStr.size()==0)
-					{
-						output+=msg+" from "+genRoleName(WORLD,ran);
-						output+=" to "+genRoleByVar(WORLD,theMPIOP->getTarExprStr())+";\n";
-					}
-
-					else{
-						output+=msg+" from "+genRoleByVar(WORLD,theMPIOP->execExprStr);
-						output+=" to "+this->getReceiverRoles(theMPIOP,i)+";\n";
-					}
+				else{
+					output+=msg+" from "+genRoleName(WORLD,ran);
+					output+=" to "+genRoleByVar(WORLD,theMPIOP->getTarExprStr())+";\n";
 				}
-
 			}
 
-			//if the parent is NOT foreach node, then we might need to generate a 
-			//foreach output from scratch.
 			else{
-			//TODO
+				if (theMPIOP->isUnicast() && theMPIOP->isDependentOnExecutor()){
+					output+=msg+" from "+WORLD+this->insertRankInfoToRangeStr("["+theMPIOP->execExprStr+"]");
+					output+=" to "+getReceiverRoles(theMPIOP, i)+";\n";
+				}
+
+				else{
+					output+=msg+" from "+genRoleByVar(WORLD,theMPIOP->execExprStr);
+					output+=" to "+this->getReceiverRoles(theMPIOP,i)+";\n";
+				}
 			}
+
 		}
+
 
 		else{
 			string senderRoleName=genRoleName(WORLD,ran);
 			if (theMPIOP->isUnicast() && theMPIOP->isDependentOnExecutor())
 			{
-				senderRoleName=WORLD+this->insertRankInfoToRangeStr(ran.printRangeInfo());
+				if(theMPIOP->execExprStr.size()==0)
+					senderRoleName=WORLD+this->insertRankInfoToRangeStr(ran.printRangeInfo());
+
+				else
+					senderRoleName=WORLD+this->insertRankInfoToRangeStr("["+theMPIOP->execExprStr+"]");
 			}
 
 			output+=msg+" from "+senderRoleName+" to "+getReceiverRoles(theMPIOP, i)+";\n";
@@ -350,9 +373,9 @@ string ProtocolGenerator::globalContinue(MPINode *node){
 
 string ProtocolGenerator::globalForeach(MPIForEachNode *node){
 	string out="\nforeach ("+node->iterVarName+":";
-	out+=node->startPos==InitEndIndex-1 ? "N-1" : convertIntToStr(node->startPos);
+	out+=node->startPos==N-1 ? "N-1" : convertIntToStr(node->startPos);
 	out+="..";
-	out+=node->endPos==InitEndIndex-1 ? "N-1" : convertIntToStr(node->endPos);
+	out+=node->endPos==N-1 ? "N-1" : convertIntToStr(node->endPos);
 	out+=")";
 
 	out+=globalInteractionBlock(node);

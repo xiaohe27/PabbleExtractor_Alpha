@@ -13,13 +13,14 @@ MPITypeCheckingConsumer::MPITypeCheckingConsumer(CompilerInstance *ci, int numOf
 }
 
 MPITypeCheckingConsumer::MPITypeCheckingConsumer(CompilerInstance *ci) {
-	init(ci, InitEndIndex);
+	init(ci, N);
 }
 
 void MPITypeCheckingConsumer::init(CompilerInstance *ci, int numOfProc){
 	this->ci=ci;
 	this->visitStart=false;
 	this->numOfProcs=numOfProc;
+	this->setOfWorldCommGroup.insert(WORLD);
 	this->commManager=new CommManager(ci, numOfProc);
 	this->mpiTree=new MPITree(new MPINode(new CommNode(ST_NODE_ROOT,Condition(true))));
 
@@ -245,7 +246,8 @@ string expr2str(SourceManager *sm, LangOptions lopt,clang::Expr *expr){
 	int offset=0;
 	endChar--;
 
-	while(*endChar!=',' && *endChar!='('){
+	while(*endChar!=',' && *endChar!='(' && *endChar!=';'
+		&& *endChar!='='){
 		offset++;
 		endChar--;
 	}

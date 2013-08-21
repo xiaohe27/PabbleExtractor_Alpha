@@ -23,6 +23,7 @@ void VisitResult::printVisitInfo(){
 
 	for (int i = 0; i < escapableRoles.size(); i++)
 	{
+		if(escapableRoles[i]->getCurVisitNode())
 		cout<<"The role "<<escapableRoles[i]->getRoleName()<<" is able to escape to the node with index "
 			<<escapableRoles[i]->getCurVisitNode()->getPosIndex()<<endl;
 	}
@@ -172,8 +173,11 @@ void MPISimulator::insertNode(CommNode *node){
 	this->curNode->insert(node);
 
 	if(nodeT==ST_NODE_CHOICE || nodeT==ST_NODE_RECUR 
-		|| nodeT==ST_NODE_FOREACH || nodeT==ST_NODE_ROOT)
+		|| nodeT==ST_NODE_FOREACH || nodeT==ST_NODE_ROOT){
 		this->curNode=node;
+
+		VarCondMap[RANKVAR]=this->getCurExecCond();
+	}
 
 }
 
@@ -292,6 +296,8 @@ bool MPISimulator::areAllRolesDone(){
 void MPISimulator::simulate(){
 	this->root->optimize();
 
+	VarCondMap[RANKVAR]=Condition(true);
+
 	cout<<"Ready to simulate the execution of the MPI program now!"<<endl;
 	const map<string,ParamRole*> paramRoleMap=this->commManager->getParamRoleMapping();
 	cout<<"There are "<<paramRoleMap.size()<<" communicator groups involved"<<endl;
@@ -359,9 +365,11 @@ void MPISimulator::simulate(){
 
 
 Condition MPISimulator::getTarCondFromExprAndExecCond(Expr *expr, Condition execCond){
+	Condition rankCondBak=VarCondMap[RANKVAR];
+	VarCondMap[RANKVAR]=execCond;
+	Condition newTarget=this->commManager->extractCondFromTargetExpr(expr);
 
-	Condition newTarget=this->commManager->extractCondFromTargetExpr(expr, execCond);
-
+	VarCondMap[RANKVAR]=rankCondBak;
 	return newTarget;
 }
 
@@ -403,11 +411,11 @@ void MPISimulator::analyzeVisitResult(VisitResult *vr){
 		//the collective op can actually happen.
 		if (op->isCollectiveOp())
 		{
-			vector<MPIOperation*> happenedCollectiveOPs=this->collectiveOpMgr.insertCollectiveOP(op);
-			for (int i = 0; i < happenedCollectiveOPs.size(); i++)
-			{
-				this->insertMPIOpToMPITree(happenedCollectiveOPs.at(i));
-			}
+			MPIOperation* happenedCollectiveOP=this->collectiveOpMgr.insertCollectiveOP(op);
+			
+			if(happenedCollectiveOP)
+			this->insertMPIOpToMPITree(happenedCollectiveOP);
+			
 			return;
 		}
 
@@ -427,7 +435,7 @@ void MPISimulator::analyzeVisitResult(VisitResult *vr){
 							this->insertOpToPendingList(opJ);
 						}
 
-						for (int k = ran.getStart(); k < InitEndIndex; k++){
+						for (int k = ran.getStart(); k < N; k++){
 							MPIOperation *opK=new MPIOperation(*op);
 							opK->setExecutorCond(Condition(Range(k,k)));
 							this->insertOpToPendingList(opK);
@@ -470,6 +478,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 		//Avoid the same action in the same node to be performed by multiple roles
 		if (op->theNode==curVisitOP->theNode)
 		{
+			/*
 			Condition workNeedsDoing=op->getExecutor().Diff(curVisitOP->getExecutor());
 			op->setExecutorCond(workNeedsDoing);
 			if (op->isDependentOnExecutor())
@@ -478,6 +487,9 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 			}
 
 			continue;
+			*/
+			if(!op->getExecutor().AND(curVisitOP->getExecutor()).isIgnored())
+				throw new MPI_TypeChecking_Error("The same task is repeated by "+op->printMPIOP());
 		}
 
 
@@ -535,7 +547,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 
 			//VERY IMPORTANT! NEED TO ENSURE THE EXPECTED TARGET IS THE SAME AS THE ACTUAL ONE!
 			if(op->isDependentOnExecutor()){
-				Condition expectedTar=this->commManager->extractCondFromTargetExpr(
+				Condition expectedTar=this->getTarCondFromExprAndExecCond(
 					op->getTargetExpr(), actualExecutor);
 
 				if (!expectedTar.isSameAsCond(actualTarget))

@@ -14,12 +14,10 @@ using namespace std;
 using namespace clang;
 using namespace llvm;
 
-int numOfProcesses;
 string filePath;
-bool strict=false;
+bool STRICT=true;
+string APP_PATH="";
 
-
-//TODO
 string getFileName(string path){
 
 	char drive[_MAX_DRIVE];
@@ -28,7 +26,7 @@ string getFileName(string path){
 	char ext[_MAX_EXT];
 	errno_t err;
 
-	
+
 
 	err = _splitpath_s( path.c_str(), drive, _MAX_DRIVE, dir, _MAX_DIR, fname,
 		_MAX_FNAME, ext, _MAX_EXT );
@@ -61,17 +59,17 @@ void parseArgs(int argc, char *argv[]){
 					filePath = argv[i + 1];
 					cout<<"The path of src file is "<<filePath<<endl;
 				} else if (string(argv[i]) == "-n") {
-					numOfProcesses = atoi(argv[i + 1]);
-					InitEndIndex=numOfProcesses;
-					cout<<"There are "<<numOfProcesses<<" processes!"<<endl;
+					N = atoi(argv[i + 1]);
+
+					cout<<"There are "<<N<<" processes!"<<endl;
 				} else if (string(argv[i]) == "-strict") {
 					string ans = argv[i + 1];
 					transform(ans.begin(), ans.end(), ans.begin(), ::tolower);
 					if (ans=="true" || ans=="y" || ans=="yes")
-						strict=true;
+						STRICT=true;
 
 					else 
-						strict=false;
+						STRICT=false;
 				} else {
 					std::cout << "\nNot enough or invalid arguments, please try again.\n";
 
@@ -82,6 +80,8 @@ void parseArgs(int argc, char *argv[]){
 		}
 
 	}
+
+
 }
 
 
@@ -98,10 +98,15 @@ int main(int argc, char *argv[])
 		throw MPI_TypeChecking_Error("No MPI src code provided!");
 
 
-	ofstream outputFile("A:/MPI_SessionType_Extractor/SessionTypeExtractor4MPI/Debug/Protocol.txt");
+	ofstream outputFile("Protocol.txt");
 	outputFile.clear();
 	outputFile.close();
 
+	ofstream debugFile("Debug.txt");
+	debugFile.clear();
+	debugFile.close();
+
+	///////////////////////////////////////////////////////////////////////////
 	CompilerInstance ci;
 	DiagnosticOptions diagnosticOptions;
 	TextDiagnosticPrinter *pTextDiagnosticPrinter =
@@ -171,8 +176,8 @@ int main(int argc, char *argv[])
 
 	MPITypeCheckingConsumer *astConsumer;
 
-	if(numOfProcesses!=0){
-		astConsumer= new MPITypeCheckingConsumer(&ci,numOfProcesses);
+	if(N!=0){
+		astConsumer= new MPITypeCheckingConsumer(&ci,N);
 	}
 
 	else{
@@ -194,8 +199,7 @@ int main(int argc, char *argv[])
 		ci.getSourceManager().createMainFileID(pFile);
 		/////////////////////////////////////////
 
-		fileName=getFileName(filePath);
-
+		MPI_FILE_NAME=getFileName(filePath);
 
 		ci.getDiagnosticClient().BeginSourceFile(ci.getLangOpts(),
 			&ci.getPreprocessor());

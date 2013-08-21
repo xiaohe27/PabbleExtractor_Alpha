@@ -4,8 +4,9 @@
 #include "Comm.h"
 #include <time.h>
 
+extern string APP_PATH;
+
 using namespace clang;
-using namespace std;
 using namespace llvm;
 
 class MPITypeCheckingConsumer;
@@ -37,6 +38,8 @@ private:
 	list<string> funcsList;
 
 	string numOfProcessesVar;
+	set<string> listOfNumOfProcVars;
+	set<string> setOfWorldCommGroup;
 
 	int numOfProcs;
 
