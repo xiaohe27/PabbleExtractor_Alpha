@@ -48,7 +48,7 @@ using namespace std;
 using namespace clang;
 
 
-#define InitStartIndex -2
+
 #define ST_NODE_FOREACH 8
 #define MPI_Wait 9
 #define MPI_Barrier 10
@@ -63,13 +63,23 @@ class MPINode;
 class MPITree;
 
 extern int N;
-extern int LFP; //the largest known rank number
+extern int LFP; //the least stable point
 extern bool STRICT;
 extern string MPI_FILE_NAME;
 extern string RANKVAR;
 extern map<string,Condition> VarCondMap;
 
-#define InvalidIndex -3
+/////////////////////////////////////////////////
+//TODO
+extern int LargestKnownRank; //the LFP is thisInt+2
+extern bool IsGenericProtocol;
+extern bool IsProtocolStable();
+
+extern vector<string> unboundVarList;
+////////////////////////////////////////////////
+
+#define InitStartIndex INT_MIN
+#define InitEndIndex INT_MAX
 
 #define WORLD "MPI_COMM_WORLD"
 
@@ -105,8 +115,7 @@ void writeProtocol(string protocol);
 
 int min(int a, int b);
 int max(int a, int b);
-int minEnd(int a, int b);
-int maxEnd(int a, int b);
+
 int compute(string op, int operand1, int operand2);
 bool areTheseTwoNumsAdjacent(int a, int b);
 

@@ -16,8 +16,8 @@ Range::Range(int s,int e){
 Range::Range(){
 	shouldBeIgnored=true;
 
-	this->startPos=InitStartIndex;
-	this->endPos=N;
+	this->startPos=InitEndIndex;
+	this->endPos=InitStartIndex;
 
 }
 
@@ -110,45 +110,22 @@ Condition Range::AND(Range other){
 	if( (!this->isSpecialRange() && !other.isSpecialRange())
 		|| (this->isSpecialRange() && other.isSpecialRange()) ){
 			int newStart=max(this->getStart(),other.getStart());
-			int newEnd=minEnd(this->getEnd(),other.getEnd());
+			int newEnd=min(this->getEnd(),other.getEnd());
 
 			return Condition(Range(newStart,newEnd));
 	}
 
 	//one is special and the other is not 
-	if(this->isSpecialRange()){}
-	else{
-		//if this is not special but the other is
-		Range tmp=Range(*this);
-		this->startPos=other.startPos;
-		this->endPos=other.endPos;
-		this->shouldBeIgnored=other.shouldBeIgnored;
 
-		other=tmp; //exchange the value of this and other range
+	if(this->isSpecialRange()){
+		return (Range(0,this->endPos).AND(other))
+			.OR(Range(this->startPos,N-1).AND(other));
 	}
 
-	if(this->isSuperSetOf(other))
-		return Condition(other);
-
 	else{
-		if(other.isThisNumInside(this->getEnd())){
-			if(other.getEnd() < this->getStart()){
-				return Condition(Range(other.getStart(),this->getEnd()));
-			}
-
-			else{
-				Range ran1=Range(other.getStart(),this->getEnd());
-				Range ran2=Range(this->getStart(),other.getEnd());
-				return Condition(ran1,ran2);
-			}
-		}
-
-		else{
-			return Condition(Range(this->getStart(), other.getEnd()));
-		}
-
+	return (Range(0,other.endPos).AND(*this))
+			.OR(Range(other.startPos,N-1).AND(*this));
 	}
-
 
 }
 
@@ -245,7 +222,7 @@ Condition Range::OR(Range other){
 		!other.isSpecialRange()){
 
 			int newStart=min(this->getStart(),other.getStart());
-			int newEnd=maxEnd(this->getEnd(),other.getEnd());
+			int newEnd=max(this->getEnd(),other.getEnd());
 
 			Range ran= Range(newStart,newEnd);
 
@@ -345,7 +322,6 @@ bool Range::isAllRange(){
 		return true;
 
 	return false;
-
 }
 
 //ok. already considered the case of end < start
@@ -365,8 +341,7 @@ bool Range::isThisNumInside(int num){
 //ok. already considered the case of end < start
 Condition Range::negateOfRange(Range ran){
 	if(ran.isIgnored()){
-		Range allRange=Range(0,N);
-		return Condition(allRange);
+		return Condition(true);
 	}
 
 	if(ran.isAllRange()){

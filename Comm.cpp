@@ -8,31 +8,23 @@ string RANKVAR;
 map<string,Condition> VarCondMap;
 string MPI_FILE_NAME="MPIProtocol";
 
+/////////////////////////////////////
+//TODO
+int LargestKnownRank=-1; 
+bool IsGenericProtocol=true;
+vector<string> unboundVarList;
+bool IsProtocolStable(){
+	return IsGenericProtocol && N >= LargestKnownRank+2;
+}
+/////////////////////////////////////
+
 //some functions
 int min(int a, int b){if(a<b) return a; else return b;}
 int max(int a, int b){if(a<b) return b; else return a;}
 
-int minEnd(int a, int b){
-	if(a==N)
-		return b;
-
-	if(b==N)
-		return a;
-
-	return min(a,b);
-}
 
 
-int maxEnd(int a, int b){
-	if(a==N)
-		return a;
 
-	if(b==N)
-		return b;
-
-	return max(a,b);
-
-}
 
 
 int compute(string op, int operand1, int operand2){
@@ -61,10 +53,14 @@ int compute(string op, int operand1, int operand2){
 }
 
 bool areTheseTwoNumsAdjacent(int a, int b){
-	if(a==b) return true;
+	if(a==b || a==b+1 || a==b-1) return true;
 
-	if(a==(b-1+N)%N ||
-		a==(b+1)%N)
+	if(a==0 && b==N-1) return true;
+
+	if(a==N-1 && b==0) return true;
+
+	if(a%N==(b-1+N)%N ||
+		a%N==(b+1)%N)
 		return true;
 
 	return false;

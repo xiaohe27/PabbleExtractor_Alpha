@@ -4,7 +4,6 @@
 #include "Comm.h"
 #include <time.h>
 
-extern string APP_PATH;
 
 using namespace clang;
 using namespace llvm;

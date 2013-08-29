@@ -6,7 +6,6 @@ using namespace clang;
 
 /*******************************visitCallExpr******************************************************/
 bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
-	//TODO
 
 	//if we haven't started to visit the main function, then do nothing.
 	if(!this->visitStart)

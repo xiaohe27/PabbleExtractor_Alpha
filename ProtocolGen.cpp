@@ -46,7 +46,8 @@ string ProtocolGenerator::selfCreatedLoop(MPINode *mpinode){
 	cur=forloops.at(0);
 	MPIForEachNode *mpi4Each=new MPIForEachNode(cur);
 
-	////////////////////////////////////////////////////////////////////////////	
+	////////////////////////////////////////////////////////////////////////////
+	if(!mpinode->getMPIOP()->isUnicast())
 	mpinode->getMPIOP()->isBothCastAndGather=true;
 	////////////////////////////////////////////////////////////////////////////
 
@@ -265,13 +266,6 @@ string ProtocolGenerator::globalMsgTransfer(MPINode *node){
 		return output;
 	}
 
-	/*
-	if(theMPIOP->isRecvingOp()){
-	Condition tmp=theMPIOP->getExecutor();
-	theMPIOP->setExecutorCond(theMPIOP->getTargetCond());
-	theMPIOP->setTargetCond(tmp);
-	}
-	*/
 
 	Condition execCond=theMPIOP->getExecutor();
 	for (int i = 0; i < execCond.getRangeList().size(); i++)

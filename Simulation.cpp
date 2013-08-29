@@ -233,8 +233,14 @@ bool MPISimulator::isDeadLockDetected(){
 }
 
 void MPISimulator::initTheRoles(){
-	const map<string,ParamRole*> paramRoleMap=this->commManager->getParamRoleMapping();
+	map<string,ParamRole*> paramRoleMap=this->commManager->getParamRoleMapping();
 
+	paramRoleMap[WORLD]->getTheRoles()->clear();
+	Role *initRole=new Role(Range(0,N-1));
+	initRole->setCurVisitNode(this->root);
+	paramRoleMap[WORLD]->getTheRoles()->push_back(initRole);
+		
+	/*
 	for (auto &x: paramRoleMap)
 	{
 
@@ -247,6 +253,8 @@ void MPISimulator::initTheRoles(){
 			roles->at(i)->setCurVisitNode(this->root);
 		}
 	}
+	*/
+
 
 }
 
@@ -304,6 +312,7 @@ void MPISimulator::simulate(){
 
 	this->printTheRoles();
 
+	//only the role [0..N-1] is needed at first.
 	this->initTheRoles();
 
 	this->root->initTheBranchId();
@@ -882,6 +891,17 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 
 
 void MPISimulator::insertMPIOpToMPITree(MPIOperation *actuallyHappenedOP){
+	//make sure the MPI operation does not incur runtime error
+	if(!actuallyHappenedOP->isCollectiveOp()) {
+		Condition execCond=actuallyHappenedOP->getExecutor();
+		Condition tarCond=actuallyHappenedOP->getTargetCond();
+		if(execCond.isSameAsCond(tarCond) ||
+			execCond.Diff(tarCond).isIgnored() ||
+			tarCond.Diff(execCond).isIgnored())
+		throw new MPI_TypeChecking_Error("\n\n"+actuallyHappenedOP->printMPIOP()+" \n\n"
+					+"involves action of sending data to itself...Will incur runtime error!");
+	}
+
 	CommNode *masterNode=actuallyHappenedOP->theNode->getClosestNonRankAncestor();
 	MPINode *theParentMPINode=this->posIndexAndMPINodeMapping[masterNode->getPosIndex()];
 	if (theParentMPINode)
