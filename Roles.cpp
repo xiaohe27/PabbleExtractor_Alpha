@@ -7,6 +7,7 @@ using namespace std;
 /********************************************************************/
 //Class Role impl start										****
 /********************************************************************/
+
 Role::Role(Range ran){
 	this->paramRoleName=WORLD;
 	range=ran;
@@ -41,12 +42,6 @@ VisitResult* Role::visit(){
 		return nullptr;
 
 	if (finished)
-		return nullptr;
-
-
-	if (this->range.isAllRange() &&
-		this->curVisitNode && !this->curVisitNode->getCond().isComplete() &&
-		!this->curVisitNode->isNegligible())
 		return nullptr;
 
 
@@ -85,6 +80,9 @@ VisitResult* Role::visit(){
 		Condition myRoleCond=Condition(this->getRange());
 
 		Condition escapedCond=myRoleCond.Diff(curNodeCond);
+		
+		escapedCond=escapedCond.AND(Condition(true));
+
 		Condition stayHereCond=myRoleCond.Diff(escapedCond);
 
 		//get all the roles who are able to escape
@@ -304,6 +302,7 @@ string ParamRole::getFullParamRoleName(){
 
 //used in constructing the comm tree
 void ParamRole::addAllTheRangesInTheCondition(Condition cond){
+	cond=cond.AND(Condition(true));
 	vector<Range> ranList=cond.getRangeList();
 	for (int i = 0; i < ranList.size(); i++)
 	{

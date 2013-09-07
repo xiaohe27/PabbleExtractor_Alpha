@@ -12,8 +12,9 @@ MPIOperation::MPIOperation(	string opName0,int opType0, string dataType0,
 							   this->opName=opName0;
 							   this->opType=opType0;
 							   this->dataType=dataType0;
-							   this->executor=executor0;
-							   this->target=target0;
+							   this->executor=executor0.AND(Condition(true));
+							   this->target=target0.AND(Condition(true));
+							   this->target.execStr=target0.execStr;
 							   this->tag=tag0;
 							   this->group=group0;
 
@@ -23,6 +24,7 @@ MPIOperation::MPIOperation(	string opName0,int opType0, string dataType0,
 
 							   this->setTargetExprStr("");
 							   this->theWaitNode=nullptr;
+							   this->targetExpr=nullptr;
 
 }
 
@@ -31,7 +33,7 @@ MPIOperation::MPIOperation(string opName0,int opType0, string dataType0,
 							   this->opName=opName0;
 							   this->opType=opType0;
 							   this->dataType=dataType0;
-							   this->executor=executor0;
+							   this->executor=executor0.AND(Condition(true));
 							   this->targetExpr=targetExpr0;
 							   this->tag=tag0;
 							   this->group=group0;
@@ -208,6 +210,22 @@ bool MPIOperation::isCollectiveOp(){
 	else
 		return false;
 }
+
+
+bool MPIOperation::isStable(){
+	if(!this->executor.isVolatile && !this->target.isVolatile)
+		return true;
+
+	if(this->executor.isVolatile && this->target.isVolatile)
+		return true;
+
+	return false;
+}
+
+bool MPIOperation::isDependentOnExecutor(){
+	return this->isTargetDependOnExecutor;
+}
+
 
 //test whether this op is a complementary op of the other op.
 bool MPIOperation::isComplementaryOpOf(MPIOperation *otherOP){

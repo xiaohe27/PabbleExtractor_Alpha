@@ -49,8 +49,8 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 				("Current program does not support communicators other than MPI_COMM_WORLD.");
 
 			this->numOfProcessesVar=args[1].substr(1,args[1].length()-1);
-			this->listOfNumOfProcVars.insert(this->numOfProcessesVar);
-			VarCondMap[this->numOfProcessesVar]=Condition(Range(N,N));
+			unboundVarList.insert(this->numOfProcessesVar);
+			VarCondMap[this->numOfProcessesVar]=Condition(Range(N,N)).setVolatile(true);
 
 			cout<<"Var storing num of Processes is "<<this->numOfProcessesVar<<endl;
 		}
@@ -65,6 +65,9 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			RANKVAR=args[1].substr(1,args[1].length()-1);
 
 			VarCondMap[RANKVAR]=Condition(true);
+			VarCondMap[RANKVAR].execStr=RANKVAR;
+
+			this->mpiSimulator->getCurNode()->execExpr=E->getArg(1);
 
 			this->commManager->insertRankVarAndOffset(RANKVAR,0);
 
@@ -102,6 +105,10 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			else{
 				Condition bcaster=this->commManager->extractCondFromTargetExpr(E->getArg(3));
 
+				if(bcaster.isVolatile && bcaster.outsideOfBound())
+					throw new MPI_TypeChecking_Error("The executor condition of operation '"
+					+ funcSrcCode + "' is "+bcaster.execStr+". It is out of bound [0..N-1]");
+
 				mpiOP=new MPIOperation(	funcName,
 					ST_NODE_SEND, 
 					dataType,
@@ -110,7 +117,11 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 					"", 
 					group);
 
+				int larRank= bcaster.getLargestNum();
+				updateLargestKnownRank(larRank);
 			}
+
+
 
 			mpiOP->setSrcCode(funcSrcCode);
 			mpiOP->execExprStr=root;
@@ -143,6 +154,10 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			else{
 				Condition reducer=this->commManager->extractCondFromTargetExpr(E->getArg(5));
 
+				if(reducer.isVolatile && reducer.outsideOfBound())
+					throw new MPI_TypeChecking_Error("The executor condition of operation '"
+					+ funcSrcCode + "' is "+reducer.execStr+". It is out of bound [0..N-1]");
+
 				mpiOP=new MPIOperation(	funcName,
 					ST_NODE_RECV, 
 					dataType,
@@ -151,7 +166,10 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 					"", 
 					group);
 
+				int larRank= reducer.getLargestNum();
+				updateLargestKnownRank(larRank);
 			}
+
 
 			mpiOP->setSrcCode(funcSrcCode);
 			mpiOP->execExprStr=root;
@@ -185,6 +203,10 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			else{
 				Condition gather=this->commManager->extractCondFromTargetExpr(E->getArg(6));
 
+				if(gather.isVolatile && gather.outsideOfBound())
+					throw new MPI_TypeChecking_Error("The executor condition of operation '"
+					+ funcSrcCode + "' is "+gather.execStr+". It is out of bound [0..N-1]");
+
 				mpiOP=new MPIOperation(	funcName,
 					ST_NODE_RECV, 
 					recvDataType,
@@ -193,7 +215,10 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 					"", 
 					group);
 
+				int larRank= gather.getLargestNum();
+				updateLargestKnownRank(larRank);
 			}
+
 
 			mpiOP->setSrcCode(funcSrcCode);
 			mpiOP->execExprStr=root;
@@ -226,6 +251,10 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 			else{
 				Condition scatter=this->commManager->extractCondFromTargetExpr(E->getArg(6));
 
+				if(scatter.isVolatile && scatter.outsideOfBound())
+					throw new MPI_TypeChecking_Error("The executor condition of operation '"
+					+ funcSrcCode + "' is "+scatter.execStr+". It is out of bound [0..N-1]");
+
 				mpiOP=new MPIOperation(	funcName,
 					ST_NODE_SEND, 
 					sendDataType,
@@ -234,13 +263,18 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 					"", 
 					group);
 
+
+				int larRank= scatter.getLargestNum();
+				updateLargestKnownRank(larRank);
 			}
+
+
 
 			mpiOP->setSrcCode(funcSrcCode);
 			mpiOP->execExprStr=root;
-			CommNode *gatherNode=new CommNode(mpiOP);
+			CommNode *scatterNode=new CommNode(mpiOP);
 
-			this->mpiSimulator->insertNode(gatherNode);
+			this->mpiSimulator->insertNode(scatterNode);
 
 		}
 
@@ -326,7 +360,7 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 				waitNode=new WaitNode(args[0]);
 
 			if (funcName=="MPI_Waitall")
-				waitNode==new WaitNode(WaitNode::waitAll);
+				waitNode=new WaitNode(WaitNode::waitAll);
 
 			if (funcName=="MPI_Waitany")
 				waitNode=new WaitNode();
@@ -335,7 +369,8 @@ bool MPITypeCheckingConsumer::VisitCallExpr(CallExpr *E){
 		}
 
 		if(funcName=="MPI_Barrier"){
-			BarrierNode *barNode=new BarrierNode();
+
+			BarrierNode *barNode=new BarrierNode(this->commManager->getParamRoleWithName(WORLD));
 
 			if(this->setOfWorldCommGroup.find(args[0])==this->setOfWorldCommGroup.end())
 				throw new MPI_TypeChecking_Error
@@ -380,6 +415,14 @@ void MPITypeCheckingConsumer::genSendingOP(vector<string> args,CallExpr *E,strin
 
 	Condition execCond=this->mpiSimulator->getCurExecCond();
 
+	/*
+	if(execCond.isVolatile && execCond.outsideOfBound())
+	throw new MPI_TypeChecking_Error("The executor condition of operation '"
+	+ funcSrcCode + "' is "+execCond.execStr+". It is out of bound [0..N-1]");
+	*/
+
+	Condition tmpTarCond;
+
 	if(this->setOfWorldCommGroup.find(group)==this->setOfWorldCommGroup.end())
 		throw new MPI_TypeChecking_Error
 		("Current program does not support communicators other than MPI_COMM_WORLD.");
@@ -401,10 +444,13 @@ void MPITypeCheckingConsumer::genSendingOP(vector<string> args,CallExpr *E,strin
 
 		mpiOP->setTargetExprStr(stmt2str(&ci->getSourceManager(),ci->getLangOpts(),E->getArg(3)));
 
+		tmpTarCond=this->mpiSimulator->
+			getTarCondFromExprAndExecCond(mpiOP->getTargetExpr(),mpiOP->getExecutor());
 	}
 
 	else{
 		Condition destCond=this->commManager->extractCondFromTargetExpr(E->getArg(3));
+		tmpTarCond=destCond;
 
 		mpiOP=new MPIOperation(		funcName,
 			ST_NODE_SEND, 
@@ -414,16 +460,46 @@ void MPITypeCheckingConsumer::genSendingOP(vector<string> args,CallExpr *E,strin
 			tag, 
 			group);	
 
-		if(destCond.outsideOfBound())
-			throw new MPI_TypeChecking_Error("Destination condition for the op "+
-			mpiOP->printMPIOP()+" is "+destCond.printConditionInfo()+"\nRank outside of bound.");
 	}
 
+
+	//////////////////////////////////////////////////////////////////////////////////////////////
+	Condition tmpExec=this->mpiSimulator->getCurNode()->rawCond;
+
+	if(tmpTarCond.isVolatile && tmpTarCond.outsideOfBound())
+		throw new MPI_TypeChecking_Error("Destination condition for the op '"+
+		mpiOP->srcCode+"'\nis outside of bound.");
+
+	if(mpiOP->getExecutor().isVolatile){
+		tmpExec=this->mpiSimulator->getExecCondFromExprAndProcCond(
+			this->mpiSimulator->getCurNode()->getExecExpr(),this->numOfProcessesVar,Condition(Range(0,0)));
+
+		if (mpiOP->isDependentOnExecutor())
+			tmpTarCond=this->mpiSimulator->
+			getTarCondFromExprAndExecCond(mpiOP->getTargetExpr(), tmpExec);
+	}
+
+	int larInExec= tmpExec.getLargestNum();
+
+	int larInTar=  tmpTarCond.getLargestNum();
+
+	if(mpiOP->getExecutor().size()==N && mpiOP->getTargetCond().size()==N){}
+	else
+		updateLargestKnownRank(larInExec < larInTar ? larInTar : larInExec);
+	////////////////////////////////////////////////////////////////////////////////////////////
 	mpiOP->setSrcCode(funcSrcCode);
 
 	mpiOP->execExprStr=execCond.execStr;
 
 	mpiOP->setTargetExprStr(dest);
+
+	/////////////////////////
+	if(mpiOP->getTargetCond().execStr.size()>0)
+		mpiOP->setTargetExprStr(mpiOP->getTargetCond().execStr);
+	////////////////////////
+
+	if(this->commManager->containsRankStr(mpiOP->getTarExprStr()))
+		mpiOP->isTargetDependOnExecutor=true;
 
 	if(funcName=="MPI_Isend")
 		mpiOP->reqVarName=args[6];
@@ -444,7 +520,17 @@ void MPITypeCheckingConsumer::genRecvingOP(vector<string> args,CallExpr *E,strin
 	string tag=args[4];
 	string group=args[5];
 
+	if(src == "MPI_ANY_SOURCE")
+		throw new MPI_TypeChecking_Error
+		("The MPI_ANY_SOURCE is not supported at present, sorry about that.");
+
 	Condition execCond=this->mpiSimulator->getCurExecCond();
+
+	if(execCond.isVolatile && execCond.outsideOfBound())
+		throw new MPI_TypeChecking_Error("The executor condition of operation '"
+		+ funcSrcCode + "' is "+execCond.execStr+". It is out of bound [0..N-1]");
+
+	Condition tmpTarCond;
 
 	if(this->setOfWorldCommGroup.find(group)==this->setOfWorldCommGroup.end())
 		throw new MPI_TypeChecking_Error
@@ -459,27 +545,65 @@ void MPITypeCheckingConsumer::genRecvingOP(vector<string> args,CallExpr *E,strin
 			tag, group);
 
 		mpiOP->setTargetExprStr(stmt2str(&ci->getSourceManager(),ci->getLangOpts(),E->getArg(3)));
+
+		tmpTarCond=this->mpiSimulator->
+			getTarCondFromExprAndExecCond(mpiOP->getTargetExpr(),mpiOP->getExecutor());
+
 	}
 
 	else{
 
 		Condition tarCond=this->commManager->extractCondFromTargetExpr(E->getArg(3));
+		tmpTarCond=tarCond;
 
 		mpiOP=new MPIOperation(funcName,ST_NODE_RECV, dataType,								
 			execCond, 
 			tarCond,
 			tag, group);
 
-		if(tarCond.outsideOfBound())
-			throw new MPI_TypeChecking_Error("Src condition for the op "+
-			mpiOP->printMPIOP()+" is "+tarCond.printConditionInfo()+"\nRank outside of bound.");
 	}
 
+	//////////////////////////////////////////////////////////////////////////////////////////////
+	Condition tmpExec=this->mpiSimulator->getCurNode()->rawCond;
 
+	if(tmpTarCond.isVolatile && tmpTarCond.outsideOfBound())
+		throw new MPI_TypeChecking_Error("Src condition for the op "+
+		mpiOP->srcCode+" is "+tmpTarCond.printConditionInfo()+"\nRank outside of bound.");
+
+	if(mpiOP->getExecutor().isVolatile){
+		tmpExec=this->mpiSimulator->getExecCondFromExprAndProcCond(
+			this->mpiSimulator->getCurNode()->getExecExpr(),this->numOfProcessesVar,Condition(Range(0,0)));
+
+		if (mpiOP->isDependentOnExecutor())
+			tmpTarCond=this->mpiSimulator->
+			getTarCondFromExprAndExecCond(mpiOP->getTargetExpr(), tmpExec);
+	}
+
+	int larInExec= tmpExec.getLargestNum();
+
+	int larInTar=  tmpTarCond.getLargestNum();
+
+	if(mpiOP->getExecutor().size()==N && mpiOP->getTargetCond().size()==N){}
+	else
+		updateLargestKnownRank(larInExec < larInTar ? larInTar : larInExec);
+
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////
 
 	mpiOP->setSrcCode(funcSrcCode);
 	mpiOP->setTargetExprStr(src);
+
+	/////////////////////////
+	if(mpiOP->getTargetCond().execStr.size()>0)
+		mpiOP->setTargetExprStr(mpiOP->getTargetCond().execStr);
+	////////////////////////
+
+
 	mpiOP->execExprStr=execCond.execStr;
+
+	if(this->commManager->containsRankStr(mpiOP->getTarExprStr()))
+		mpiOP->isTargetDependOnExecutor=true;
 
 	if(funcName=="MPI_Irecv")
 		mpiOP->reqVarName=args[6];

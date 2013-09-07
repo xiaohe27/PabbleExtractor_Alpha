@@ -63,19 +63,20 @@ class MPINode;
 class MPITree;
 
 extern int N;
-extern int LFP; //the least stable point
 extern bool STRICT;
 extern string MPI_FILE_NAME;
 extern string RANKVAR;
 extern map<string,Condition> VarCondMap;
 
 /////////////////////////////////////////////////
-//TODO
 extern int LargestKnownRank; //the LFP is thisInt+2
+extern void updateLargestKnownRank(int num);
+extern int getLFP(); // return the least stable point
+
 extern bool IsGenericProtocol;
 extern bool IsProtocolStable();
 
-extern vector<string> unboundVarList;
+extern set<string> unboundVarList;
 ////////////////////////////////////////////////
 
 #define InitStartIndex INT_MIN
@@ -92,7 +93,7 @@ public:
 	string errInfo;
 
 	MPI_TypeChecking_Error(string err){
-		this->errInfo=err;
+		this->errInfo="\n\n"+err+"\n\n";
 	}
 
 	void printErrInfo(){
@@ -124,7 +125,6 @@ class Range{
 private:
 	int startPos;
 	int endPos;
-	bool shouldBeIgnored;
 
 public:
 
@@ -135,7 +135,7 @@ public:
 
 	Range(int s,int e);
 
-	bool isIgnored(){return shouldBeIgnored;}
+	bool isIgnored(){return this->size()==0;}
 
 	bool isAllRange();
 
@@ -161,14 +161,14 @@ public:
 
 	int size();
 
+	int getLargestNum();
+
 	string printRangeInfo();
 };
 
 class Condition{
 private:
 	vector<Range> rangeList;
-	bool shouldBeIgnored;
-	bool complete;
 	string groupName;
 
 	//the non-rank var related condition might be important in determining the target of MPI op!
@@ -180,6 +180,7 @@ private:
 public:
 	int offset;
 	string execStr; //the expr str of the executor.
+	bool isVolatile;
 
 	Condition();
 
@@ -219,6 +220,8 @@ public:
 
 	Condition addANumber(int num);
 
+	Condition setVolatile(bool bv){this->isVolatile=bv; return *this;}
+
 	string getGroupName(){return this->groupName;}
 
 	void setCommGroup(string group){this->groupName=group;}
@@ -248,6 +251,8 @@ public:
 	static bool areTheseTwoCondAdjacent(Condition cond1, Condition cond2);
 
 	bool outsideOfBound(){return this->isRankInside(N) || this->isRankInside(-1);}
+
+	int getLargestNum();
 
 	string printConditionInfo();
 };
@@ -279,6 +284,7 @@ private:
 	bool finished;
 
 public:
+
 	Role(Range ran);
 
 	Role(string paramRoleName0, Range ran);
@@ -307,12 +313,8 @@ public:
 
 class ParamRole{
 private:
-
-	int size;
 	//the paramRole name is the communicator group name
 	string paramRoleName;
-
-	st_tree localSessionTree;
 
 	vector<Role*> *actualRoles;
 
@@ -372,6 +374,7 @@ public:
 	MPIOperation(string opName0,int opType0, string dataType0,Condition executor0, Condition target0, string tag0, string group0);
 	MPIOperation(string opName0,int opType0, string dataType0,Condition executor0, Expr *targetExpr0, string tag0, string group0);
 
+	bool isStable();
 	string getOpName(){return this->opName;}
 	int getOPType(){return this->opType;}
 	string getDataType(){return this->dataType;}
@@ -387,10 +390,10 @@ public:
 	static bool areTheseTwoOpsCompatible(MPIOperation* op1, MPIOperation* op2);
 	bool isBlockingOP();
 	bool isNonBlockingOPWithReqVar(string reqName);
-	bool isDependentOnExecutor(){return this->isTargetDependOnExecutor;}
+	bool isDependentOnExecutor();
 	void setSrcCode(string srcC){this->srcCode=srcC;}
-	void setExecutorCond(Condition execCond){this->executor=execCond;}
-	void setTargetCond(Condition target0){this->target=target0;}
+	void setExecutorCond(Condition execCond){this->executor=execCond.AND(Condition(true));}
+	void setTargetCond(Condition target0){this->target=target0.AND(Condition(true));}
 	void setTargetExprStr(string str){this->targetExprStr=str;}
 
 	bool isSendingOp();
@@ -408,7 +411,7 @@ public:
 	bool isFinished();
 	bool isEmptyOP();
 
-//	void transformToSendingOP();
+	//	void transformToSendingOP();
 	string printMPIOP();
 	string getTarExprStr();
 };
@@ -452,7 +455,6 @@ private:
 	//A node is master if it is the root of a master.
 	bool isMasterNode;
 
-
 protected:
 	//the pos number indicates the time of insertion, the smaller the earlier
 	int posIndex;
@@ -467,6 +469,8 @@ protected:
 	Condition condition;
 
 public:
+	Expr* execExpr;
+	Condition rawCond;
 
 	//construct an intermediate node
 	CommNode(int type, Condition cond);
@@ -479,6 +483,8 @@ public:
 	}
 
 	bool isStructureNode();
+
+	Expr* getExecExpr();
 
 	bool isLeaf() const;
 
@@ -592,7 +598,7 @@ public:
 
 class WaitNode: public CommNode{
 public:
-    static const int waitNormal=0;
+	static const int waitNormal=0;
 	static const int waitAny=1;
 	static const int waitAll=2;
 
@@ -607,10 +613,13 @@ public:
 };
 
 class BarrierNode: public CommNode{
+private:
+	ParamRole *commGroup;
+
 public:
 	Condition curArrivedProcCond;
 
-	BarrierNode();//the cur pgm only support the barrier of world communicator
+	BarrierNode(ParamRole *group);//the cur pgm only support the barrier of world communicator
 
 	void visit(Condition visitorCond);
 };
@@ -690,12 +699,15 @@ private:
 	vector<CommNode*> participatingCommNodesVec;
 	MPIOperation *curCollectiveOP;
 
+	int getInitNodePos();
 public:
 	CollectiveOPManager();
 	//if the collective op fires, then relevant nodes will be unblocked
 	//The actually happened collective op will be returned if there is any
 	MPIOperation* insertCollectiveOP(MPIOperation* op);
 	void unlockCollectiveOP();
+
+	string getCurPendingCollectiveOPName();
 };
 
 
@@ -740,6 +752,8 @@ public:
 
 
 	Condition getTarCondFromExprAndExecCond(Expr *expr, Condition execCond);
+	Condition getExecCondFromExprAndProcCond(Expr *expr, string procVar, Condition procCond);
+
 	void analyzeVisitResult(VisitResult *vr);
 
 	void insertOpToPendingList(MPIOperation *op);
@@ -774,7 +788,7 @@ public:
 
 	MPINode(CommNode* node);
 	MPINode(MPIOperation* theOp);
-	
+
 	void initMPIOpNode(MPIOperation* op);
 	bool isLeaf();
 	MPINode* getParent(){return this->parent;}

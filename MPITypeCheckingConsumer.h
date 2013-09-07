@@ -37,7 +37,7 @@ private:
 	list<string> funcsList;
 
 	string numOfProcessesVar;
-	set<string> listOfNumOfProcVars;
+
 	set<string> setOfWorldCommGroup;
 
 	int numOfProcs;
@@ -60,7 +60,7 @@ public:
 
 	virtual bool HandleTopLevelDecl( DeclGroupRef d);
 
-	void HandleTranslationUnit(ASTContext &Ctx);
+	virtual void HandleTranslationUnit(ASTContext &Ctx);
 
 	bool checkWhetherTheDeclHasBeenVisitedBefore(FunctionDecl *decl);
 
@@ -124,8 +124,6 @@ public:
 	bool VisitBinAndAssign(CompoundAssignOperator *OP);
 
 	bool VisitBinaryOperator(BinaryOperator *S);
-
-	bool VisitDecl(Decl *decl);
 
 	bool VisitFunctionDecl(FunctionDecl *funcDecl);
 };

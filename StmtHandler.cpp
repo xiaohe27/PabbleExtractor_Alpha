@@ -5,16 +5,13 @@ using namespace llvm;
 
 
 
-
-
-
 bool MPITypeCheckingConsumer::VisitBinaryOperator(BinaryOperator *op){
 	if(!this->visitStart)
 		return true;
 
 	string str=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),op);
-	cout <<"Visit '"<< op->getStmtClassName()<<"':\n" ;
-	cout << str <<endl;
+	/*cout <<"Visit '"<< op->getStmtClassName()<<"':\n" ;
+	cout << str <<endl;*/
 
 	Expr *lhs=op->getLHS();
 	string lhsVarName;
@@ -37,8 +34,9 @@ bool MPITypeCheckingConsumer::VisitBinaryOperator(BinaryOperator *op){
 
 
 	try{
-		if(op->isAssignmentOp())
-			VarCondMap[lhsVarName]=this->commManager->extractCondFromTargetExpr(op->getRHS());	
+		if(op->isAssignmentOp()){
+			VarCondMap[lhsVarName]=this->commManager->extractCondFromTargetExpr(op->getRHS());
+		}
 	}
 	catch(MPI_TypeChecking_Error *err){
 		cout<<"Cannot extract condition from "<<str<<endl;
@@ -103,7 +101,7 @@ void MPITypeCheckingConsumer::removeAndAddNewNonRankVarCondInStack(vector<string
 	{
 		Condition theCond=this->commManager->getTopCond4NonRankVar(stackOfNonRankVarNames[i]);
 		this->commManager->removeTopCond4NonRankVar(stackOfNonRankVarNames[i]);
-		theCond=Condition::negateCondition(theCond);
+		theCond=Condition::negateCondition(Condition(theCond));
 		this->commManager->insertNonRankVarAndCondtion(stackOfNonRankVarNames[i],theCond);
 	}
 
@@ -124,10 +122,6 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 	Condition thenCond=this->commManager->extractCondFromBoolExpr(condExpr);
 
-	cout<<"\n\n\n\n\nThe if condition is \n"
-		<<thenCond.printConditionInfo()
-		<<"\n\n\n\n\n"<<endl;
-
 	//insert the non-rank var conditions to formal stack, if any
 	vector<string> stackOfNonRankVarNames=this->analyzeNonRankVarCond();
 
@@ -142,12 +136,11 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 
 	//visit then part
-	cout<<"Going to visit then part of condition: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
-
 
 	//before traverse the then part, create a root node for it 
 	//only the processes that satisfy the then part conditon can enter the block!
 	CommNode *thenNode=new CommNode(ST_NODE_ROOT,thenCond);
+	thenNode->execExpr=condExpr;
 	this->mpiSimulator->insertNode(thenNode);
 
 	////////////////////////////////////////////////////////////////////////////////////
@@ -183,8 +176,6 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	this->mpiSimulator->gotoParent();
 
 	//should remove the condition for the then part now.
-	cout<<"//should remove the condition for the then part now."<<endl;
-
 	this->removeAndAddNewNonRankVarCondInStack(stackOfNonRankVarNames);
 
 
@@ -192,9 +183,10 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	if(STRICT){ //if only the same type of expr appears in the conditional expr
 		if (!thenCond.isRelatedToRank())
 			condInElsePart=Condition(thenCond);
-		else
-			condInElsePart=Condition::negateCondition(thenCond);
-
+		else{
+			Condition tmp(thenCond);
+			condInElsePart=Condition::negateCondition(tmp);
+		}
 	}
 
 	else{
@@ -206,13 +198,10 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 			if (!thenCond.isRelatedToRank())
 				condInElsePart=Condition(thenCond);
 			else
-				condInElsePart=Condition::negateCondition(thenCond);
+				condInElsePart=Condition::negateCondition(Condition(thenCond));
 		}
 	}
 
-
-	cout << "\n\n\n\n\nThe condition in else part is \n"<<condInElsePart.printConditionInfo()
-		<<"\n\n\n\n\n"<<endl;
 
 	//before visit else part, create a node for it
 	CommNode *elseNode=new CommNode(ST_NODE_ROOT,condInElsePart);
@@ -232,7 +221,6 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
 	//visit else part
-	cout<<"Going to visit else part of condition: "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),condExpr)<<endl;
 	this->TraverseStmt(ifStmt->getElse());
 
 	this->mpiSimulator->gotoParent();
@@ -248,6 +236,8 @@ bool MPITypeCheckingConsumer::TraverseIfStmt(IfStmt *ifStmt){
 
 
 bool MPITypeCheckingConsumer::VisitDeclStmt(DeclStmt *S){
+	if(!this->visitStart)
+		return true;
 
 	DeclGroupRef d=S->getDeclGroup();
 
@@ -297,13 +287,12 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 	if(!this->visitStart)
 		return true;
 
-	cout <<"The for stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 
 	Expr *condOfFor=S->getCond();
 	string condOfForStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), condOfFor);
 
 	Stmt *initFor = S->getInit();
-	cout<<"type of init stmt in for stmt is "<<initFor->getStmtClassName()<<endl;
+	
 	string initForStmtStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), initFor);
 	this->TraverseStmt(initFor);
 
@@ -312,13 +301,6 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 
 	Stmt *bodyOfFor= S->getBody();
 	string bodyOfForStmtStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), bodyOfFor);
-
-
-	//	cout<<"The var decl is "<<varDeclStr<<endl;
-	cout<<"The init is "<<initForStmtStr<<endl;
-	cout<<"The condition is "<<condOfForStr<<endl;
-	cout<<"The inc is "<<incOfForStr<<"; It is of type "<<inc->getStmtClassName()<<endl;
-	cout<<"The body of for stmt is "<<bodyOfForStmtStr<<endl;
 
 
 
@@ -336,8 +318,6 @@ bool MPITypeCheckingConsumer::TraverseForStmt(ForStmt *S){
 
 	int size=this->analyzeForStmt(initFor,condOfFor,inc,bodyOfFor,nonRankVarList,
 		iterVarName,startPos,endPos);
-
-	cout<<"The for loop will iterate "<<size<<" times!"<<endl;
 
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -379,8 +359,6 @@ bool MPITypeCheckingConsumer::VisitDoStmt(DoStmt *S){
 bool MPITypeCheckingConsumer::TraverseWhileStmt(WhileStmt *S){
 	if(!this->visitStart)
 		return true;
-
-	cout <<"The While stmt is \n"<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 
 	Expr *condOfWhile=S->getCond();
 	string condOfWhileStr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(), condOfWhile);
@@ -427,8 +405,6 @@ bool MPITypeCheckingConsumer::VisitLabelStmt(LabelStmt *S){
 bool MPITypeCheckingConsumer::VisitReturnStmt(ReturnStmt *S){
 	if(!this->visitStart)
 		return true;
-
-	cout <<"The return stmt is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),S) <<endl;
 
 	removeFuncFromList();
 
@@ -479,43 +455,10 @@ bool MPITypeCheckingConsumer::VisitContinueStmt(ContinueStmt *S){
 
 
 
-bool MPITypeCheckingConsumer::VisitDecl(Decl *decl){
-	if(!this->visitStart)
-		return true;
-
-
-	if(isa<FunctionDecl>(decl)){
-		FunctionDecl *func=cast<FunctionDecl>(decl);
-		this->VisitFunctionDecl(func);
-	}
-
-	return true;
-}
 
 bool MPITypeCheckingConsumer::VisitFunctionDecl(FunctionDecl *funcDecl){
 	if(!this->visitStart)
 		return true;	
-
-	/***************************************************************
-	*The parameter list of the function call.
-	*****************************************************************/
-	for (FunctionDecl::param_iterator it = funcDecl->param_begin(); it !=funcDecl->param_end(); it++)
-	{
-		unsigned int index=(*it)->getFunctionScopeIndex();
-		unsigned int depth=(*it)->getFunctionScopeDepth();
-
-		//		cout << "The index and depth of the parameter "<<decl2str(&ci->getSourceManager(),ci->getLangOpts(),*it);
-		//		cout <<" is " << index << " and " << depth << endl;
-
-		Expr *argVal=(*it)->getDefaultArg();
-		if(argVal && argVal->isRValue()){
-			APSInt result;
-			if(argVal->EvaluateAsInt(result,ci->getASTContext())){
-				cout<<"The parameter in the "<<index<<" position has default value "<<result.toString(10)<<endl;						
-			}
-
-		}
-	}
 
 	string funcName=funcDecl->getQualifiedNameAsString();
 
@@ -598,8 +541,7 @@ int MPITypeCheckingConsumer::analyzeForStmt(Stmt* initStmt, Expr* condExpr, Expr
 				}
 
 				string initExpr=stmt2str(&ci->getSourceManager(),ci->getLangOpts(),initExprInVarDecl);
-				cout<<"the var "<<varName<<" is declared!"
-					<<"The init in the decl is "<<initExpr<<endl;
+				
 			}
 		}
 

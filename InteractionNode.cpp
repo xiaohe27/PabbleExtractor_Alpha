@@ -24,6 +24,7 @@ void CommNode::init(int type, vector<MPIOperation*> *theOPs){
 
 	this->parent=nullptr;
 	this->sibling=nullptr;
+	this->execExpr=nullptr;
 
 	switch(type){
 	case ST_NODE_CHOICE: this->nodeName="CHOICE"; break;
@@ -57,6 +58,7 @@ void CommNode::init(int type, vector<MPIOperation*> *theOPs){
 CommNode::CommNode(int type, Condition cond){
 	init(type, nullptr);
 	this->setCond(cond);
+	this->rawCond=cond;
 }
 
 CommNode::CommNode(MPIOperation *op0){
@@ -85,6 +87,14 @@ CommNode* CommNode::getClosestNonRankAncestor(){
 	else{
 		return this->getParent()->getClosestNonRankAncestor();
 	}
+}
+
+Expr* CommNode::getExecExpr(){
+	if (this->execExpr)
+		return this->execExpr;
+	
+	else
+		return this->parent->getExecExpr();
 }
 
 bool CommNode::isNonRankChoiceNode(){
@@ -222,6 +232,8 @@ bool CommNode::isNegligible() {
 		return true;
 	}
 
+	
+
 	else if(this->ops){
 		for (int i = 0; i < this->ops->size(); i++)
 		{
@@ -236,6 +248,11 @@ bool CommNode::isNegligible() {
 				return false;
 		}
 
+		this->marked=true;
+		return true;
+	}
+
+	else if(this->isLeaf() && this->isStructureNode()){
 		this->marked=true;
 		return true;
 	}
@@ -310,6 +327,7 @@ string CommNode::printTheNode(){
 bool CommNode::isStructureNode(){
 	if(	this->nodeType==ST_NODE_ROOT || 
 		this->nodeType==ST_NODE_RECUR ||
+		this->nodeType==ST_NODE_FOREACH ||
 		this->nodeType==ST_NODE_CHOICE)
 		return true;
 
@@ -435,7 +453,7 @@ void CommNode::optimize(){
 			}
 		}
 
-		else if(childI->nodeType==ST_NODE_ROOT && childI->children.size()==0)
+		else if(childI->isStructureNode() && childI->children.size()==0)
 		{
 			childI->deleteItsTree();
 
@@ -521,7 +539,8 @@ ForEachNode::ForEachNode(string iterVar,int start,int end):CommNode(ST_NODE_FORE
 //Class BarrierNode impl start										****
 /********************************************************************/
 
-BarrierNode::BarrierNode():CommNode(MPI_Barrier,Condition(true)){
+BarrierNode::BarrierNode(ParamRole *group):CommNode(MPI_Barrier,Condition(true)){
+	this->commGroup=group;
 	this->curArrivedProcCond=Condition(false);
 }
 
@@ -531,6 +550,10 @@ void BarrierNode::visit(Condition visitorCond){
 	if (this->curArrivedProcCond.isComplete())
 	{
 		this->setMarked();
+		this->commGroup->getTheRoles()->clear();
+		Role *allRanRole=new Role(Range(0,N-1));
+		allRanRole->setCurVisitNode(this->skipToNextNode());
+		this->commGroup->getTheRoles()->push_back(allRanRole);
 	}
 }
 

@@ -43,8 +43,22 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 
 	//if it is a single var
 	if(this->isAVar(exprStr)){
+		if(rankVarOffsetMapping.count(exprStr))
+		{
+			//if the var is rank var, then: if N==1 then fasle, else [1..N-1]
+			if(N==1)
+				return Condition(false);
+
+			else{
+				return Condition(Range(1,N-1));
+			}
+		}
+
 		//a var can contain any value, so assume true.
 		Condition theCond(true);
+		if(unboundVarList.count(exprStr))
+			theCond.isVolatile=true;
+
 		theCond.setNonRankVarName(exprStr);
 		return theCond;
 	}
@@ -77,9 +91,12 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 					this->insertTmpNonRankVarCond(nonRankVarName,newC);
 				}
 
-				Condition theCond(true);
-				theCond.setNonRankVarName(nonRankVarName);
-				return theCond;
+				Condition myCond(true);
+				if(theCond.isVolatile)
+					myCond.isVolatile=true;
+
+				myCond.setNonRankVarName(nonRankVarName);
+				return myCond;
 			}
 			return Condition::negateCondition(theCond);
 		}
@@ -314,11 +331,15 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 
 
 			////////////////////////////////////////////////////////////////////////////////
+			bool isVolatileCond=false;
+			if(unboundVarList.count(lVarName) || unboundVarList.count(rVarName))
+				isVolatileCond=true;
+
 			if(leftIsVar && rightIsVar){
 
 				cout<<"Both lhs and rhs are var, so, all Range Condition!"<<endl;
 
-				return Condition(true);
+				return Condition(true).setVolatile(isVolatileCond);
 			}
 
 			else if(!this->isVarRelatedToRank(lVarName)
@@ -356,7 +377,8 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 					//so return the "all" range.
 					cout<<"Either the lvar or rvar is a non-rank var. So All Range Condition!"<<endl;
 					//also set the name of the non-rank var
-					Condition nonRankCond=Condition(true);
+					Condition nonRankCond(true);
+					nonRankCond.setVolatile(isVolatileCond);
 					nonRankCond.setNonRankVarName(nonRankVarName);
 					return nonRankCond;
 			}
@@ -376,7 +398,7 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 						if(commGroupName!=WORLD)
 							cond.setCommGroup(commGroupName);
 
-						return cond;
+						return cond.setVolatile(isVolatileCond);
 					}
 				}
 
@@ -392,7 +414,7 @@ Condition CommManager::extractCondFromBoolExpr(Expr *expr){
 						if(commGroupName!=WORLD)
 							cond.setCommGroup(commGroupName);
 
-						return cond;
+						return cond.setVolatile(isVolatileCond);
 					}
 				}
 			}			

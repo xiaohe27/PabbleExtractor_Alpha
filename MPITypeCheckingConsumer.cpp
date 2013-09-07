@@ -29,31 +29,9 @@ void MPITypeCheckingConsumer::init(CompilerInstance *ci, int numOfProc){
 	this->protocolGen=new ProtocolGenerator(this->mpiTree,this->commManager->getParamRoleMapping());
 }
 
-void MPITypeCheckingConsumer::HandleTranslationUnit(ASTContext &Ctx) {
-	cout<<"all the parts have been parsed!"<<endl;
-
-	int numOfErrs=ci->getDiagnosticClient().getNumErrors();
-
-	if(numOfErrs>0){
-		throw exception();
-	}
-
-	this->visitStart=true;
-
-	this->VisitDecl(this->mainFunc);
-
-	//after the main function has been visited, 
-	//the comm tree and roles will have been constructed,
-	//and the traversal of the comm tree can start
-	this->mpiSimulator->simulate();
-
-	this->protocolGen->generateTheProtocols();
-}
-
 
 bool MPITypeCheckingConsumer::HandleTopLevelDecl(DeclGroupRef d)
 {
-
 	DeclGroupRef::iterator it;
 
 
@@ -80,6 +58,31 @@ bool MPITypeCheckingConsumer::HandleTopLevelDecl(DeclGroupRef d)
 
 	return true;
 }
+
+
+void MPITypeCheckingConsumer::HandleTranslationUnit(ASTContext &Ctx) {
+	cout<<"all the parts have been parsed!"<<endl;
+
+	int numOfErrs=ci->getDiagnosticClient().getNumErrors();
+
+	if(numOfErrs>0){
+		throw exception();
+	}
+
+
+	this->visitStart=true;
+
+	this->VisitFunctionDecl(this->mainFunc);
+
+	//after the main function has been visited, 
+	//the comm tree and roles will have been constructed,
+	//and the traversal of the comm tree can start
+	this->mpiSimulator->simulate();
+
+	this->protocolGen->generateTheProtocols();
+
+}
+
 
 
 
@@ -262,6 +265,8 @@ string expr2str(SourceManager *sm, LangOptions lopt,clang::Expr *expr){
 
 string delSpaces(string &str){
 	str.erase(std::remove(str.begin(), str.end(), ' '), str.end());
+	str.erase(std::remove(str.begin(), str.end(), '\t'), str.end());
+	str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
 	return str;
 }
 

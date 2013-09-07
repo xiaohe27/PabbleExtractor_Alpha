@@ -10,6 +10,7 @@
 *
 *****************************************************************************/
 #include "MPITypeCheckingConsumer.h"
+
 using namespace std;
 using namespace clang;
 using namespace llvm;
@@ -20,7 +21,7 @@ bool STRICT=true;
 vector<string> srcFilesPaths;
 vector<string> searchPaths;
 
-//windows specific. //may add linux supported later.
+//windows specific. 
 string getFileName(string path, bool withExtension){
 
 	char drive[_MAX_DRIVE];
@@ -51,6 +52,34 @@ string getFileName(string path, bool withExtension){
 
 	return name;
 
+	/*
+	Linux equivaluent.
+	/////////////////////////////////////////
+	char *resolvedPath;
+	char buf[PATH_MAX + 1];
+	char *ret=realpath(path.c_str(), buf);
+
+	if (ret) {
+	char *baseName=basename(buf);
+
+	string name(baseName);
+
+	if(!withExtension){
+	unsigned found = name.find_last_of(".");
+	if (found!=string::npos)	
+	return name.substr(0,found);
+
+	else return name;
+	}
+	else
+	return name;
+
+	} else {
+	cerr << "Not resolvable path!" <<endl;
+	exit(EXIT_FAILURE);
+	}
+	*/
+
 }
 
 void parseArgs(int argc, char *argv[]){
@@ -64,7 +93,6 @@ void parseArgs(int argc, char *argv[]){
 				if (string(argv[i]) == "-n") {
 					N = atoi(argv[i + 1]);
 
-					cout<<"There are "<<N<<" processes!"<<endl;
 				} else if (string(argv[i]) == "-lib"){
 					string singleLibPath;
 					stringstream stream(argv[i+1]);
@@ -83,7 +111,7 @@ void parseArgs(int argc, char *argv[]){
 				} else if(string(argv[i]) == "-src"){
 					string srcFileListStr=argv[i + 1];
 
-					cout << srcFileListStr <<endl;
+					cout <<"\n"<< srcFileListStr <<endl;
 
 					string singlePath;
 					stringstream stream(srcFileListStr);
@@ -97,7 +125,7 @@ void parseArgs(int argc, char *argv[]){
 
 					throw exception();
 				}
-				std::cout << argv[i] << " ";
+
 			}
 		}
 
@@ -123,133 +151,137 @@ int main(int argc, char *argv[])
 
 	parseArgs(argc,argv);//the command line args can overwrite the config args
 
-	if (srcFilesPaths.size()==0)
-		throw MPI_TypeChecking_Error("No MPI src code provided!");
-
-
-	ofstream outputFile("Protocol.txt");
-	outputFile.clear();
-	outputFile.close();
-
-	ofstream debugFile("Debug.txt");
-	debugFile.clear();
-	debugFile.close();
-
-
-	///////////////////////////////////////////////////////////////////////////
-	CompilerInstance ci;
-	DiagnosticOptions *diagnosticOptions=new DiagnosticOptions();
-	TextDiagnosticPrinter *pTextDiagnosticPrinter =
-		new TextDiagnosticPrinter(
-		llvm::outs(),
-		diagnosticOptions,
-		true);
-
-
-	string clangArgs1= "-w";
-	// Arguments to pass to the clang frontend
-	vector<const char *> args4Clang;
-	args4Clang.push_back(clangArgs1.c_str());
-
-	// The compiler invocation needs a DiagnosticsEngine so it can report problems
-
-	llvm::IntrusiveRefCntPtr<clang::DiagnosticIDs> DiagID(new clang::DiagnosticIDs());
-	clang::DiagnosticsEngine Diags(DiagID,diagnosticOptions);
-
-	llvm::OwningPtr<clang::CompilerInvocation> CI(new clang::CompilerInvocation);
-	clang::CompilerInvocation::CreateFromArgs(*CI, &args4Clang[0], 
-		&args4Clang[0] + args4Clang.size(), Diags);
-
-	///////////////////////////////////////////////////////////////////////////
-	ci.setInvocation(CI.take());
-
-
-	ci.createDiagnostics(pTextDiagnosticPrinter,false);
-
-	llvm::IntrusiveRefCntPtr<TargetOptions> pto( new TargetOptions());
-	pto->Triple = llvm::sys::getDefaultTargetTriple();
-	TargetInfo *pti = TargetInfo::CreateTargetInfo(ci.getDiagnostics(), pto.getPtr());
-	ci.setTarget(pti);
-
-	ci.createFileManager();
-	ci.createSourceManager(ci.getFileManager());
-	ci.createPreprocessor();
-
-
-
-	ci.getPreprocessorOpts().UsePredefines = true;
-
-
-	IntrusiveRefCntPtr<clang::HeaderSearchOptions> hso( new clang::HeaderSearchOptions());
-	HeaderSearch headerSearch(	hso, 
-		ci.getFileManager(),
-		ci.getDiagnostics(),
-		ci.getLangOpts(),
-		pti);
-
-
-
-	/******************************************************************************************
-	Platform specific code start
-	****************************************************************************************/
-	if (searchPaths.size()==0)
-		throw new MPI_TypeChecking_Error("No lib search path is provided!!!");
-
-	for (int i = 0; i < searchPaths.size(); i++)
-	{
-		hso->AddPath(searchPaths.at(i),
-			clang::frontend::Angled,
-			false,
-			false);
-	}
-
-	/******************************************************************************************
-	Platform specific code end
-	****************************************************************************************/
-
-	InitializePreprocessor(ci.getPreprocessor(), 
-		ci.getPreprocessorOpts(),
-		*hso,
-		ci.getFrontendOpts());
-
-
-
-	MPITypeCheckingConsumer *astConsumer;
-
-	if(N!=0){
-		astConsumer= new MPITypeCheckingConsumer(&ci,N);
-	}
-
-	else{
-		astConsumer= new MPITypeCheckingConsumer(&ci);
-	}
-
-	ci.setASTConsumer(astConsumer);
-
-	ci.createASTContext();
-
-	ci.createSema(clang::TU_Complete, NULL);
-
-
 	try{
+		if (srcFilesPaths.size()==0)
+			throw MPI_TypeChecking_Error("No MPI src code provided!");
+
+
+		ofstream outputFile("Protocol.txt");
+		outputFile.clear();
+		outputFile.close();
+
+		ofstream debugFile("Debug.txt");
+		debugFile.clear();
+		debugFile.close();
+
+
+		///////////////////////////////////////////////////////////////////////////
+		CompilerInstance ci;
+		DiagnosticOptions *diagnosticOptions=new DiagnosticOptions();
+		TextDiagnosticPrinter *pTextDiagnosticPrinter =
+			new TextDiagnosticPrinter(
+			llvm::outs(),
+			diagnosticOptions,
+			true);
+
+
+		string clangArgs1= "-w";
+		// Arguments to pass to the clang frontend
+		vector<const char *> args4Clang;
+		args4Clang.push_back(clangArgs1.c_str());
+
+		// The compiler invocation needs a DiagnosticsEngine so it can report problems
+
+		llvm::IntrusiveRefCntPtr<clang::DiagnosticIDs> DiagID(new clang::DiagnosticIDs());
+		clang::DiagnosticsEngine Diags(DiagID,diagnosticOptions);
+
+		llvm::OwningPtr<clang::CompilerInvocation> CI(new clang::CompilerInvocation);
+		clang::CompilerInvocation::CreateFromArgs(*CI, &args4Clang[0], 
+			&args4Clang[0] + args4Clang.size(), Diags);
+
+		///////////////////////////////////////////////////////////////////////////
+		ci.setInvocation(CI.take());
+
+
+		ci.createDiagnostics(pTextDiagnosticPrinter,false);
+
+		llvm::IntrusiveRefCntPtr<TargetOptions> pto( new TargetOptions());
+		pto->Triple = llvm::sys::getDefaultTargetTriple();
+		TargetInfo *pti = TargetInfo::CreateTargetInfo(ci.getDiagnostics(), pto.getPtr());
+		ci.setTarget(pti);
+
+		ci.createFileManager();
+		ci.createSourceManager(ci.getFileManager());
+		ci.createPreprocessor();
+
+
+
+		ci.getPreprocessorOpts().UsePredefines = true;
+
+
+		IntrusiveRefCntPtr<clang::HeaderSearchOptions> hso( new clang::HeaderSearchOptions());
+		HeaderSearch headerSearch(	hso, 
+			ci.getFileManager(),
+			ci.getDiagnostics(),
+			ci.getLangOpts(),
+			pti);
+
+
+
+		/******************************************************************************************
+		Platform specific code start
+		****************************************************************************************/
+		if (searchPaths.size()==0)
+			throw new MPI_TypeChecking_Error("No lib search path is provided!!!");
+
+		for (int i = 0; i < searchPaths.size(); i++)
+		{
+			hso->AddPath(searchPaths.at(i),
+				clang::frontend::Angled,
+				false,
+				false);
+		}
+
+		/******************************************************************************************
+		Platform specific code end
+		****************************************************************************************/
+
+		InitializePreprocessor(ci.getPreprocessor(), 
+			ci.getPreprocessorOpts(),
+			*hso,
+			ci.getFrontendOpts());
+
+
+
+		MPITypeCheckingConsumer *astConsumer;
+
+		if(N!=0){
+			astConsumer= new MPITypeCheckingConsumer(&ci,N);
+		}
+
+		else{
+			astConsumer= new MPITypeCheckingConsumer(&ci);
+		}
+
+		ci.setASTConsumer(astConsumer);
+
+		ci.createASTContext();
+
+		ci.createSema(clang::TU_Complete, NULL);
+
+
+
 		string filePath=srcFilesPaths.at(0);
 		MPI_FILE_NAME=getFileName(filePath,false);
 
 		string updatedMainFilePath=filePath+"_ExplictIncluding";
 		//create a bakup modifiable file on which we perform the analysis
-		ifstream f1 (filePath, fstream::binary);
-		ofstream f2 (updatedMainFilePath, fstream::trunc|fstream::binary);
+		ifstream inputFileStream (filePath, fstream::binary);
+		ofstream outputFileStream (updatedMainFilePath, fstream::trunc|fstream::binary);
 
-		f2<<"\n/*explict including the import list*/\n";
+		if(!inputFileStream)
+			throw new MPI_TypeChecking_Error("Cannot find MPI source file!");
+
+		outputFileStream<<"\n/*explict including the import list*/\n";
 		//the first is main file and the others are following.
 		for (int i = 1; i < srcFilesPaths.size(); i++)
 		{
-			f2 << "#include \""<< srcFilesPaths.at(i) << "\"\n";
+			outputFileStream << "#include \""<< srcFilesPaths.at(i) << "\"\n";
 		}
-		f2<<"\n/*End of importing the other src files*/\n\n";
+		outputFileStream <<"\n/*End of importing the other src files*/\n\n";
 
-		f2 << f1.rdbuf ();
-		f2.close();
+		outputFileStream << inputFileStream.rdbuf ();
+		outputFileStream.close();
 
 		//read from the mpi src file
 		const FileEntry *pFile = ci.getFileManager().getFile(updatedMainFilePath);

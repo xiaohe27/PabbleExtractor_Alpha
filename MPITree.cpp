@@ -56,7 +56,23 @@ void MPINode::insertToEndOfChildrenList(MPINode *lastContNode)
 	this->children.push_back(lastContNode);
 }
 
+//TODO
 MPIOperation* MPINode::combineMPIOPs(MPIOperation* op1, MPIOperation* op2){
+	/*
+	bool op1B=op1->isStable();
+	bool op2B=op2->isStable();
+
+	bool imperfect=(op1B || op2B) && !(op1B && op2B);
+	*/
+
+	bool imperfect=false;
+	if(op1->execExprStr.size()>0 && op2->execExprStr.size()==0 
+		|| op2->execExprStr.size()>0 && op1->execExprStr.size()==0 )
+		imperfect=true;
+
+	if(imperfect)
+		return nullptr;
+
 	//because every op has been transformed to sending op before inserted to the node
 	//we can assume both ops are sending ops
 	int span1=Condition::getDistBetweenTwoCond(op1->getExecutor(),op1->getTargetCond());
@@ -71,6 +87,22 @@ MPIOperation* MPINode::combineMPIOPs(MPIOperation* op1, MPIOperation* op2){
 			MPIOperation* combi=new MPIOperation(*op2);
 			combi->setExecutorCond(op1->getExecutor().OR(op2->getExecutor()));
 			combi->setTargetCond(op1->getTargetCond().OR(op2->getTargetCond()));
+
+			////////////////////////////////
+			if(op1->getExecutor().isVolatile && op2->getExecutor().isVolatile &&
+				op1->execExprStr.size()>0 && op2->execExprStr.size()>0){
+				if(op1->getExecutor().getRangeList().at(0).getStart() <
+					op2->getExecutor().getRangeList().at(0).getStart())
+				{
+					combi->execExprStr=op1->execExprStr+".."+op2->execExprStr;
+				}
+
+				else{
+					combi->execExprStr=op2->execExprStr+".."+op1->execExprStr;
+				}
+
+			}
+			///////////////////////////////
 			return combi;
 		}
 

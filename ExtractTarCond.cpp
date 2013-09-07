@@ -40,13 +40,27 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 		if(this->nonRankVarAndStackOfCondMapping.count(exprStr)>0){
 			if(this->nonRankVarAndStackOfCondMapping[exprStr].size()>0){
 				//we have identified the range of the non-rank var 
-				return this->getTopCond4NonRankVar(exprStr);
+				Condition cond=this->getTopCond4NonRankVar(exprStr);
+
+				if (unboundVarList.count(exprStr)){
+					if(cond.isSameAsCond(Condition(Range(N,N))))
+						cond.execStr="N";
+					cond.isVolatile=true;
+				}
+
+				return cond;
 			}
 
 		}
 
-		else if(VarCondMap.count(exprStr))
-			return VarCondMap.at(exprStr);
+		else if(VarCondMap.count(exprStr)){
+			Condition cond2=VarCondMap.at(exprStr);
+
+			if(cond2.isSameAsCond(Condition(Range(N,N))))
+				cond2.execStr="N";
+
+			return cond2;
+		}
 
 		//the current system does not allow to use unknown non-rank vars to denote target processes.
 		throw new MPI_TypeChecking_Error(errInfo2);
@@ -72,7 +86,11 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 		Expr *withoutParen=bracketExpr->getSubExpr();
 		//		cout<<"The expr without brackets is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),withoutParen)<<endl;
 
-		return extractCondFromTargetExpr(withoutParen);
+		Condition updatedCond=extractCondFromTargetExpr(withoutParen);
+
+		updatedCond.execStr="("+updatedCond.execStr+")";
+
+		return updatedCond;
 	}
 
 
@@ -88,7 +106,7 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 
 		cout<<"The bin op is "<<stmt2str(&ci->getSourceManager(),ci->getLangOpts(),binOP)<<"\n";
 		cout<<"The lhs is "<<lhsStr<<"\n";
-		cout<<"The rhs is "<<rhs<<"\n";
+		cout<<"The rhs is "<<rhsStr<<"\n";
 		cout<<"The operator is : "<<op<<endl;
 
 
@@ -97,6 +115,7 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 		bool rhsIsNum=false;
 		int lhsNum=-1;
 		int rhsNum=-1;
+
 
 		if (lhs->EvaluateAsInt(INT_Result, this->ci->getASTContext())) {
 			lhsIsNum=true;
@@ -107,7 +126,8 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 
 		else if(VarCondMap.count(lhsStr)){
 			Condition lcond=VarCondMap.at(lhsStr);
-			if(lcond.size()==1)
+
+			if(lcond.size()==1 && !lcond.isVolatile)
 			{
 				lhsIsNum=true;
 				lhsNum=lcond.getRangeList().at(0).getStart();
@@ -123,7 +143,7 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 
 		else if(VarCondMap.count(rhsStr)){
 			Condition rcond=VarCondMap.at(rhsStr);
-			if(rcond.size()==1)
+			if(rcond.size()==1 && !rcond.isVolatile)
 			{
 				rhsIsNum=true;
 				rhsNum=rcond.getRangeList().at(0).getStart();
@@ -142,11 +162,50 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 
 		if(op=="+"){
 			if(rhsIsNum){
-				return this->extractCondFromTargetExpr(lhs).addANumber(rhsNum);
+				Condition lcond=this->extractCondFromTargetExpr(lhs);
+				Condition plusCond=lcond.addANumber(rhsNum);
+				string rStr=rhsNum==N?"N":convertIntToStr(rhsNum);
+				plusCond.execStr=lcond.execStr + "+" + rStr;
+				return plusCond;
 			}
 
 			if(lhsIsNum){
-				return this->extractCondFromTargetExpr(rhs).addANumber(lhsNum);
+				Condition rcond=this->extractCondFromTargetExpr(rhs);
+				Condition plusCond=rcond.addANumber(lhsNum);
+				string lStr=lhsNum==N?"N":convertIntToStr(lhsNum);
+				plusCond.execStr=rcond.execStr + "+" + lStr;
+				return plusCond;
+			}
+
+			//			throw new MPI_TypeChecking_Error(errInfo3);
+			Condition lcond=this->extractCondFromTargetExpr(lhs);
+			Condition rcond=this->extractCondFromTargetExpr(rhs);
+
+			bool volatileV= (lcond.isVolatile || rcond.isVolatile);
+
+			if(lcond.size()==1){
+				int leftNum=lcond.getRangeList().at(0).getStart();
+				Condition plusCond=rcond.addANumber(leftNum);
+				string signOP=leftNum <=0 ? "" : "+";
+				string lNumStr= leftNum==0 ? "" : convertIntToStr(leftNum);
+
+				if(leftNum==N)
+					lNumStr="N";
+
+				plusCond.execStr=rcond.execStr + signOP + lNumStr;
+				return plusCond.setVolatile(volatileV);
+			}
+
+			if(rcond.size()==1){
+				int rightNum=rcond.getRangeList().at(0).getStart();
+				Condition plusCond=lcond.addANumber(rightNum);
+				string signOP=rightNum <=0 ? "" : "+";
+				string rNumStr= rightNum==0 ? "" : convertIntToStr(rightNum);
+
+				if(rightNum==N)
+					rNumStr="N";
+				plusCond.execStr=lcond.execStr + signOP + rNumStr;
+				return plusCond.setVolatile(volatileV);
 			}
 
 			throw new MPI_TypeChecking_Error(errInfo3);
@@ -155,7 +214,24 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 		// minus
 		else if(op=="-"){
 			if(rhsIsNum){
-				return this->extractCondFromTargetExpr(lhs).addANumber(-rhsNum);
+				Condition lcond=this->extractCondFromTargetExpr(lhs);
+				Condition plusCond=lcond.addANumber(-rhsNum);
+				plusCond.execStr=lcond.execStr + "-" + convertIntToStr(rhsNum);
+				return plusCond;
+			}
+
+			Condition lcond=this->extractCondFromTargetExpr(lhs);
+			Condition rcond=this->extractCondFromTargetExpr(rhs);
+			bool volatileV= (lcond.isVolatile || rcond.isVolatile);
+
+
+			if(rcond.size()==1){
+				int rightNum=rcond.getRangeList().at(0).getStart();
+				Condition plusCond=lcond.addANumber(rightNum);
+				string signOP=rightNum <0 ? "+" : "";
+				string rNumStr= rightNum==0 ? "" : convertIntToStr(-rightNum);
+				plusCond.execStr=lcond.execStr + signOP + rNumStr;
+				return plusCond.setVolatile(volatileV);
 			}
 
 			throw new MPI_TypeChecking_Error(errInfo4);
@@ -166,8 +242,13 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 
 		else if(op=="%"){
 			Condition lhsCond=this->extractCondFromTargetExpr(lhs);
+			Condition rhsCond=this->extractCondFromTargetExpr(rhs);
+			rhsIsNum= rhsCond.size()==1;
+
 			if(!rhsIsNum)
 				throw new MPI_TypeChecking_Error("The op % needs to have a number in the rhs.");
+
+			rhsNum=rhsCond.getRangeList().at(0).getStart();
 
 			if(rhsNum!=N)
 				throw new MPI_TypeChecking_Error("Cur system only support the %N...");
@@ -179,6 +260,8 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 				newCond=newCond.OR(Condition(Range(ranI.getStart() % N, ranI.getEnd() % N)));
 			}
 
+			newCond.isVolatile=true;
+			newCond.execStr=lhsCond.execStr+"%N";
 			return newCond;
 		}
 
@@ -187,12 +270,19 @@ Condition CommManager::extractCondFromTargetExpr(Expr *expr){
 			Condition rhsCond=this->extractCondFromTargetExpr(rhs);
 			if(lhsCond.size()!=1 || rhsCond.size()!=1)
 				throw new MPI_TypeChecking_Error("The op / can only be performed on two numbers.");
-				
+
 			int dividend=lhsCond.getRangeList().at(0).getStart();
 			int divisor=rhsCond.getRangeList().at(0).getStart();
 			int quotient=dividend/divisor;
-			return Condition(Range(quotient,quotient));
 
+			Condition resultCond=Condition(Range(quotient,quotient));
+
+			if(lhsCond.isVolatile || rhsCond.isVolatile)
+				resultCond.isVolatile=true;
+
+
+			resultCond.execStr=lhsCond.execStr+"/"+convertIntToStr(divisor); //need to revise
+			return resultCond;
 		}
 
 		throw new MPI_TypeChecking_Error(errInfo);

@@ -24,7 +24,7 @@ void VisitResult::printVisitInfo(){
 	for (int i = 0; i < escapableRoles.size(); i++)
 	{
 		if(escapableRoles[i]->getCurVisitNode())
-		cout<<"The role "<<escapableRoles[i]->getRoleName()<<" is able to escape to the node with index "
+			cout<<"The role "<<escapableRoles[i]->getRoleName()<<" is able to escape to the node with index "
 			<<escapableRoles[i]->getCurVisitNode()->getPosIndex()<<endl;
 	}
 
@@ -174,9 +174,9 @@ void MPISimulator::insertNode(CommNode *node){
 
 	if(nodeT==ST_NODE_CHOICE || nodeT==ST_NODE_RECUR 
 		|| nodeT==ST_NODE_FOREACH || nodeT==ST_NODE_ROOT){
-		this->curNode=node;
+			this->curNode=node;
 
-		VarCondMap[RANKVAR]=this->getCurExecCond();
+			VarCondMap[RANKVAR]=this->getCurExecCond();
 	}
 
 }
@@ -235,26 +235,14 @@ bool MPISimulator::isDeadLockDetected(){
 void MPISimulator::initTheRoles(){
 	map<string,ParamRole*> paramRoleMap=this->commManager->getParamRoleMapping();
 
-	paramRoleMap[WORLD]->getTheRoles()->clear();
+	vector<Role*> *worldRoles=paramRoleMap[WORLD]->getTheRoles();
+	for (int i = 0; i < worldRoles->size(); i++)
+		delete worldRoles->at(i);
+
+	worldRoles->clear();
 	Role *initRole=new Role(Range(0,N-1));
 	initRole->setCurVisitNode(this->root);
 	paramRoleMap[WORLD]->getTheRoles()->push_back(initRole);
-		
-	/*
-	for (auto &x: paramRoleMap)
-	{
-
-		ParamRole *paramRole=x.second;
-
-		vector<Role*> *roles= paramRole->getTheRoles();
-
-		for (int i = 0; i < roles->size(); i++)
-		{
-			roles->at(i)->setCurVisitNode(this->root);
-		}
-	}
-	*/
-
 
 }
 
@@ -368,8 +356,18 @@ void MPISimulator::simulate(){
 		cout<<"\n\n\nThe comm tree has been traversed successfully!!!"<<endl;
 	}
 
-	else if(isDeadLockDetected())
-		cout<<"\n\n\nDeadlock occurs!!!";
+	else if(isDeadLockDetected()){
+		cout<<"\n\n\nDeadlock occurs!!!\n";
+		string errOut="The current pending operations are:\n";
+		for (int i = 0; i < this->pendingOPs.size(); i++)
+		{
+			errOut+=this->pendingOPs.at(i)->srcCode+"\n";
+		}
+
+		errOut+="\n"+this->collectiveOpMgr.getCurPendingCollectiveOPName()+"\n";
+
+		cout<<errOut<<endl;
+	}
 }
 
 
@@ -380,6 +378,17 @@ Condition MPISimulator::getTarCondFromExprAndExecCond(Expr *expr, Condition exec
 
 	VarCondMap[RANKVAR]=rankCondBak;
 	return newTarget;
+}
+
+
+//need to improve precision
+Condition MPISimulator::getExecCondFromExprAndProcCond(Expr *expr, string procVar,Condition procCond){
+	Condition procCondBak=VarCondMap[procVar];
+	VarCondMap[procVar]=procCond;
+	Condition newExecCond=this->commManager->extractCondFromBoolExpr(expr);
+
+	VarCondMap[procVar]=procCondBak;
+	return newExecCond;
 }
 
 /**
@@ -404,12 +413,12 @@ void MPISimulator::analyzeVisitResult(VisitResult *vr){
 	if (op)
 	{
 		//if the target condition has not been built, then build it
-		if(op->isDependentOnExecutor()){
+		if(op->isDependentOnExecutor() && op->getTargetExpr()){
 			Condition tarCond=this->getTarCondFromExprAndExecCond(op->getTargetExpr(),op->getExecutor());
 
 			if(tarCond.outsideOfBound())
-				throw new MPI_TypeChecking_Error("Target condition for the op "+
-				op->printMPIOP()+" is "+tarCond.printConditionInfo()+"\nRank outside of bound.");
+				throw new MPI_TypeChecking_Error("\nTarget condition for the op "+
+				op->srcCode+" is "+tarCond.printConditionInfo()+"\nRank outside of bound.");
 
 			op->setTargetCond(tarCond);
 
@@ -421,10 +430,18 @@ void MPISimulator::analyzeVisitResult(VisitResult *vr){
 		if (op->isCollectiveOp())
 		{
 			MPIOperation* happenedCollectiveOP=this->collectiveOpMgr.insertCollectiveOP(op);
-			
-			if(happenedCollectiveOP)
-			this->insertMPIOpToMPITree(happenedCollectiveOP);
-			
+
+			if(happenedCollectiveOP){
+				this->insertMPIOpToMPITree(happenedCollectiveOP);
+
+				//optimise the role list
+				ParamRole *globalGroup=this->commManager->getParamRoleWithName(WORLD);
+				globalGroup->getTheRoles()->clear();
+				Role *newStartRole=new Role(Range(0,N-1));
+				newStartRole->setCurVisitNode(happenedCollectiveOP->theNode->skipToNextNode());
+				globalGroup->getTheRoles()->push_back(newStartRole);
+			}
+
 			return;
 		}
 
@@ -487,18 +504,8 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 		//Avoid the same action in the same node to be performed by multiple roles
 		if (op->theNode==curVisitOP->theNode)
 		{
-			/*
-			Condition workNeedsDoing=op->getExecutor().Diff(curVisitOP->getExecutor());
-			op->setExecutorCond(workNeedsDoing);
-			if (op->isDependentOnExecutor())
-			{
-				op->setTargetCond(this->getTarCondFromExprAndExecCond(op->getTargetExpr(),workNeedsDoing));
-			}
-
-			continue;
-			*/
 			if(!op->getExecutor().AND(curVisitOP->getExecutor()).isIgnored())
-				throw new MPI_TypeChecking_Error("The same task is repeated by "+op->printMPIOP());
+				throw new MPI_TypeChecking_Error("The same task is repeated by "+op->srcCode);
 		}
 
 
@@ -555,7 +562,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 				continue;
 
 			//VERY IMPORTANT! NEED TO ENSURE THE EXPECTED TARGET IS THE SAME AS THE ACTUAL ONE!
-			if(op->isDependentOnExecutor()){
+			if(op->isDependentOnExecutor() && op->getTargetExpr()){
 				Condition expectedTar=this->getTarCondFromExprAndExecCond(
 					op->getTargetExpr(), actualExecutor);
 
@@ -563,7 +570,24 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					continue;
 			}
 
-			/////////////////////////////////////////////////////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////////////////////////////////////
+			//test whether the matching is perfect or not.
+			if(execCondOfCurVisitOp.size()==N) execCondOfCurVisitOp.setVolatile(false);
+			if(execOfThisOp.size()==N) execCondOfCurVisitOp.setVolatile(false);
+			if(targetOfCurOp.size()==N) targetOfCurOp.setVolatile(false);
+			if(targetOfThisOp.size()==N) targetOfThisOp.setVolatile(false);
+
+			bool isDiff1= (execOfThisOp.isVolatile || targetOfCurOp.isVolatile) &&
+				!(execOfThisOp.isVolatile && targetOfCurOp.isVolatile);
+
+			bool isDiff2= (execCondOfCurVisitOp.isVolatile || targetOfThisOp.isVolatile) &&
+				!(execCondOfCurVisitOp.isVolatile && targetOfThisOp.isVolatile);
+
+
+			if(isDiff1 || isDiff2)
+				IsGenericProtocol=false; //we found the imperfect matching! 
+
+			//////////////////////////////////////////////////////////////////////////////////////////
 			MPIOperation *actuallyHappenedOP;
 			if(op->isUnicast() && curVisitOP->isUnicast()){
 				op->theNode->setCond(op->theNode->getCond().Diff(actualExecutor));
@@ -677,7 +701,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					delete curVisitOP;
 
 					if(index>=0)
-					tmpNode->getOPs()->at(index)=nullptr;
+						tmpNode->getOPs()->at(index)=nullptr;
 
 					this->pendingOPs.erase(this->pendingOPs.begin()+i);
 					i--;
@@ -689,7 +713,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					CommNode *thisTmpNode=op->theNode;
 					delete op;
 					if(index>=0)
-					thisTmpNode->getOPs()->at(index)=nullptr;
+						thisTmpNode->getOPs()->at(index)=nullptr;
 
 					return;
 				}
@@ -770,7 +794,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					delete curVisitOP;
 
 					if(index>=0)
-					tmpNode->getOPs()->at(index)=curOP1;
+						tmpNode->getOPs()->at(index)=curOP1;
 					curVisitOP=curOP1;
 
 					this->pendingOPs[i]=curVisitOP;
@@ -784,8 +808,8 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					delete curVisitOP;
 
 					if(index>=0)
-					tmpNode->getOPs()->at(index)=curOP1;
-					
+						tmpNode->getOPs()->at(index)=curOP1;
+
 					curVisitOP=curOP1;
 
 					this->pendingOPs[i]=curVisitOP;
@@ -797,7 +821,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					delete curVisitOP;
 
 					if(index>=0)
-					tmpNode->getOPs()->at(index)=curOP2;
+						tmpNode->getOPs()->at(index)=curOP2;
 					curVisitOP=curOP2;
 					this->pendingOPs[i]=curVisitOP;
 				}
@@ -808,7 +832,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					delete curVisitOP;
 
 					if(index>=0)
-					tmpNode->getOPs()->at(index)=nullptr;
+						tmpNode->getOPs()->at(index)=nullptr;
 
 					this->pendingOPs.erase(this->pendingOPs.begin()+i);
 					i--;
@@ -823,7 +847,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					delete op;
 
 					if(index>=0)
-					tmpNode->getOPs()->at(index)=thisOP1;
+						tmpNode->getOPs()->at(index)=thisOP1;
 					tmpNode->insertMPIOP(thisOP2);
 
 					//the time of insertion is vital, 
@@ -841,7 +865,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					delete op;
 
 					if(index>=0)
-					tmpNode->getOPs()->at(index)=thisOP1;
+						tmpNode->getOPs()->at(index)=thisOP1;
 
 					op=thisOP1;
 
@@ -853,7 +877,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					delete op;
 
 					if(index>=0)
-					tmpNode->getOPs()->at(index)=thisOP2;
+						tmpNode->getOPs()->at(index)=thisOP2;
 
 					op=thisOP2;
 
@@ -865,7 +889,7 @@ void MPISimulator::insertOpToPendingList(MPIOperation *op){
 					delete op;
 
 					if(index>=0)
-					tmpNode->getOPs()->at(index)=nullptr;
+						tmpNode->getOPs()->at(index)=nullptr;
 
 					return;
 				}
@@ -898,8 +922,10 @@ void MPISimulator::insertMPIOpToMPITree(MPIOperation *actuallyHappenedOP){
 		if(execCond.isSameAsCond(tarCond) ||
 			execCond.Diff(tarCond).isIgnored() ||
 			tarCond.Diff(execCond).isIgnored())
-		throw new MPI_TypeChecking_Error("\n\n"+actuallyHappenedOP->printMPIOP()+" \n\n"
-					+"involves action of sending data to itself...Will incur runtime error!");
+
+			if(execCond.execStr != tarCond.execStr && (execCond.isVolatile || tarCond.isVolatile))
+			throw new MPI_TypeChecking_Error("\n\n"+actuallyHappenedOP->srcCode+" \n\n"
+			+"involves action of sending data to itself...Will incur runtime error!");
 	}
 
 	CommNode *masterNode=actuallyHappenedOP->theNode->getClosestNonRankAncestor();
@@ -913,6 +939,7 @@ void MPISimulator::insertMPIOpToMPITree(MPIOperation *actuallyHappenedOP){
 
 
 void MPISimulator::unblockTheRolesWithCond(Condition unblockedRoleCond, CommNode *unblockingNode){
+	unblockedRoleCond=unblockedRoleCond.AND(Condition(true));
 	for (int i = 0; i < unblockedRoleCond.getRangeList().size(); i++)
 	{
 		Role *unblockedRole=new Role(unblockedRoleCond.getRangeList()[i]);

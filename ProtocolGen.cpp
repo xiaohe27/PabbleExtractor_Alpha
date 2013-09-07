@@ -36,7 +36,6 @@ string ProtocolGenerator::genRoleByVar(string paramRoleName, string varName){
 }
 
 
-//TODO
 string ProtocolGenerator::selfCreatedLoop(MPINode *mpinode){
 	mpinode->isInRankSpecificForLoop=false;
 
@@ -48,7 +47,7 @@ string ProtocolGenerator::selfCreatedLoop(MPINode *mpinode){
 
 	////////////////////////////////////////////////////////////////////////////
 	if(!mpinode->getMPIOP()->isUnicast())
-	mpinode->getMPIOP()->isBothCastAndGather=true;
+		mpinode->getMPIOP()->isBothCastAndGather=true;
 	////////////////////////////////////////////////////////////////////////////
 
 	mpi4Each->insert(mpinode);
@@ -68,10 +67,42 @@ string ProtocolGenerator::selfCreatedLoop(MPINode *mpinode){
 
 //TODO
 void ProtocolGenerator::generateTheProtocols(){
+
 	string globalP=this->generateGlobalProtocol();
 
-	//	cout<<"\n\n\n"<<globalP<<"\n\n\n"<<endl;
-	writeProtocol(globalP);
+	cout << "The largest known rank in this MPI program is " << LargestKnownRank << endl;
+
+	string judge=(IsProtocolStable() ? "" : "NOT ");
+	string stabilityInfo= "/*The protocol generated is " + judge + "stable!*/\n\n";
+
+	if(!IsProtocolStable()){
+		string diagnosticOfMPIPGM;
+		string sug1="Try to re-run the app and set the number of processes as "
+				 +convertIntToStr(getLFP());
+
+		string sug2="There is imperfect matching of MPI operations; Plz use perfect matching.";
+
+		if(!IsGenericProtocol)
+			diagnosticOfMPIPGM+="\n/*"+sug2+"*/\n";
+		
+		if(N < getLFP())
+			diagnosticOfMPIPGM+="\n/*"+sug1+"*/\n";
+
+		stabilityInfo+="/*The current protocol is only applicable when number of processes is "+
+				 convertIntToStr(N)+"*/\n"+
+				 diagnosticOfMPIPGM+"\n";
+
+		stabilityInfo+="const N="+convertIntToStr(N)+";\n\n";
+	}
+
+	else{
+		string startNum=convertIntToStr(getLFP());
+		stabilityInfo+="const N= "+startNum+"..Inf\n\n";
+	}
+	
+	cout << stabilityInfo << endl;
+
+	writeProtocol(stabilityInfo+globalP);
 
 	for (auto &x: paramRoleNameMapping)
 	{
@@ -248,22 +279,27 @@ string ProtocolGenerator::globalMsgTransfer(MPINode *node){
 	string output="\n";
 
 	if(theMPIOP->isCollectiveOp()){
-		if(theMPIOP->getExecutor().size()==1)
+		if(theMPIOP->getExecutor().size()==1 && !theMPIOP->getExecutor().isVolatile)
 			theMPIOP->execExprStr=convertIntToStr(theMPIOP->getExecutor().getRangeList().at(0).getStart());
-			
+
 
 		if (theMPIOP->isSendingOp())
 		{
 			output+=msg+" from "+genRoleByVar(WORLD,theMPIOP->execExprStr)
-				+" to "+genRoleName(WORLD,Range(0,N-1));
+				+" to "+genRoleName(WORLD,Range(0,N-1))+";";
 		}
 
 		else
 		{
+			if(theMPIOP->getExecutor().isVolatile)
+				output+=msg+" from "+genRoleName(WORLD,Range(0,N-1)) +
+				+" to "+genRoleByVar(WORLD,theMPIOP->getExecutor().execStr)+";";
+
+			else
 			output+=msg+" from "+genRoleName(WORLD,Range(0,N-1)) +
-				+" to "+genRoleByVar(WORLD,theMPIOP->execExprStr);
+				+" to "+genRoleByVar(WORLD,theMPIOP->execExprStr)+";";
 		}
-		return output;
+		return output+"\n";
 	}
 
 

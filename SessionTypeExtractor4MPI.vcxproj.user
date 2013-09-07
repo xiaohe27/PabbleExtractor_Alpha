@@ -1,8 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerCommandArguments>-src "A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\Debug\InterProcedural\realPgm\InterProcedural_TestedByMPIExec\main\main.c;sib.c;inner/child.c;../parent.c;../outer/uncle.c" -lib "S:/MinGW/MPI/include;S:/MinGW/include;S:/CLANG/SW/build4VS11/lib/clang/3.4/include"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-src test.c</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerAttach>false</LocalDebuggerAttach>
+    <LocalDebuggerWorkingDirectory>A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\Debug</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LocalDebuggerCommandArguments>-src A:\MasterThesis\Final_Report\Tests\LFP\lfp.c -n 5</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerWorkingDirectory>A:\MPI_SessionType_Extractor\SessionTypeExtractor4MPI\Release</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
 </Project>

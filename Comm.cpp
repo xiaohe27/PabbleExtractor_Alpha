@@ -3,18 +3,24 @@
 
 
 int N=100;
-int LFP=0;
 string RANKVAR;
 map<string,Condition> VarCondMap;
 string MPI_FILE_NAME="MPIProtocol";
 
 /////////////////////////////////////
-//TODO
-int LargestKnownRank=-1; 
+int LargestKnownRank=0; 
 bool IsGenericProtocol=true;
-vector<string> unboundVarList;
+set<string> unboundVarList;
+
+void updateLargestKnownRank(int num){
+if(num > LargestKnownRank)
+	LargestKnownRank=num;
+}
+
+int getLFP(){return LargestKnownRank + 2;}
+
 bool IsProtocolStable(){
-	return IsGenericProtocol && N >= LargestKnownRank+2;
+	return IsGenericProtocol && N >= getLFP();
 }
 /////////////////////////////////////
 
@@ -91,8 +97,6 @@ void writeToFile(string content){
 void writeProtocol(string protocol){
 	ofstream outputFile("Protocol.txt",
 		ios_base::out | ios_base::trunc);
-
-	outputFile <<"const N="<<N<<";\n";
 
 	outputFile <<"\n"<< protocol <<"\n";
 

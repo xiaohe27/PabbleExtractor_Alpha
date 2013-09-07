@@ -7,6 +7,10 @@ CollectiveOPManager::CollectiveOPManager(){
 this->curCollectiveOP=nullptr;
 }
 
+string CollectiveOPManager::getCurPendingCollectiveOPName(){
+	return this->curCollectiveOP==nullptr ? "No pending collective operation!" :
+			this->curCollectiveOP->srcCode;
+}
 
 MPIOperation* CollectiveOPManager::insertCollectiveOP(MPIOperation* op){
 
@@ -43,6 +47,12 @@ MPIOperation* CollectiveOPManager::insertCollectiveOP(MPIOperation* op){
 			this->curCollectiveOP->srcCode+"\n\nis not compatible with the op:\n\n"+
 			op->srcCode+"\n\nDeadlock will happen!");
 
+		bool isDiff=(this->curCollectiveOP->getExecutor().isVolatile || execCond.isVolatile)
+			&& !(this->curCollectiveOP->getExecutor().isVolatile && execCond.isVolatile);
+		
+		if (isDiff)
+			IsGenericProtocol=false; //we found the imperfect matching! 
+
 		bool found=false;
 
 		for (int i = 0; i < this->participatingCommNodesVec.size(); i++)
@@ -73,8 +83,10 @@ MPIOperation* CollectiveOPManager::insertCollectiveOP(MPIOperation* op){
 
 		MPIOperation *actuallyHappenedOP=this->curCollectiveOP;
 
+		CommNode *initNode=this->participatingCommNodesVec.at(this->getInitNodePos());
 		this->unlockCollectiveOP();
 
+		actuallyHappenedOP->theNode=initNode;
 		return actuallyHappenedOP;
 	}
 
@@ -85,12 +97,6 @@ MPIOperation* CollectiveOPManager::insertCollectiveOP(MPIOperation* op){
 
 
 void CollectiveOPManager::unlockCollectiveOP(){
-	/*
-	string outToFile="\n\n\nThe actually happened MPI OP is :\n";
-		outToFile.append(this->curCollectiveOP->srcCode);
-		writeToFile(outToFile);
-		cout<<outToFile<<endl;
-	*/
 
 	for (unsigned int i = 0; i < this->participatingCommNodesVec.size(); i++)
 	{
@@ -104,4 +110,21 @@ void CollectiveOPManager::unlockCollectiveOP(){
 	this->participatingCommNodesVec.clear();
 	this->commNodeAndInitExecutorCondMap.clear();
 	this->curCollectiveOP=nullptr;
+}
+
+//in order to find the node with min index among candidates. 
+int CollectiveOPManager::getInitNodePos(){
+	int initNodePos=0;
+
+	int curMinNodeIndex=this->participatingCommNodesVec.at(0)->getPosIndex();
+	for (int i = 1; i < this->participatingCommNodesVec.size(); i++)
+	{
+		if (this->participatingCommNodesVec.at(i)->getPosIndex() < curMinNodeIndex)
+		{
+			curMinNodeIndex=this->participatingCommNodesVec.at(i)->getPosIndex();
+			initNodePos=i;
+		}
+	}
+
+	return initNodePos;
 }

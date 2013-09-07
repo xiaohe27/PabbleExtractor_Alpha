@@ -8,20 +8,18 @@ using namespace clang;
 /********************************************************************/
 
 Range::Range(int s,int e){
-	this->shouldBeIgnored=false;
-
 	this->startPos=s; this->endPos=e;
 }
 
 Range::Range(){
-	shouldBeIgnored=true;
-
 	this->startPos=InitEndIndex;
 	this->endPos=InitStartIndex;
-
 }
 
 int Range::size(){
+	if(this->startPos==InitEndIndex && this->endPos==InitStartIndex)
+		return 0;
+
 	if (this->startPos <= this->endPos)
 	{
 		return this->endPos-this->startPos+1;
@@ -32,53 +30,33 @@ int Range::size(){
 	}
 }
 
-Range Range::createByStartIndex(int start){
-	if(start>=N)
-		return Range();
+int Range::getLargestNum(){
+	if(this->isSpecialRange())
+		return 0;
 
-	return Range(start,N-1);
+	return this->startPos;
+}
+
+Range Range::createByStartIndex(int start){
+	return Range(start,InitEndIndex);
 }
 
 Range Range::createByEndIndex(int end){
-	if (end<0)
-		return Range();
-
-	else if(end>=N)
-		return Range(0,N-1);
-
-	return Range(0,end);
+	return Range(InitStartIndex,end);
 }
 
 
 Range Range::createByOp(string op, int num){
 	if(op=="=="){
-		if(num<0 || num>= N)
-			return Range();
-
-		else
-			return Range(num,num);
+		return Range(num,num);
 	}
 
 	if(op=="<"){
-		if(num<=0)
-			return Range();
-
-		else if(num<= N)
-			return Range(0,num-1);
-
-		else
-			return Range(0,N-1);
+		return Range(InitStartIndex,num-1);
 	}
 
 	if(op=="<="){
-		if(num<0)
-			return Range();
-
-		else if(num<N)
-			return Range(0,num);
-
-		else
-			return Range(0,N-1);
+		return Range(InitStartIndex,num);
 	}
 
 	if(op==">"){	
@@ -95,8 +73,8 @@ Range Range::createByOp(string op, int num){
 
 void Range::addNumber(int num){
 
-		this->startPos+=num;
-		this->endPos+=num;
+	this->startPos+=num;
+	this->endPos+=num;
 
 }
 
@@ -123,7 +101,7 @@ Condition Range::AND(Range other){
 	}
 
 	else{
-	return (Range(0,other.endPos).AND(*this))
+		return (Range(0,other.endPos).AND(*this))
 			.OR(Range(other.startPos,N-1).AND(*this));
 	}
 
@@ -179,7 +157,7 @@ Condition Range::OR(Range other){
 				return Condition(Range(smallOne,largeOne));
 			else
 				return Condition(*this,other);
-			
+
 		}
 
 		else if (areTheseTwoNumsAdjacent(other.getEnd(),this->getStart()))
@@ -312,16 +290,7 @@ bool Range::isEqualTo(Range ran){
 
 //ok. already considered the case of end < start
 bool Range::isAllRange(){
-	if (this->shouldBeIgnored)
-		return false;
-
-	if(getStart()==0 && getEnd()==N-1)
-		return true;
-
-	if(getEnd()==getStart()-1)
-		return true;
-
-	return false;
+	return this->size()==N;
 }
 
 //ok. already considered the case of end < start
@@ -382,7 +351,7 @@ string Range::printRangeInfo(){
 	}
 
 	else
-	return "["+convertIntToStr(this->getStart())+
+		return "["+convertIntToStr(this->getStart())+
 		".."+convertIntToStr(this->getEnd())+"]";
 
 }
@@ -397,9 +366,9 @@ string Range::printRangeInfo(){
 /********************************************************************/
 
 Condition::Condition(){
-	this->shouldBeIgnored=false; this->complete=false;
 	this->mixed=false;
 	this->isTrivialCond=false;
+	this->isVolatile=false;
 	this->groupName=WORLD;
 	this->nonRankVarName="";
 	this->offset=0;
@@ -411,27 +380,19 @@ Condition::Condition(bool val){
 	rangeList.clear();
 	this->mixed=false;
 	this->isTrivialCond=false;
+	this->isVolatile=false;
 	this->offset=0;
 
 	if(val){
-
-		this->complete=true;
-		this->shouldBeIgnored=false;
 		this->rangeList.push_back(Range(0,N-1));
-	}
-
-	else{
-		this->shouldBeIgnored=true;
-		this->complete=false;
 	}
 }
 
 Condition::Condition(Range ran){
 	this->nonRankVarName="";
-	this->shouldBeIgnored=false; 
-	this->complete=false;
 	this->mixed=false;
 	this->isTrivialCond=false;
+	this->isVolatile=false;
 	this->groupName=WORLD;
 	this->offset=0;
 	this->rangeList.clear(); this->rangeList.push_back(ran);
@@ -440,22 +401,19 @@ Condition::Condition(Range ran){
 
 Condition::Condition(Range ran1, Range ran2){
 	this->nonRankVarName="";
-	this->shouldBeIgnored=false; 
-	this->complete=false;
 	this->mixed=false;
 	this->isTrivialCond=false;
+	this->isVolatile=false;
 	this->groupName=WORLD;
 	this->offset=0;
-	rangeList.clear(); rangeList.push_back(ran1);rangeList.push_back(ran2);
-
+	rangeList.clear(); 
+	rangeList.push_back(ran1);
+	rangeList.push_back(ran2);
 }
 
 
 bool Condition::isIgnored(){
-	if(this->isComplete())
-		return false;
-
-	return shouldBeIgnored || this->rangeList.size()==0;
+	return this->size()==0;
 }
 
 bool Condition::isRangeInside(Range ran){
@@ -468,6 +426,23 @@ bool Condition::isRangeInside(Range ran){
 	}
 
 	return false;
+}
+
+int Condition::getLargestNum(){
+	if(this->isVolatile)
+		return 0;
+
+	int curL=INT_MIN;
+	for (int i = 0; i < this->rangeList.size(); i++)
+	{
+		Range ran=this->rangeList.at(i);
+		int largestInRan=ran.getLargestNum();
+		
+		if(largestInRan > curL)
+			curL=largestInRan;
+	}
+
+	return curL;
 }
 
 
@@ -553,13 +528,33 @@ Condition Condition::createCondByOp(string op, int num){
 
 bool Condition::isComplete()
 {
-	if(!this->complete)
-		this->normalize();
+	if(this->rangeList.size()==1)
+	{
+		Range ran0=getRangeList().at(0);
+		int start=ran0.getStart();
+		int end=ran0.getEnd();
+		
+		if(start==0 && end==N-1)
+			return true;
 
-	return this->complete;
+		if(start==end+1)
+			return true;
+
+		return false;
+	}
+
+
+	return this->size()==N;
 }
 
+//need to revise
 void Condition::normalize(){
+	if(this->isComplete())
+	{
+		this->rangeList.clear();
+		this->rangeList.push_back(Range(0,N-1));
+		return;
+	}
 
 	for (int i = 0; i < rangeList.size(); i++)
 	{
@@ -597,23 +592,29 @@ void Condition::normalize(){
 
 	this->rangeList=newRangeList;
 
-	if(this->isRangeConsecutive() && this->rangeList[0].isAllRange())
-	{this->complete=true;}
-
 }
 
 
 
 
 Condition Condition::AND(Condition other){
+	bool isChangeable=false;
+	if(this->isVolatile || other.isVolatile)
+		isChangeable=true;
+
 	if(this->isIgnored() || other.isIgnored())
-		return Condition(false);
+		return Condition(false).setVolatile(isChangeable);
 
-	if(this->isComplete()){return other;}
+	if(this->isComplete()){
+		Condition cond= other.setVolatile(isChangeable);
+		other.execStr=this->execStr;
+		return cond;
+	}
 
-	if(other.isComplete()){return *this;}
+//	if(other.isComplete()){return (*this).setVolatile(isChangeable);}
 
-	Condition cond; 
+	Condition cond(*this); 
+	cond.rangeList.clear();
 
 	for (int i = 0; i < this->rangeList.size(); i++)
 	{
@@ -632,19 +633,23 @@ Condition Condition::AND(Condition other){
 	cond.normalize();
 
 	cond.offset=this->offset;
-	return cond;
+	return cond.setVolatile(isChangeable);
 
 }
 
 Condition Condition::OR(Condition other){
+	bool isChangeable=false;
+	if(this->isVolatile || other.isVolatile)
+		isChangeable=true;
+
 	if(this->isIgnored() && other.isIgnored())
-		return other;
+		return other.setVolatile(isChangeable);
 
 	if(this->isIgnored())
-		return other;
+		return other.setVolatile(isChangeable);
 
 	if(other.isIgnored())
-		return *this;
+		return (*this).setVolatile(isChangeable);
 
 	/////////////////////////////////////
 	Condition cond;
@@ -661,7 +666,7 @@ Condition Condition::OR(Condition other){
 	cond.normalize();
 
 	cond.offset=this->offset;
-	return cond;
+	return cond.setVolatile(isChangeable);
 }
 
 
@@ -669,17 +674,17 @@ Condition Condition::negateCondition(Condition cond){
 
 	if(cond.isIgnored()){
 		//negate of nothing becomes a complete condition
-		return Condition(true);
+		return Condition(true).setVolatile(cond.isVolatile);
 	}
 
 	if(cond.isComplete()){
-		return Condition(false);	
+		return Condition(false).setVolatile(cond.isVolatile);	
 	}
 
 	//base case: only one range
 	if(cond.rangeList.size()==1){
 		Range ran=cond.rangeList.back();
-		return Range::negateOfRange(ran);
+		return Range::negateOfRange(ran).setVolatile(cond.isVolatile);
 	}
 
 	else{
@@ -690,7 +695,7 @@ Condition Condition::negateCondition(Condition cond){
 }
 
 Condition Condition::Diff(Condition other){
-	return this->AND(Condition::negateCondition(other));
+	return this->AND(Condition::negateCondition(Condition(other)));
 }
 
 
